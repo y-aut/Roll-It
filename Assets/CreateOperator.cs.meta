@@ -3,7 +3,13 @@ guid: eb361aa9edc4391418c5e383e3db2576
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - cam: {instanceID: 0}
+  - panel: {instanceID: 0}
+  - arrowPrefab: {instanceID: 0}
+  - XZResizeCubePrefab: {instanceID: 0}
+  - YResizeCubePrefab: {instanceID: 0}
+  - FrameCubePrefab: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
