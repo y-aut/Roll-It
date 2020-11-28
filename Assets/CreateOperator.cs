@@ -3,30 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class CreateOperator : MonoBehaviour
 {
     public Camera cam;
     public static Stage Stage { get; set; }
     public GameObject panel;
-    public Button BtnDelete;
-    public GameObject arrowPrefab;          // 移動用の矢印のプレハブ
-    public GameObject XZResizeCubePrefab;   // XZ方向のサイズ変更用のキューブのプレハブ
-    public GameObject YResizeCubePrefab;    // Y方向のサイズ変更用のキューブのプレハブ
-    public GameObject FrameCubePrefab;      // 外枠のキューブのプレハブ
-    public GameObject RotateArrowPrefab;    // 回転用の矢印のプレハブ
+    public GameObject arrowPrefab;  // 移動用の矢印のプレハブ
 
     private Vector2? leftDowned;
     private Vector2? rightDowned;
-    private Vector2 old1, old2;     // ピンチイン/アウト
+    private Vector2 old1, old2; // ピンチイン/アウト
 
     private Structure dragging;     // ドラッグ中のオブジェクト（半透明）
     private Structure focused;      // フォーカスされているオブジェクト
-    private GameObject framecube;   // 外枠
-    private TransformTools tools;      // 移動用矢印
+    private AxisArrows arrows;     // 移動用矢印
 
-    const int CAM_RADIUS = 10;      // カメラの回転時、中心となる点のカメラからの距離
+    const int CAM_RADIUS = 10;  // カメラの回転時、中心となる点のカメラからの距離
     const int CAM_RADIUS_MAX = 20;  // Focus中のオブジェクトからこれ以上離れていたらCAM_RADIUSを半径とする
 
     // Start is called before the first frame update
@@ -44,51 +37,31 @@ public class CreateOperator : MonoBehaviour
         {
             clicked.Clicked = false;
             focused = clicked;
-            BtnDelete.interactable = focused.IsDeletable;
-
-            // 外枠を表示
-            if (framecube != null) Destroy(framecube);
-            framecube = Instantiate(FrameCubePrefab);
-            framecube.transform.position = focused.Position;
-            framecube.transform.localScale = focused.LocalScale;
-
-            // 矢印、サイズ変更用キューブを表示
-            if (tools != null) Destroy(tools);
-            tools = gameObject.AddComponent<TransformTools>();
-            tools.Focused = focused;
-            tools.ArrowPrefab = arrowPrefab;
-            tools.XZCubePrefab = XZResizeCubePrefab;
-            tools.YCubePrefab = YResizeCubePrefab;
-            tools.RotateArrowPrefab = RotateArrowPrefab;
-            tools.Create();
+            focused.GetArrowRoot(out var roots);
+            if (arrows != null) Destroy(arrows);
+            arrows = gameObject.AddComponent<AxisArrows>();
+            arrows.roots = roots;
+            arrows.prefab = arrowPrefab;
+            arrows.Create();
         }
 
-        // 矢印やキューブがドラッグされたか
-        if (tools != null && tools.Dragged != null)
+        // 矢印がドラッグされたか
+        if (arrows != null && arrows.Dragged != null)
         {
             // このフレームでドラッグされたか
-            if (tools.BeganDragged)
+            if (arrows.BeganDragged)
             {
-                tools.SetPointerRay(cam.ScreenPointToRay(Input.mousePosition), focused.PositionInt, focused.LocalScaleInt);
+                arrows.SetPointerRay(cam.ScreenPointToRay(Input.mousePosition), focused.PositionInt);
             }
             else
             {
-                tools.Drag(cam.ScreenPointToRay(Input.mousePosition), focused.PositionInt, focused.LocalScaleInt, out var deltaPos, out var deltaScale);
-                // Scaleが0以下になる変形はしない
-                if ((focused.LocalScaleInt + deltaScale).IsPositive())
-                {
-                    focused.PositionInt += deltaPos;
-                    focused.LocalScaleInt += deltaScale;
-
-                    // 変形後のStructureにあわせて更新
-                    framecube.transform.position = focused.Position;
-                    framecube.transform.localScale = focused.LocalScale;
-                    tools.UpdateObjects();
-                }
+                var delta = arrows.Drag(cam.ScreenPointToRay(Input.mousePosition), focused.PositionInt);
+                if (delta != Vector3Int.zero)
+                    focused.PositionInt += delta;
             }
         }
         else
-        {  // 矢印やキューブがドラッグされていないときのみ視点移動を行う
+        {  // 矢印がドラッグされていないときのみ視点移動を行う
             if (Input.touchCount <= 1)
             {
                 Vector2 p = Input.mousePosition;
@@ -186,12 +159,6 @@ public class CreateOperator : MonoBehaviour
                 dragging.Create();
                 dragging.Fade();
             }
-            else if (sender.name == "ImgBridge")
-            {
-                dragging = new Structure(StructureType.Bridge, pos, new Vector3Int(4, 4, 4));
-                dragging.Create();
-                dragging.Fade();
-            }
             else
                 return;
         }
@@ -230,20 +197,6 @@ public class CreateOperator : MonoBehaviour
             return cam.transform.position + cam.transform.forward * r;
         else
             return cam.transform.position + cam.transform.forward * CAM_RADIUS;
-    }
-
-    // Delete
-    public void BtnDeleteClicked()
-    {
-        if (focused != null && focused.IsDeletable)
-        {
-            focused.ForEach(Destroy);
-            Stage.Delete(focused);
-            focused = null;
-            BtnDelete.interactable = false;
-            if (framecube != null) Destroy(framecube);
-            if (tools != null) Destroy(tools);
-        }
     }
 
     // Finish

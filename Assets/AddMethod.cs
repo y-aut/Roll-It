@@ -14,31 +14,10 @@ public static class AddMethod
     public static Vector3 ZInversed(this Vector3 vec) => new Vector3(vec.x, vec.y, -vec.z);
     public static Vector3 XYInversed(this Vector3 vec) => new Vector3(-vec.x, -vec.y, vec.z);
     public static Vector3 XZCast(this Vector3 vec) => new Vector3(vec.x, 0, vec.z);
-    public static Vector3Int Abs(this Vector3Int vec) => new Vector3Int(Math.Abs(vec.x), Math.Abs(vec.y), Math.Abs(vec.z));
-    public static bool IsPositive(this Vector3Int vec) => vec.x > 0 && vec.y > 0 && vec.z > 0;
 
     public static Quaternion ToQuaternion(this RotationEnum rotation)
     {
-        switch (rotation)
-        {
-            case RotationEnum.IDENTITY: return Quaternion.identity;
-            case RotationEnum.Y90:      return Quaternion.Euler(0, 90, 0);
-            case RotationEnum.Y180:     return Quaternion.Euler(0, 180, 0);
-            case RotationEnum.Y270:     return Quaternion.Euler(0, 270, 0);
-            default: return Quaternion.identity;
-        }
-    }
-
-    public static RotationEnum Increment(this RotationEnum rotation)
-    {
-        switch (rotation)
-        {
-            case RotationEnum.IDENTITY: return RotationEnum.Y90;
-            case RotationEnum.Y90: return RotationEnum.Y180;
-            case RotationEnum.Y180: return RotationEnum.Y270;
-            case RotationEnum.Y270: return RotationEnum.IDENTITY;
-            default: return RotationEnum.IDENTITY;
-        }
+        return Quaternion.identity;
     }
 
     // ray1を通る平面で、posからの距離が最大となるものとray2との交点を返す

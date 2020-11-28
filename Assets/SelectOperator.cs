@@ -25,7 +25,6 @@ public class SelectOperator : MonoBehaviour
                 if (btn.name == "BtnEdit") btn.onClick.AddListener(() => BtnEditClicked(id));
                 else if (btn.name == "BtnRename") btn.onClick.AddListener(() => BtnRenameClicked(id));
                 else if (btn.name == "BtnPlay") btn.onClick.AddListener(() => BtnPlayClicked(id));
-                else if (btn.name == "BtnDelete") btn.onClick.AddListener(() => BtnDeleteClicked(id));
             }
 
             item.transform.SetParent(content.transform);
@@ -67,12 +66,6 @@ public class SelectOperator : MonoBehaviour
     {
         PlayOperator.Stage = GameData.MyStages.Find(i => i.ID == stageId);
         SceneManager.LoadScene("Play Scene");
-    }
-
-    public void BtnDeleteClicked(int stageId)
-    {
-        GameData.MyStages.Remove(GameData.MyStages.Find(i => i.ID == stageId));
-        SceneManager.LoadScene("Select Scene");
     }
 
 }

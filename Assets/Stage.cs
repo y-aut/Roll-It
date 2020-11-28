@@ -49,11 +49,6 @@ public class Stage
     {
         Structs.Add(item);
     }
-
-    public void Delete(Structure item)
-    {
-        Structs.Remove(item);
-    }
     
     // クリックされたStructureを返す
     public Structure ClickedStructure()
