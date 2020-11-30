@@ -3,12 +3,65 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Structureの種類
+// 追加するときは、Img, CreateOperator.ItemDragged, 各種List, SetObjs, UpdateObjectsを更新する
+[Serializable]
+public enum StructureType
+{
+    Floor,      // 壁なし床
+    Start,      // スタート
+    Goal,       // ゴール
+    Board,      // 通路（傾く）
+    Plate,      // 円盤
+    Slope,      // 三角柱の坂
+    Arc,        // 円弧状の坂
+    Viewpoint,  // 視点回転の矢印
+    Lift,       // リフト
+
+}
+
+[Serializable]
+public enum RotationEnum
+{
+    IDENTITY, Y90, Y180, Y270, NB,
+}
+
 // 複数のPrimitiveを一つにまとめた構造体
 // 抽象クラスにするとSerializeできないので非抽象クラス
 [Serializable]
-public class Structure : ISerializationCallbackReceiver
+public class Structure
 {
-    const float BRIDGE_THICKNESS = 0.5f;    // Bridgeの厚み
+    const float BOARD_THICKNESS = 0.2f;     // Boardの厚み
+    const float LIFT_THICKNESS = 0.2f;      // Liftの厚み
+
+    const int LIFT_PERIOD = 1000;           // Liftの周期(f)
+
+    // 回転可能なStructureType
+    public static List<StructureType> RotatableList
+        => new List<StructureType>() {
+            StructureType.Board,
+            StructureType.Slope,
+            StructureType.Arc,
+            StructureType.Viewpoint,
+        };
+
+    // Y軸方向にリサイズ可能なStructureType
+    public static List<StructureType> YNonresizableList
+        => new List<StructureType>() {
+            StructureType.Viewpoint,
+        };
+
+    // 衝突判定をするか
+    public static List<StructureType> DetectCollisionList
+        => new List<StructureType>() {
+            StructureType.Viewpoint,
+        };
+
+    // 動的オブジェクトか
+    public static List<StructureType> DynamicList
+        => new List<StructureType>() {
+            StructureType.Lift,
+        };
 
     [SerializeField]
     private StructureType _type;
@@ -16,6 +69,10 @@ public class Structure : ISerializationCallbackReceiver
 
     [NonSerialized]
     private List<Primitive> objs;
+
+    [NonSerialized]
+    private Stage _parent;
+    public Stage Parent { get => _parent; set => _parent = value; }
 
     // Transform
     // 矢印などの移動やサイズ変更に関するオブジェクトはこの直方体を基準にして設置する
@@ -86,11 +143,12 @@ public class Structure : ISerializationCallbackReceiver
     public static Vector3 ToLocalScaleF(Vector3Int scale) => (Vector3)scale / GameConst.LOCALSCALE_SCALE;
 
     // コンストラクタ
-    public Structure(StructureType type, Vector3Int pos, Vector3Int scale)
+    public Structure(StructureType type, Vector3Int pos, Vector3Int scale, Stage parent)
     {
         Type = type;
         _positionInt = pos;
         _localScaleInt = scale;
+        Parent = parent;
 
         SetObjs();
         UpdateObjects();
@@ -105,10 +163,7 @@ public class Structure : ISerializationCallbackReceiver
         switch (type)
         {
             case StructureType.Floor:
-                {
-                    var floor = new Primitive(PrimitiveType.Cube);
-                    objs = new List<Primitive>() { floor };
-                }
+                objs = new List<Primitive>() { new Primitive(PrimitiveType.Cube) };
                 break;
             case StructureType.Start:
                 SetObjs(StructureType.Floor);
@@ -116,7 +171,22 @@ public class Structure : ISerializationCallbackReceiver
             case StructureType.Goal:
                 SetObjs(StructureType.Floor);
                 break;
-            case StructureType.Bridge:
+            case StructureType.Board:
+                SetObjs(StructureType.Floor);
+                break;
+            case StructureType.Plate:
+                objs = new List<Primitive>() { new Primitive(PrimitiveType.Cylinder) };
+                break;
+            case StructureType.Slope:
+                objs = new List<Primitive>() { new Primitive(Prefabs.SlopePrefab) };
+                break;
+            case StructureType.Arc:
+                objs = new List<Primitive>() { new Primitive(Prefabs.ArcPrefab) };
+                break;
+            case StructureType.Viewpoint:
+                objs = new List<Primitive>() { new Primitive(Prefabs.ViewpointArrow) };
+                break;
+            case StructureType.Lift:
                 SetObjs(StructureType.Floor);
                 break;
         }
@@ -144,30 +214,67 @@ public class Structure : ISerializationCallbackReceiver
             case StructureType.Goal:
                 UpdateObjects(StructureType.Floor);
                 break;
-            case StructureType.Bridge:
+            case StructureType.Board:
                 {
                     objs[0].Position = Position;
                     switch (RotationInt)
                     {
-                        case RotationEnum.IDENTITY: // Z-からZ+に下るように配置
-                            objs[0].LocalScale = new Vector3(LocalScale.x, BRIDGE_THICKNESS, LocalScale.NewX(0).magnitude);
+                        case RotationEnum.IDENTITY: // X+からX-に下るように配置
+                            objs[0].LocalScale = new Vector3(LocalScale.NewZ(0).magnitude, BOARD_THICKNESS, LocalScale.z);
+                            objs[0].Rotation = Quaternion.FromToRotation(new Vector3(1, 0, 0), new Vector3(LocalScale.x, LocalScale.y, 0));
+                            break;
+                        case RotationEnum.Y90: // Z-からZ+
+                            objs[0].LocalScale = new Vector3(LocalScale.x, BOARD_THICKNESS, LocalScale.NewX(0).magnitude);
                             objs[0].Rotation = Quaternion.FromToRotation(new Vector3(0, 0, 1), new Vector3(0, -LocalScale.y, LocalScale.z));
                             break;
-                        case RotationEnum.Y90:  // X-からX+
-                            objs[0].LocalScale = new Vector3(LocalScale.NewZ(0).magnitude, BRIDGE_THICKNESS, LocalScale.z);
+                        case RotationEnum.Y180:  // X-からX+
+                            objs[0].LocalScale = new Vector3(LocalScale.NewZ(0).magnitude, BOARD_THICKNESS, LocalScale.z);
                             objs[0].Rotation = Quaternion.FromToRotation(new Vector3(1, 0, 0), new Vector3(LocalScale.x, -LocalScale.y, 0));
                             break;
-                        case RotationEnum.Y180: // Z+からZ-
-                            objs[0].LocalScale = new Vector3(LocalScale.x, BRIDGE_THICKNESS, LocalScale.NewX(0).magnitude);
+                        case RotationEnum.Y270: // Z+からZ-
+                            objs[0].LocalScale = new Vector3(LocalScale.x, BOARD_THICKNESS, LocalScale.NewX(0).magnitude);
                             objs[0].Rotation = Quaternion.FromToRotation(new Vector3(0, 0, 1), new Vector3(0, LocalScale.y, LocalScale.z));
-                            break;
-                        case RotationEnum.Y270: // X+からX-
-                            objs[0].LocalScale = new Vector3(LocalScale.NewZ(0).magnitude, BRIDGE_THICKNESS, LocalScale.z);
-                            objs[0].Rotation = Quaternion.FromToRotation(new Vector3(1, 0, 0), new Vector3(LocalScale.x, LocalScale.y, 0));
                             break;
                     }
                     // 上面が正確な位置にくるようにY座標を調整
                     objs[0].Position += objs[0].Rotation * Vector3.down * (objs[0].LocalScale.y / 2);
+                }
+                break;
+            case StructureType.Plate:
+                objs[0].Position = Position;
+                objs[0].LocalScale = LocalScale.NewY(LocalScale.y / 2);
+                break;
+            case StructureType.Slope:
+                {
+                    objs[0].Position = Position;
+                    // Quaternion.Euler(90, 0, 0)をかけるとX+からX-に下る
+                    objs[0].Rotation = Rotation * Quaternion.Euler(90, 0, 0);
+                    objs[0].LocalScale = (Quaternion.Inverse(objs[0].Rotation) * LocalScale).Abs();
+                }
+                break;
+            case StructureType.Arc:
+                {
+                    // Quaternion.Euler(180, 0, 0)をかけるとX+からX-に下る
+                    objs[0].Rotation = Rotation * Quaternion.Euler(180, 0, 0);
+                    objs[0].LocalScale = (Quaternion.Inverse(objs[0].Rotation) * LocalScale).Abs();
+                    // 内面が正確な位置にくるようにY座標を調整
+                    objs[0].Position = Position + objs[0].Rotation * new Vector3(0.05f * objs[0].LocalScale.x, 0.05f * objs[0].LocalScale.y, 0);
+                }
+                break;
+            case StructureType.Viewpoint:
+                {
+                    objs[0].Rotation = Rotation;
+                    objs[0].LocalScale = (Quaternion.Inverse(objs[0].Rotation) * LocalScale).Abs();
+                    objs[0].Position = Position - ToLocalScaleF(new Vector3Int(0, 1, 0)) / 2;
+                }
+                break;
+            case StructureType.Lift:
+                {
+                    objs[0].LocalScale = new Vector3(LocalScale.x, LIFT_THICKNESS, LocalScale.z);
+                    // sinの動きに
+                    objs[0].Position = Position
+                        + new Vector3(0, LocalScale.y / 2 * Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)
+                        - LIFT_THICKNESS / 2, 0);
                 }
                 break;
         }
@@ -177,13 +284,11 @@ public class Structure : ISerializationCallbackReceiver
     public void Create()
     {
         objs.ForEach(i => i.Create());
+        if (DetectsCollision) objs.ForEach(i => i.SetCollisionEvent());
     }
 
-    // 各Primitiveにactionを作用させる。Destroy時に必要
-    public void ForEach(Action<GameObject> action)
-    {
-        objs.ForEach(i => i.Act(action));
-    }
+    // ワールドから削除
+    public void Destroy() => objs.ForEach(i => i.Destroy());
 
     // 半透明に
     public void Fade() => objs.ForEach(i => i.Fade());
@@ -236,25 +341,20 @@ public class Structure : ISerializationCallbackReceiver
 
     // オブジェクト選択時、回転を表す矢印を表示する点
     public Vector3 GetRotateArrowPos()
-        => Position + new Vector3(0, LocalScale.y / 2 + 0.5f, 0);
+        => Position + new Vector3(0, LocalScale.y / 2 + 1f, 0);
 
 
-    //// Y方向のサイズ変更が可能か
-    //public bool IsYResizable()
-    //{
-    //    switch (Type)
-    //    {
-    //        case StructureType.Floor:
-    //        case StructureType.Start:
-    //        case StructureType.Goal:
-    //            return false;
-    //        default:
-    //            return true;
-    //    }
-    //}
+    // Y方向のサイズ変更が可能か
+    public bool IsYResizable => !YNonresizableList.Contains(Type);
 
     // 回転可能か
-    public bool IsRotatable => Type == StructureType.Bridge;
+    public bool IsRotatable => RotatableList.Contains(Type);
+
+    // 衝突判定を行うか
+    public bool DetectsCollision => DetectCollisionList.Contains(Type);
+
+    // 動的オブジェクトか
+    public bool IsDynamic => DynamicList.Contains(Type);
 
     // ステージから削除できるか
     public bool IsDeletable => !(Type == StructureType.Start || Type == StructureType.Goal);
@@ -262,30 +362,19 @@ public class Structure : ISerializationCallbackReceiver
     // Primitiveがクリックされた時にtrueになる
     public bool Clicked { get; set; }
 
-    public void OnBeforeSerialize()
+    // ボールと衝突した時にtrueになる
+    public bool Collided { get; set; }
+
+    // Generationが更新されたら呼ばれる
+    public void GenerationChanged()
     {
-        
+        if (IsDynamic) UpdateObjects();
     }
 
+    // Stageから呼ばれる
     public void OnAfterDeserialize()
     {
         SetObjs();
         UpdateObjects();
     }
-}
-
-// Structureの種類
-[Serializable]
-public enum StructureType
-{
-    Floor,      // 壁なし床
-    Start,      // スタート
-    Goal,       // ゴール
-    Bridge,     // 通路（傾く）
-}
-
-[Serializable]
-public enum RotationEnum
-{
-    IDENTITY, Y90, Y180, Y270, 
 }

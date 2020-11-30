@@ -6,21 +6,19 @@ using UnityEngine.EventSystems;
 
 // 球、直方体などの基礎的な図形
 // Stuructureの構成要素; 初期化時に生成されないようにする
-[Serializable]
 public class Primitive
 {
-    [NonSerialized]
     private GameObject obj;
 
-    [SerializeField]
-    private PrimitiveType _type;
-    public PrimitiveType Type { get => _type; set => _type = value; }
+    // TypeかPrefabの一方を設定する
+    public PrimitiveType Type { get; set; }
+    public GameObject Prefab { get; set; } = null;
 
-    // これをSerializeすると循環参照になるので、StructureをDeserializeしたタイミングで設定
+    public bool IsPrimitive => Prefab == null;
+
     public Structure Parent { get; set; }
 
     // Transform
-    [SerializeField]
     private Vector3 _position;
     public Vector3 Position
     {
@@ -32,7 +30,6 @@ public class Primitive
         }
     }
 
-    [SerializeField]
     private Vector3 _localScale;
     public Vector3 LocalScale
     {
@@ -44,7 +41,6 @@ public class Primitive
         }
     }
 
-    [SerializeField]
     private Quaternion _rotation;
     public Quaternion Rotation
     {
@@ -61,13 +57,36 @@ public class Primitive
         Type = type;
     }
 
+    public Primitive(GameObject prefab)
+    {
+        Prefab = prefab;
+    }
+
     // ワールドに生成
     public void Create()
     {
-        obj = GameObject.CreatePrimitive(Type);
+        if (IsPrimitive)
+        {
+            obj = GameObject.CreatePrimitive(Type);
+
+            // 専用ColliderがないCylinderはMeshに
+            if (Type == PrimitiveType.Cylinder)
+            {
+                obj.GetComponent<Collider>().enabled = false;
+                obj.AddComponent<MeshCollider>();
+            }
+        }
+        else
+        {
+            obj = UnityEngine.Object.Instantiate(Prefab);
+        }
+
         UpdateObject();
         SetClickEvent();
     }
+
+    // ワールドから削除
+    public void Destroy() => UnityEngine.Object.Destroy(obj);
 
     private void UpdateObject()
     {
@@ -99,7 +118,8 @@ public class Primitive
     // Clickイベントを追加
     private void SetClickEvent()
     {
-        var trigger = obj.AddComponent<EventTrigger>();
+        if (!obj.TryGetComponent(out EventTrigger trigger))
+            trigger = obj.AddComponent<EventTrigger>();
         trigger.triggers = new List<EventTrigger.Entry>();
         var entry = new EventTrigger.Entry
         {
@@ -107,5 +127,12 @@ public class Primitive
         };
         entry.callback.AddListener(x => Parent.Clicked = true);
         trigger.triggers.Add(entry);
+    }
+
+    // Collisionイベントを追加
+    public void SetCollisionEvent()
+    {
+        var script = obj.AddComponent<CollisionEvent>();
+        script.Primitive = this;
     }
 }

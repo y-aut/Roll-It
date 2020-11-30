@@ -551,10 +551,7 @@ MonoBehaviour:
   cam: {fileID: 963194227}
   stick: {fileID: 1961065716}
   stickBack: {fileID: 1424961920}
-  stage:
-    _id: 0
-    Structs:
-      jsons: []
+  playOp: {fileID: 1749642634}
   ball: {fileID: 0}
 --- !u!114 &1424961925
 MonoBehaviour:
@@ -646,6 +643,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f84d6eea4d1a114bad8d286c3da91a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cam: {fileID: 963194227}
   ballMat: {fileID: 13400000, guid: 5d89fd29ebac3e0498e52e9be7cef317, type: 2}
 --- !u!4 &1749642635
 Transform:

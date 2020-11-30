@@ -9,26 +9,23 @@ public class StickListener : MonoBehaviour
     public GameObject stick;
     public GameObject stickBack;
 
-    public Stage stage;
+    public PlayOperator playOp;
     public GameObject ball;
     private Vector3 acceleration;
 
     public const int MAX_VELOCITY = 10; // 最大速さ
-    public const int CAM_DIST = 6;     // 球からカメラまでの距離
-    public const int CAM_HEIGHT = 3;   // カメラの高さ
     public const float ACCE_SCALE = 1.0f / 10;
 
     // Start is called before the first frame update
     void Start()
     {
-        var op = FindObjectOfType<PlayOperator>();
-        stage = PlayOperator.Stage;
-        ball = op.Ball.Sphere;
+        ball = playOp.Ball.Sphere;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (playOp.StopUpdate) return;
         // スティックの値をもとに加速度を設定
         var vel = ball.GetComponent<Rigidbody>().velocity;
         if (vel.magnitude > MAX_VELOCITY)
@@ -36,7 +33,8 @@ public class StickListener : MonoBehaviour
         ball.GetComponent<Rigidbody>().AddForce(acceleration * ACCE_SCALE);
 
         var buf = ball.transform.position;
-        buf.z -= CAM_DIST; buf.y += CAM_HEIGHT;
+        // IDENTITYはX+方向
+        buf += playOp.Viewpoint.ToQuaternion() * new Vector3(-GameConst.PLAY_CAMDIST_HOR, GameConst.PLAY_CAMDIST_VER, 0);
         cam.transform.position = buf;
         cam.transform.forward = ball.transform.position - cam.transform.position;
     }
@@ -54,7 +52,7 @@ public class StickListener : MonoBehaviour
 
         stick.transform.position = p;
 
-        acceleration = (p - stickBack.transform.position).YZSwapped();
+        acceleration = playOp.Viewpoint.ToQuaternion() * Quaternion.Euler(90, 90, 0) * (p - stickBack.transform.position);
     }
 
     public void Released()

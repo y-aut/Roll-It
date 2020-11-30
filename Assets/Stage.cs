@@ -5,12 +5,21 @@ using UnityEngine;
 
 // ステージはマス目によって構成される。
 [Serializable]
-public class Stage
+public class Stage : ISerializationCallbackReceiver
 {
     [SerializeField]
     private int _id;
     public int ID { get => _id; private set => _id = value; }
     public static int MaxID { get; set; }
+
+    // ステージが生成されてから何フレーム経過したか
+    // Operatorから毎フレーム更新する
+    public int Generation { get; private set; }
+    public void IncrementGeneration()
+    {
+        ++Generation;
+        Structs.ForEach(i => i.GenerationChanged());
+    }
 
     [SerializeField]
     private SerializableList<Structure> Structs;
@@ -19,30 +28,26 @@ public class Stage
     public Structure Start => Structs[0];
     public Structure Goal => Structs[1];
 
-    public Stage()
-    {
-        
-    }
-
     // FromJsonは引数なしのコンストラクタを自動で呼び出すので、新規ステージの初期化部は分ける
     public void Initialize()
     {
         ID = ++MaxID;
         Structs = new SerializableList<Structure>()
         {
-            new Structure(StructureType.Start, new Vector3Int(0,0,0), new Vector3Int(1,1,1)),
-            new Structure(StructureType.Goal, new Vector3Int(0,0,10), new Vector3Int(1,1,1)),
+            new Structure(StructureType.Start, new Vector3Int(0,0,0), new Vector3Int(1,1,1), this),
+            new Structure(StructureType.Goal, new Vector3Int(0,0,10), new Vector3Int(1,1,1), this),
         };
     }
 
     public void Create()
     {
         Structs.ForEach(i => i.Create());
+        Generation = 0;
     }
 
-    public void ForEach(Action<GameObject> action)
+    public void Destroy()
     {
-        Structs.ForEach(i => i.ForEach(action));
+        Structs.ForEach(i => i.Destroy());
     }
 
     public void Add(Structure item)
@@ -65,4 +70,16 @@ public class Stage
         return null;
     }
 
+    // 衝突したStructureを返す
+    public List<Structure> CollidedStructures() => Structs.FindAll(i => i.Collided);
+
+    public void OnBeforeSerialize()
+    {
+        
+    }
+
+    public void OnAfterDeserialize()
+    {
+        Structs.ForEach(i => { i.Parent = this; i.OnAfterDeserialize(); });
+    }
 }

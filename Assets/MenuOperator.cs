@@ -5,13 +5,13 @@ using UnityEngine.SceneManagement;
 
 public class MenuOperator : MonoBehaviour
 {
-    private static bool FirstTime = true;   // 起動時に一度だけ処理するため
+    private static bool firstTime = true;   // 起動時に一度だけ処理するため
 
     private void Awake()
     {
-        if (FirstTime)
+        if (firstTime)
         {
-            FirstTime = false;
+            firstTime = false;
             GameData.Load();
         }
     }

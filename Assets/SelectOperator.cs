@@ -16,7 +16,7 @@ public class SelectOperator : MonoBehaviour
         var stages = GameData.MyStages;
         for (int i = 0; i < stages.Count; ++i)
         {
-            var item = Instantiate(stageItemPrefab);
+            var item = Instantiate(stageItemPrefab, content.transform, false);
             // イベントを追加
             var btns = item.GetComponentsInChildren<Button>();
             int id = stages[i].ID;  // 遅延評価を防ぐ
@@ -27,8 +27,6 @@ public class SelectOperator : MonoBehaviour
                 else if (btn.name == "BtnPlay") btn.onClick.AddListener(() => BtnPlayClicked(id));
                 else if (btn.name == "BtnDelete") btn.onClick.AddListener(() => BtnDeleteClicked(id));
             }
-
-            item.transform.SetParent(content.transform);
         }
     }
 

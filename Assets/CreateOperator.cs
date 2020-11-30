@@ -11,20 +11,15 @@ public class CreateOperator : MonoBehaviour
     public static Stage Stage { get; set; }
     public GameObject panel;
     public Button BtnDelete;
-    public GameObject arrowPrefab;          // 移動用の矢印のプレハブ
-    public GameObject XZResizeCubePrefab;   // XZ方向のサイズ変更用のキューブのプレハブ
-    public GameObject YResizeCubePrefab;    // Y方向のサイズ変更用のキューブのプレハブ
-    public GameObject FrameCubePrefab;      // 外枠のキューブのプレハブ
-    public GameObject RotateArrowPrefab;    // 回転用の矢印のプレハブ
 
     private Vector2? leftDowned;
     private Vector2? rightDowned;
     private Vector2 old1, old2;     // ピンチイン/アウト
 
-    private Structure dragging;     // ドラッグ中のオブジェクト（半透明）
+    private Structure dragged;      // ドラッグ中のオブジェクト（半透明）
     private Structure focused;      // フォーカスされているオブジェクト
     private GameObject framecube;   // 外枠
-    private TransformTools tools;      // 移動用矢印
+    private TransformTools tools;   // 移動用矢印
 
     const int CAM_RADIUS = 10;      // カメラの回転時、中心となる点のカメラからの距離
     const int CAM_RADIUS_MAX = 20;  // Focus中のオブジェクトからこれ以上離れていたらCAM_RADIUSを半径とする
@@ -38,6 +33,7 @@ public class CreateOperator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Stage.IncrementGeneration();
         // Structureがクリックされたか
         var clicked = Stage.ClickedStructure();
         if (clicked != null)
@@ -48,18 +44,16 @@ public class CreateOperator : MonoBehaviour
 
             // 外枠を表示
             if (framecube != null) Destroy(framecube);
-            framecube = Instantiate(FrameCubePrefab);
+            framecube = Instantiate(Prefabs.FrameCubePrefab);
             framecube.transform.position = focused.Position;
             framecube.transform.localScale = focused.LocalScale;
 
             // 矢印、サイズ変更用キューブを表示
-            if (tools != null) Destroy(tools);
-            tools = gameObject.AddComponent<TransformTools>();
-            tools.Focused = focused;
-            tools.ArrowPrefab = arrowPrefab;
-            tools.XZCubePrefab = XZResizeCubePrefab;
-            tools.YCubePrefab = YResizeCubePrefab;
-            tools.RotateArrowPrefab = RotateArrowPrefab;
+            if (tools != null) tools.Destroy();
+            tools = new TransformTools
+            {
+                Focused = focused
+            };
             tools.Create();
         }
 
@@ -93,13 +87,13 @@ public class CreateOperator : MonoBehaviour
             {
                 Vector2 p = Input.mousePosition;
                 // 上下左右
-                if (Input.GetMouseButtonDown(0) && !PointerOnPanel() && dragging == null)
+                if (Input.GetMouseButtonDown(0) && !PointerOnPanel() && dragged == null)
                 {
                     leftDowned = p;
                 }
-                else if (Input.GetMouseButton(0) && leftDowned != null && dragging == null)
+                else if (Input.GetMouseButton(0) && leftDowned != null && dragged == null)
                 {
-                    cam.transform.position += cam.transform.rotation * ((Vector3)(p - leftDowned)).XYInversed() / 30;
+                    cam.transform.position += cam.transform.rotation * ((Vector3)(p - leftDowned)).XYMinus() / 30;
                     leftDowned = p;
                 }
                 else if (Input.GetMouseButtonUp(0))
@@ -142,17 +136,26 @@ public class CreateOperator : MonoBehaviour
                 }
                 else if (t1.phase == TouchPhase.Moved || t2.phase == TouchPhase.Moved)
                 {
-                    // 2点の移動量の平均をとって回転
-                    var avg = (t1.position - old1 + t2.position - old2) / 2;
-                    var forw = cam.transform.forward;
-                    var center = RotateCenter();
-                    forw = Quaternion.AngleAxis(avg.x, cam.transform.rotation * Vector3.up) * Quaternion.AngleAxis(-avg.y, cam.transform.rotation * Vector3.right) * forw;
-                    cam.transform.position = center - forw * (cam.transform.position - center).magnitude;
-                    cam.transform.forward = forw;
+                    var d1 = t1.position - old1; var d2 = t2.position - old2;
 
-                    // 2点の距離の増加量をもとに拡大
-                    var scroll = (t2.position - t1.position).magnitude - (old2 - old1).magnitude;
-                    cam.transform.position += (cam.transform.rotation * new Vector3(0, 0, scroll));
+                    // 2つのベクトルのなす角θが|cosθ|>0.8なら拡大縮小
+                    if (d1 != Vector2.zero && d2 != Vector2.zero
+                        && Mathf.Abs(Vector2.Dot(d1, d2) / (d1.magnitude * d2.magnitude)) > 0.8)
+                    {
+                        // 2点の距離の増加量をもとに拡大
+                        var scroll = ((t2.position - t1.position).magnitude - (old2 - old1).magnitude) / panel.transform.lossyScale.x / 50;
+                        cam.transform.position += (cam.transform.rotation * new Vector3(0, 0, scroll));
+                    }
+                    else
+                    {
+                        // 2点の移動量の平均をとって回転
+                        var avg = (t1.position - old1 + t2.position - old2) / 2 / panel.transform.lossyScale.x;
+                        var forw = cam.transform.forward;
+                        var center = RotateCenter();
+                        forw = Quaternion.AngleAxis(avg.x, cam.transform.rotation * Vector3.up) * Quaternion.AngleAxis(-avg.y, cam.transform.rotation * Vector3.right) * forw;
+                        cam.transform.position = center - forw * (cam.transform.position - center).magnitude;
+                        cam.transform.forward = forw;
+                    }
 
                     old1 = t1.position; old2 = t2.position;
                 }
@@ -167,49 +170,65 @@ public class CreateOperator : MonoBehaviour
         // フィールド上にあるか
         if (PointerOnPanel())
         {
-            if (dragging != null)
+            if (dragged != null)
             {
-                dragging.ForEach(Destroy);
-                dragging = null;
+                dragged.Destroy();
+                dragged = null;
             }
             return;
         }
 
         // 場所を決定する
-        var pos = Structure.ToPositionInt(cam.ScreenToWorldPoint(Input.mousePosition.NewZ(10f)));
+        var pos = Structure.ToPositionInt(cam.ScreenToWorldPoint(Input.mousePosition.NewZ(6f)));
 
-        if (dragging == null)
+        if (dragged == null)
         {
-            if (sender.name == "ImgFloor")
+            switch (sender.name)
             {
-                dragging = new Structure(StructureType.Floor, pos, new Vector3Int(4, 1, 4));
-                dragging.Create();
-                dragging.Fade();
+                case "ImgFloor":
+                    dragged = new Structure(StructureType.Floor, pos, new Vector3Int(4, 1, 4), Stage);
+                    break;
+                case "ImgBoard":
+                    dragged = new Structure(StructureType.Board, pos, new Vector3Int(4, 4, 4), Stage);
+                    break;
+                case "ImgPlate":
+                    dragged = new Structure(StructureType.Plate, pos, new Vector3Int(4, 1, 4), Stage);
+                    break;
+                case "ImgSlope":
+                    dragged = new Structure(StructureType.Slope, pos, new Vector3Int(4, 4, 4), Stage);
+                    break;
+                case "ImgArc":
+                    dragged = new Structure(StructureType.Arc, pos, new Vector3Int(4, 4, 4), Stage);
+                    break;
+                case "ImgViewpoint":
+                    dragged = new Structure(StructureType.Viewpoint, pos, new Vector3Int(1, 1, 1), Stage);
+                    break;
+                case "ImgLift":
+                    dragged = new Structure(StructureType.Lift, pos, new Vector3Int(4, 4, 4), Stage);
+                    break;
+                default:
+                    return;
             }
-            else if (sender.name == "ImgBridge")
-            {
-                dragging = new Structure(StructureType.Bridge, pos, new Vector3Int(4, 4, 4));
-                dragging.Create();
-                dragging.Fade();
-            }
-            else
-                return;
+            dragged.Create();
+            dragged.Fade();
+            Stage.Add(dragged);
         }
 
-        if (dragging.PositionInt != pos)
-            dragging.PositionInt = pos;
+        if (dragged.PositionInt != pos)
+            dragged.PositionInt = pos;
 
     }
 
     // ドラッグ中のアイテムを離す
     public void ItemReleased()
     {
-        if (dragging != null)
+        if (dragged != null)
         {
             // 置ける場所なら置く
-            dragging.Opaque();
-            Stage.Add(dragging);
-            dragging = null;
+            dragged.Opaque();
+            dragged = null;
+            // 置けないなら削除
+            //Stage.Delete(dragged);
         }
     }
 
@@ -237,12 +256,12 @@ public class CreateOperator : MonoBehaviour
     {
         if (focused != null && focused.IsDeletable)
         {
-            focused.ForEach(Destroy);
+            focused.Destroy();
             Stage.Delete(focused);
             focused = null;
             BtnDelete.interactable = false;
             if (framecube != null) Destroy(framecube);
-            if (tools != null) Destroy(tools);
+            if (tools != null) tools.Destroy();
         }
     }
 
