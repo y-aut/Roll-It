@@ -20,7 +20,7 @@ public static class GameConst
     public const int PLAY_CAMDIST_VER = 3;
 
     // 視点回転の速度(ms/ROTATE_VIEWPOINT_DEGREE °)
-    public const int ROTATE_VIEWPOINT_MS = 50;
+    public const int ROTATE_VIEWPOINT_MS = 20;
     // 視点回転の速度(°/ROTATE_VIEWPOINT_MS ms)（90の約数である必要がある）
-    public const int ROTATE_VIEWPOINT_DEGREE = 5;
+    public const int ROTATE_VIEWPOINT_DEGREE = 2;
 }
