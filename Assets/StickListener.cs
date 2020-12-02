@@ -14,7 +14,7 @@ public class StickListener : MonoBehaviour
     private Vector3 acceleration;
 
     public const int MAX_VELOCITY = 10; // 最大速さ
-    public const float ACCE_SCALE = 1.0f / 10;
+    public const float ACCE_SCALE = 0.4f;
 
     // Start is called before the first frame update
     void Start()
@@ -23,7 +23,7 @@ public class StickListener : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         if (playOp.StopUpdate) return;
         // スティックの値をもとに加速度を設定
@@ -52,7 +52,7 @@ public class StickListener : MonoBehaviour
 
         stick.transform.position = p;
 
-        acceleration = playOp.Viewpoint.ToQuaternion() * Quaternion.Euler(90, 90, 0) * (p - stickBack.transform.position);
+        acceleration = playOp.Viewpoint.ToQuaternion() * Quaternion.Euler(90, 90, 0) * (p - stickBack.transform.position) / stick.transform.lossyScale.x;
     }
 
     public void Released()

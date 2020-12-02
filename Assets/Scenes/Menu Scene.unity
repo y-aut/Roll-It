@@ -519,6 +519,8 @@ MonoBehaviour:
     type: 3}
   RotateArrowPrefabObj: {fileID: 1133037696046169419, guid: 2182bb8dcc32f4345a368fb3a4f0de20,
     type: 3}
+  YInverseArrowPrefabObj: {fileID: 6604495384606412483, guid: 243bd45bef27f1044b52cf2e113c9b2c,
+    type: 3}
   FrameCubePrefabObj: {fileID: 3037920031593065870, guid: 4836849d5f27bdc46ad91cb3b0d1d44e,
     type: 3}
   SlopePrefabObj: {fileID: 7072857930752478111, guid: f3cad630cca42554281d60736dbc0a94,
@@ -527,6 +529,65 @@ MonoBehaviour:
     type: 3}
   ViewpointArrowObj: {fileID: 6393451307173250525, guid: 9f4a157a0edf2cb408ec5dfbb914355a,
     type: 3}
+  InputBoxPrefabObj: {fileID: 6269427580765542264, guid: d29d5c23d1b78154cab0288e69275212,
+    type: 3}
+  OpenCurveObj:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  CloseCurveObj:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0.9442001
+      outSlope: 0.9442001
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.21375857
+      value: 1.2018309
+      inSlope: -0.49385038
+      outSlope: -0.49385038
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.3189008
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -1.5285774
+      outSlope: -1.5285774
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!4 &1130810421
 Transform:
   m_ObjectHideFlags: 0
@@ -716,6 +777,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ee1019364a3ef743a0998272a2cc84e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canvas: {fileID: 118869965}
 --- !u!1 &1831306029
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Structureの種類
-// 追加するときは、Img, CreateOperator.ItemDragged, 各種List, SetObjs, UpdateObjectsを更新する
+// 追加するときは、Img, CreateOperator.ItemDragged, 各種List, SetObjs, UpdateObjects, GenerationIncrementedを更新する
 [Serializable]
 public enum StructureType
 {
@@ -34,7 +34,7 @@ public class Structure
     const float BOARD_THICKNESS = 0.2f;     // Boardの厚み
     const float LIFT_THICKNESS = 0.2f;      // Liftの厚み
 
-    const int LIFT_PERIOD = 1000;           // Liftの周期(f)
+    const int LIFT_PERIOD = 300;            // Liftの周期(f)
 
     // 回転可能なStructureType
     public static List<StructureType> RotatableList
@@ -49,6 +49,12 @@ public class Structure
     public static List<StructureType> YNonresizableList
         => new List<StructureType>() {
             StructureType.Viewpoint,
+        };
+
+    // Y軸方向に反転可能なStructureType
+    public static List<StructureType> YInversableList
+        => new List<StructureType>() {
+            StructureType.Lift,
         };
 
     // 衝突判定をするか
@@ -89,13 +95,16 @@ public class Structure
     }
 
     [SerializeField]
-    private Vector3Int _localScaleInt;
-    public Vector3Int LocalScaleInt
+    private Vector3Int _localScaleInt;      // Inverseの情報を含むので、負の値になりうる
+    public Vector3Int LocalScaleInt         // 負の値にならない
     {
-        get => _localScaleInt;
+        get => _localScaleInt.Abs();
         set
         {
-            _localScaleInt = value;
+            if (YInversed)
+                _localScaleInt = value.YMinus();
+            else
+                _localScaleInt = value;
             UpdateObjects();
         }
     }
@@ -123,6 +132,17 @@ public class Structure
     {
         get => (Vector3)LocalScaleInt / GameConst.LOCALSCALE_SCALE;
         set => LocalScaleInt = ToLocalScaleInt(value);
+    }
+
+    // 反転はLocalScaleの符号で表す
+    public bool YInversed
+    {
+        get => _localScaleInt.y < 0;
+        set
+        {
+            if (YInversed == value) return;
+            _localScaleInt = _localScaleInt.YMinus();
+        }
     }
 
     public Quaternion Rotation => RotationInt.ToQuaternion();
@@ -188,6 +208,7 @@ public class Structure
                 break;
             case StructureType.Lift:
                 SetObjs(StructureType.Floor);
+                objs[0].AddRigidbody(1f, true);
                 break;
         }
 
@@ -271,10 +292,28 @@ public class Structure
             case StructureType.Lift:
                 {
                     objs[0].LocalScale = new Vector3(LocalScale.x, LIFT_THICKNESS, LocalScale.z);
-                    // sinの動きに
+                    // y = Asin(ωt): A = LocalScale.y / 2, ω = 2 * Mathf.PI / LIFT_PERIOD
                     objs[0].Position = Position
-                        + new Vector3(0, LocalScale.y / 2 * Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)
+                        + new Vector3(0, LocalScale.y * (YInversed ? -1 : 1) / 2 * Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)
                         - LIFT_THICKNESS / 2, 0);
+                }
+                break;
+        }
+    }
+
+    // Generationに合わせてオブジェクトを更新
+    public void GenerationIncremented() => GenerationIncremented(Type);
+
+    // こちらは直接呼ばない
+    private void GenerationIncremented(StructureType type)
+    {
+        switch (type)
+        {
+            case StructureType.Lift:
+                {
+                    objs[0].MovePosition(Position
+                        + new Vector3(0, LocalScale.y * (YInversed ? -1 : 1) / 2 * Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)
+                        - LIFT_THICKNESS / 2, 0));
                 }
                 break;
         }
@@ -343,12 +382,19 @@ public class Structure
     public Vector3 GetRotateArrowPos()
         => Position + new Vector3(0, LocalScale.y / 2 + 1f, 0);
 
+    // オブジェクト選択時、Y方向の反転を表す矢印を表示する点
+    public Vector3 GetYInverseArrowPos()
+        => Position + new Vector3(LocalScale.x / 2 + 0.8f, 0, 0);
+
 
     // Y方向のサイズ変更が可能か
     public bool IsYResizable => !YNonresizableList.Contains(Type);
 
     // 回転可能か
     public bool IsRotatable => RotatableList.Contains(Type);
+
+    // Y軸方向に反転可能か
+    public bool IsYInversable => YInversableList.Contains(Type);
 
     // 衝突判定を行うか
     public bool DetectsCollision => DetectCollisionList.Contains(Type);
@@ -364,12 +410,6 @@ public class Structure
 
     // ボールと衝突した時にtrueになる
     public bool Collided { get; set; }
-
-    // Generationが更新されたら呼ばれる
-    public void GenerationChanged()
-    {
-        if (IsDynamic) UpdateObjects();
-    }
 
     // Stageから呼ばれる
     public void OnAfterDeserialize()

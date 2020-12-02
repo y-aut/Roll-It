@@ -52,6 +52,9 @@ public class Primitive
         }
     }
 
+    public float Mass { get; private set; } = 0;
+    public bool IsKinematic { get; private set; }
+
     public Primitive(PrimitiveType type)
     {
         Type = type;
@@ -83,6 +86,13 @@ public class Primitive
 
         UpdateObject();
         SetClickEvent();
+
+        if (Mass > 0)
+        {
+            var rb = obj.AddComponent<Rigidbody>();
+            rb.isKinematic = true;
+            rb.mass = Mass;
+        }
     }
 
     // ワールドから削除
@@ -134,5 +144,28 @@ public class Primitive
     {
         var script = obj.AddComponent<CollisionEvent>();
         script.Primitive = this;
+    }
+
+    // Rigidbodyを追加
+    public void AddRigidbody(float mass, bool isKinematic)
+    {
+        // Createするまではobjはnullなので、Massにのみ保存しておく
+        Mass = mass;
+        IsKinematic = isKinematic;
+    }
+
+    // Kinematicな物体の位置を変更する
+    public void MovePosition(Vector3 position)
+    {
+        _position = position;
+        var rb = obj.GetComponent<Rigidbody>();
+        rb.MovePosition(position);
+    }
+
+    // Kinematicでない物体に力を加える
+    public void AddForce(Vector3 force)
+    {
+        var rb = obj.GetComponent<Rigidbody>();
+        rb.AddForce(force);
     }
 }

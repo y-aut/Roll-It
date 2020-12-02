@@ -5,6 +5,8 @@ using UnityEngine.SceneManagement;
 
 public class MenuOperator : MonoBehaviour
 {
+    public Canvas canvas;
+
     private static bool firstTime = true;   // 起動時に一度だけ処理するため
 
     private void Awake()
@@ -29,7 +31,7 @@ public class MenuOperator : MonoBehaviour
 
     public void PlayStages()
     {
-
+        
     }
 
     public void SelectStages()

@@ -33,7 +33,6 @@ public class CreateOperator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Stage.IncrementGeneration();
         // Structureがクリックされたか
         var clicked = Stage.ClickedStructure();
         if (clicked != null)
@@ -162,6 +161,11 @@ public class CreateOperator : MonoBehaviour
             }
         }
 
+    }
+
+    private void FixedUpdate()
+    {
+        Stage.IncrementGeneration();
     }
 
     // アイテムをドラッグ

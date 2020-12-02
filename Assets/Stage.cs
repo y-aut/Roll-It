@@ -12,13 +12,17 @@ public class Stage : ISerializationCallbackReceiver
     public int ID { get => _id; private set => _id = value; }
     public static int MaxID { get; set; }
 
+    [SerializeField]
+    private string _name = "New Stage";
+    public string Name { get => _name; set => _name = value; }
+
     // ステージが生成されてから何フレーム経過したか
     // Operatorから毎フレーム更新する
     public int Generation { get; private set; }
     public void IncrementGeneration()
     {
         ++Generation;
-        Structs.ForEach(i => i.GenerationChanged());
+        Structs.ForEach(i => i.GenerationIncremented());
     }
 
     [SerializeField]

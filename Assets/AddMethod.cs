@@ -12,6 +12,7 @@ public static class AddMethod
     public static Vector3 YZSwapped(this Vector3 vec) => new Vector3(vec.x, vec.z, vec.y);
     public static Vector3 XMinus(this Vector3 vec) => new Vector3(-vec.x, vec.y, vec.z);
     public static Vector3 YMinus(this Vector3 vec) => new Vector3(vec.x, -vec.y, vec.z);
+    public static Vector3Int YMinus(this Vector3Int vec) => new Vector3Int(vec.x, -vec.y, vec.z);
     public static Vector3 ZMinus(this Vector3 vec) => new Vector3(vec.x, vec.y, -vec.z);
     public static Vector3 XYMinus(this Vector3 vec) => new Vector3(-vec.x, -vec.y, vec.z);
     public static Vector3 XZCast(this Vector3 vec) => new Vector3(vec.x, 0, vec.z);

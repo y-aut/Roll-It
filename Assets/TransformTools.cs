@@ -16,7 +16,7 @@ public class TransformTools
     private List<Vector3> arrowRoots, XZpos, Ypos;
 
     private List<GameObject> Arrows, XZCubes, YCubes;
-    private GameObject RotateArrow;
+    private GameObject RotateArrow, YInverseArrow;
 
     // Arrowの向いている方向
     public Ray ArrowRay(int index)
@@ -134,6 +134,8 @@ public class TransformTools
         }
         if (Focused.IsRotatable)
             RotateArrow = UnityEngine.Object.Instantiate(Prefabs.RotateArrowPrefab);
+        if (Focused.IsYInversable)
+            YInverseArrow = UnityEngine.Object.Instantiate(Prefabs.YInverseArrowPrefab);
 
         UpdateObjects();
         SetDownUpEvent();
@@ -179,6 +181,8 @@ public class TransformTools
 
         if (Focused.IsRotatable)
             RotateArrow.transform.position = Focused.GetRotateArrowPos();
+        if (Focused.IsYInversable)
+            YInverseArrow.transform.position = Focused.GetYInverseArrowPos();
     }
 
     public void Destroy()
@@ -187,6 +191,7 @@ public class TransformTools
         XZCubes.ForEach(i => UnityEngine.Object.Destroy(i));
         if (Focused.IsYResizable) YCubes.ForEach(i => UnityEngine.Object.Destroy(i));
         if (Focused.IsRotatable) UnityEngine.Object.Destroy(RotateArrow);
+        if (Focused.IsYInversable) UnityEngine.Object.Destroy(YInverseArrow);
     }
 
     // Down/Upイベントを追加
@@ -270,6 +275,20 @@ public class TransformTools
             };
             entry.callback.AddListener(x => {
                 Focused.RotationInt = Focused.RotationInt.Increment();
+            });
+            trigger.triggers.Add(entry);
+        }
+
+        if (Focused.IsYInversable)
+        {
+            var trigger = YInverseArrow.AddComponent<EventTrigger>();
+            trigger.triggers = new List<EventTrigger.Entry>();
+            var entry = new EventTrigger.Entry
+            {
+                eventID = EventTriggerType.PointerDown,
+            };
+            entry.callback.AddListener(x => {
+                Focused.YInversed = !Focused.YInversed;
             });
             trigger.triggers.Add(entry);
         }
