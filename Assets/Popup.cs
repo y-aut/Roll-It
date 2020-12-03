@@ -6,7 +6,7 @@ using UnityEngine.UI;
 // ダイアログボックスを表示
 public class Popup : MonoBehaviour
 {
-    const int POPUP_DURATION = 10;  // Open/Closeにかかるフレーム数
+    const int POPUP_DURATION = 30;  // Open/Closeにかかるフレーム数
 
     public enum StateEnum { Opening, Closing, Other }
     public StateEnum State { get; private set; } = StateEnum.Other;

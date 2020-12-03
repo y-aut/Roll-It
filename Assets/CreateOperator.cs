@@ -18,7 +18,6 @@ public class CreateOperator : MonoBehaviour
 
     private Structure dragged;      // ドラッグ中のオブジェクト（半透明）
     private Structure focused;      // フォーカスされているオブジェクト
-    private GameObject framecube;   // 外枠
     private TransformTools tools;   // 移動用矢印
 
     const int CAM_RADIUS = 10;      // カメラの回転時、中心となる点のカメラからの距離
@@ -39,13 +38,7 @@ public class CreateOperator : MonoBehaviour
         {
             clicked.Clicked = false;
             focused = clicked;
-            BtnDelete.interactable = focused.IsDeletable;
-
-            // 外枠を表示
-            if (framecube != null) Destroy(framecube);
-            framecube = Instantiate(Prefabs.FrameCubePrefab);
-            framecube.transform.position = focused.Position;
-            framecube.transform.localScale = focused.LocalScale;
+            BtnDelete.interactable = focused.IsDeletable;            
 
             // 矢印、サイズ変更用キューブを表示
             if (tools != null) tools.Destroy();
@@ -59,26 +52,33 @@ public class CreateOperator : MonoBehaviour
         // 矢印やキューブがドラッグされたか
         if (tools != null && tools.Dragged != null)
         {
-            // このフレームでドラッグされたか
+            // このフレームでドラッグが開始されたか
             if (tools.BeganDragged)
             {
-                tools.SetPointerRay(cam.ScreenPointToRay(Input.mousePosition), focused.PositionInt, focused.LocalScaleInt);
+                tools.SetPointerRay(cam.ScreenPointToRay(Input.mousePosition));
             }
             else
             {
-                tools.Drag(cam.ScreenPointToRay(Input.mousePosition), focused.PositionInt, focused.LocalScaleInt, out var deltaPos, out var deltaScale);
+                tools.Drag(cam.ScreenPointToRay(Input.mousePosition), out var deltaPos, out var deltaPos2, out var deltaScale);
                 // Scaleが0以下になる変形はしない
-                if ((focused.LocalScaleInt + deltaScale).IsPositive())
+                if ((focused.LocalScaleInt + deltaScale).IsAllPositive())
                 {
                     focused.PositionInt += deltaPos;
+                    if (focused.HasPosition2) focused.PositionInt2 += deltaPos2;
                     focused.LocalScaleInt += deltaScale;
 
                     // 変形後のStructureにあわせて更新
-                    framecube.transform.position = focused.Position;
-                    framecube.transform.localScale = focused.LocalScale;
                     tools.UpdateObjects();
                 }
+
+                tools.IsLegal = Stage.CheckSpace(focused.PositionInt, focused.LocalScaleInt);
             }
+        }
+        // ドラッグが終了した直後
+        else if (tools != null && tools.FinishDragged)
+        {
+            if (!Stage.CheckSpace(focused.PositionInt, focused.LocalScaleInt))
+                tools.ReturnToFormer();
         }
         else
         {  // 矢印やキューブがドラッグされていないときのみ視点移動を行う
@@ -159,6 +159,10 @@ public class CreateOperator : MonoBehaviour
                     old1 = t1.position; old2 = t2.position;
                 }
             }
+
+            // カメラが範囲外に出ていたら戻す
+            cam.transform.position = AddMethod.Fix(Structure.ToPositionF(new Vector3Int(GameConst.X_NLIMIT, GameConst.Y_NLIMIT, GameConst.Z_NLIMIT)),
+                cam.transform.position, Structure.ToPositionF(new Vector3Int(GameConst.X_PLIMIT, GameConst.Y_PLIMIT, GameConst.Z_PLIMIT)));
         }
 
     }
@@ -204,17 +208,16 @@ public class CreateOperator : MonoBehaviour
                 case "ImgArc":
                     dragged = new Structure(StructureType.Arc, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
-                case "ImgViewpoint":
-                    dragged = new Structure(StructureType.Viewpoint, pos, new Vector3Int(1, 1, 1), Stage);
+                case "ImgAngle":
+                    dragged = new Structure(StructureType.Angle, pos, new Vector3Int(1, 1, 1), Stage);
                     break;
                 case "ImgLift":
-                    dragged = new Structure(StructureType.Lift, pos, new Vector3Int(4, 4, 4), Stage);
+                    dragged = new Structure(StructureType.Lift, pos, new Vector3Int(0, 4, 0), new Vector3Int(4, 1, 4), Stage);
                     break;
                 default:
                     return;
             }
             dragged.Create();
-            dragged.Fade();
             Stage.Add(dragged);
         }
 
@@ -228,11 +231,18 @@ public class CreateOperator : MonoBehaviour
     {
         if (dragged != null)
         {
-            // 置ける場所なら置く
-            dragged.Opaque();
-            dragged = null;
-            // 置けないなら削除
-            //Stage.Delete(dragged);
+            if (Stage.CheckSpace(dragged.PositionInt, dragged.LocalScaleInt))
+            {
+                // 置ける場所なら置く
+                dragged = null;
+            }
+            else
+            {
+                // 置けないなら削除
+                Stage.Delete(dragged);
+                dragged.Destroy();
+                dragged = null;
+            }
         }
     }
 
@@ -264,7 +274,6 @@ public class CreateOperator : MonoBehaviour
             Stage.Delete(focused);
             focused = null;
             BtnDelete.interactable = false;
-            if (framecube != null) Destroy(framecube);
             if (tools != null) tools.Destroy();
         }
     }

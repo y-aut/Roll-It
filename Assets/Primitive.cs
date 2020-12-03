@@ -14,6 +14,9 @@ public class Primitive
     public PrimitiveType Type { get; set; }
     public GameObject Prefab { get; set; } = null;
 
+    // Create Sceneでのみ表示
+    public bool CreateOnly { get; private set; } = false;
+
     public bool IsPrimitive => Prefab == null;
 
     public Structure Parent { get; set; }
@@ -52,9 +55,6 @@ public class Primitive
         }
     }
 
-    public float Mass { get; private set; } = 0;
-    public bool IsKinematic { get; private set; }
-
     public Primitive(PrimitiveType type)
     {
         Type = type;
@@ -63,6 +63,12 @@ public class Primitive
     public Primitive(GameObject prefab)
     {
         Prefab = prefab;
+    }
+
+    public Primitive(GameObject prefab, bool createOnly)
+    {
+        Prefab = prefab;
+        CreateOnly = createOnly;
     }
 
     // ワールドに生成
@@ -86,13 +92,6 @@ public class Primitive
 
         UpdateObject();
         SetClickEvent();
-
-        if (Mass > 0)
-        {
-            var rb = obj.AddComponent<Rigidbody>();
-            rb.isKinematic = true;
-            rb.mass = Mass;
-        }
     }
 
     // ワールドから削除
@@ -144,14 +143,6 @@ public class Primitive
     {
         var script = obj.AddComponent<CollisionEvent>();
         script.Primitive = this;
-    }
-
-    // Rigidbodyを追加
-    public void AddRigidbody(float mass, bool isKinematic)
-    {
-        // Createするまではobjはnullなので、Massにのみ保存しておく
-        Mass = mass;
-        IsKinematic = isKinematic;
     }
 
     // Kinematicな物体の位置を変更する

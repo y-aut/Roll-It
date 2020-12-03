@@ -11,9 +11,20 @@ public class Prefabs : MonoBehaviour
     public static GameObject RotateArrowPrefab;    // 回転用矢印
     public static GameObject YInverseArrowPrefab;  // Y反転用矢印
     public static GameObject FrameCubePrefab;      // 外枠のキューブのプレハブ
+    public static GameObject FrameCubeIllegalPrefab;      // 設置不可能な場所での外枠のキューブのプレハブ
+
+    // Structures
+    public static GameObject FloorPrefab;           // Floorのプレハブ
+    public static GameObject StartPrefab;           // Startのプレハブ
+    public static GameObject GoalPrefab;            // Goalのプレハブ
+    public static GameObject GoalFlagPrefab;        // Goalの旗のプレハブ
+    public static GameObject BoardPrefab;           // Boardのプレハブ
     public static GameObject SlopePrefab;           // Slopeのプレハブ
     public static GameObject ArcPrefab;             // Arcのプレハブ
-    public static GameObject ViewpointArrow;        // Viewpointのプレハブ
+    public static GameObject AngleArrowPrefab;      // Angleのプレハブ
+    public static GameObject LiftPrefab;            // Liftのプレハブ
+    public static GameObject LiftGoalPrefab;        // Liftの行き先のプレハブ
+
     public static GameObject InputBoxPrefab;        // InputBoxのプレハブ
 
     public GameObject ArrowPrefabObj;
@@ -22,9 +33,19 @@ public class Prefabs : MonoBehaviour
     public GameObject RotateArrowPrefabObj;
     public GameObject YInverseArrowPrefabObj;
     public GameObject FrameCubePrefabObj;
+    public GameObject FrameCubeIllegalPrefabObj;
+
+    public GameObject FloorPrefabObj;
+    public GameObject StartPrefabObj;
+    public GameObject GoalPrefabObj;
+    public GameObject GoalFlagPrefabObj;
+    public GameObject BoardPrefabObj;
     public GameObject SlopePrefabObj;
     public GameObject ArcPrefabObj;
-    public GameObject ViewpointArrowObj;
+    public GameObject AngleArrowPrefabObj;
+    public GameObject LiftPrefabObj;
+    public GameObject LiftGoalPrefabObj;
+
     public GameObject InputBoxPrefabObj;
 
     // ポップアップウィンドウ表示時のLocalScaleの曲線
@@ -42,9 +63,19 @@ public class Prefabs : MonoBehaviour
         RotateArrowPrefab = RotateArrowPrefabObj;
         YInverseArrowPrefab = YInverseArrowPrefabObj;
         FrameCubePrefab = FrameCubePrefabObj;
+        FrameCubeIllegalPrefab = FrameCubeIllegalPrefabObj;
+
+        FloorPrefab = FloorPrefabObj;
+        StartPrefab = StartPrefabObj;
+        GoalPrefab = GoalPrefabObj;
+        GoalFlagPrefab = GoalFlagPrefabObj;
+        BoardPrefab = BoardPrefabObj;
         SlopePrefab = SlopePrefabObj;
         ArcPrefab = ArcPrefabObj;
-        ViewpointArrow = ViewpointArrowObj;
+        AngleArrowPrefab = AngleArrowPrefabObj;
+        LiftPrefab = LiftPrefabObj;
+        LiftGoalPrefab = LiftGoalPrefabObj;
+
         InputBoxPrefab = InputBoxPrefabObj;
 
         OpenCurve = OpenCurveObj;

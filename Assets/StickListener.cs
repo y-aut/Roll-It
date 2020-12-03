@@ -34,7 +34,7 @@ public class StickListener : MonoBehaviour
 
         var buf = ball.transform.position;
         // IDENTITYはX+方向
-        buf += playOp.Viewpoint.ToQuaternion() * new Vector3(-GameConst.PLAY_CAMDIST_HOR, GameConst.PLAY_CAMDIST_VER, 0);
+        buf += playOp.Angle.ToQuaternion() * new Vector3(-GameConst.PLAY_CAMDIST_HOR, GameConst.PLAY_CAMDIST_VER, 0);
         cam.transform.position = buf;
         cam.transform.forward = ball.transform.position - cam.transform.position;
     }
@@ -52,7 +52,7 @@ public class StickListener : MonoBehaviour
 
         stick.transform.position = p;
 
-        acceleration = playOp.Viewpoint.ToQuaternion() * Quaternion.Euler(90, 90, 0) * (p - stickBack.transform.position) / stick.transform.lossyScale.x;
+        acceleration = playOp.Angle.ToQuaternion() * Quaternion.Euler(90, 90, 0) * (p - stickBack.transform.position) / stick.transform.lossyScale.x;
     }
 
     public void Released()

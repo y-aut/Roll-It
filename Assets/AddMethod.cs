@@ -8,6 +8,9 @@ public static class AddMethod
     public static Vector3 NewX(this Vector3 vec, float x) => new Vector3(x, vec.y, vec.z);
     public static Vector3 NewY(this Vector3 vec, float y) => new Vector3(vec.x, y, vec.z);
     public static Vector3 NewZ(this Vector3 vec, float z) => new Vector3(vec.x, vec.y, z);
+    public static Vector3Int NewX(this Vector3Int vec, int x) => new Vector3Int(x, vec.y, vec.z);
+    public static Vector3Int NewY(this Vector3Int vec, int y) => new Vector3Int(vec.x, y, vec.z);
+    public static Vector3Int NewZ(this Vector3Int vec, int z) => new Vector3Int(vec.x, vec.y, z);
     public static Vector3 XYSwapped(this Vector3 vec) => new Vector3(vec.y, vec.x, vec.z);
     public static Vector3 YZSwapped(this Vector3 vec) => new Vector3(vec.x, vec.z, vec.y);
     public static Vector3 XMinus(this Vector3 vec) => new Vector3(-vec.x, vec.y, vec.z);
@@ -18,7 +21,9 @@ public static class AddMethod
     public static Vector3 XZCast(this Vector3 vec) => new Vector3(vec.x, 0, vec.z);
     public static Vector3 Abs(this Vector3 vec) => new Vector3(Mathf.Abs(vec.x), Mathf.Abs(vec.y), Mathf.Abs(vec.z));
     public static Vector3Int Abs(this Vector3Int vec) => new Vector3Int(Math.Abs(vec.x), Math.Abs(vec.y), Math.Abs(vec.z));
-    public static bool IsPositive(this Vector3Int vec) => vec.x > 0 && vec.y > 0 && vec.z > 0;
+    public static bool IsAllPositive(this Vector3Int vec) => vec.x > 0 && vec.y > 0 && vec.z > 0;
+    public static bool NegativeExists(this Vector3 vec) => vec.x < 0 || vec.y < 0 || vec.z < 0;
+    public static bool NegativeExists(this Vector3Int vec) => vec.x < 0 || vec.y < 0 || vec.z < 0;
 
     public static Quaternion ToQuaternion(this RotationEnum rotation)
     {
@@ -54,6 +59,19 @@ public static class AddMethod
         var s = Vector3.Dot(pos + a - ray2.origin, a) / test;
         return ray2.origin + s * ray2.direction;
     }
+
+    // min <= x <= max となるようにxを調整
+    public static float Fix(float min, float x, float max)
+    {
+        if (min > x) return min;
+        else if (x > max) return max;
+        else return x;
+    }
+
+    // nlim <= p <= plim となるようにpを調整
+    public static Vector3 Fix(Vector3 nlim, Vector3 p, Vector3 plim)
+        => new Vector3(Fix(nlim.x, p.x, plim.x), Fix(nlim.y, p.y, plim.y), Fix(nlim.z, p.z, plim.z));
+
 
 }
 

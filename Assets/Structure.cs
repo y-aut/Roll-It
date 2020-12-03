@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // Structureの種類
 // 追加するときは、Img, CreateOperator.ItemDragged, 各種List, SetObjs, UpdateObjects, GenerationIncrementedを更新する
@@ -15,7 +16,7 @@ public enum StructureType
     Plate,      // 円盤
     Slope,      // 三角柱の坂
     Arc,        // 円弧状の坂
-    Viewpoint,  // 視点回転の矢印
+    Angle,      // 視点回転の矢印
     Lift,       // リフト
 
 }
@@ -32,7 +33,6 @@ public enum RotationEnum
 public class Structure
 {
     const float BOARD_THICKNESS = 0.2f;     // Boardの厚み
-    const float LIFT_THICKNESS = 0.2f;      // Liftの厚み
 
     const int LIFT_PERIOD = 300;            // Liftの周期(f)
 
@@ -42,29 +42,34 @@ public class Structure
             StructureType.Board,
             StructureType.Slope,
             StructureType.Arc,
-            StructureType.Viewpoint,
+            StructureType.Angle,
         };
 
     // Y軸方向にリサイズ可能なStructureType
     public static List<StructureType> YNonresizableList
         => new List<StructureType>() {
-            StructureType.Viewpoint,
+            StructureType.Angle,
         };
 
     // Y軸方向に反転可能なStructureType
     public static List<StructureType> YInversableList
         => new List<StructureType>() {
-            StructureType.Lift,
         };
 
     // 衝突判定をするか
     public static List<StructureType> DetectCollisionList
         => new List<StructureType>() {
-            StructureType.Viewpoint,
+            StructureType.Angle,
         };
 
     // 動的オブジェクトか
     public static List<StructureType> DynamicList
+        => new List<StructureType>() {
+            StructureType.Lift,
+        };
+
+    // Position2を使うか
+    public static List<StructureType> HasPosition2List
         => new List<StructureType>() {
             StructureType.Lift,
         };
@@ -90,6 +95,30 @@ public class Structure
         set
         {
             _positionInt = value;
+            UpdateObjects();
+        }
+    }
+
+    // Liftで、移動方向を表す
+    [SerializeField]
+    private Vector3Int _moveDirInt;
+    public Vector3Int MoveDirInt
+    {
+        get => _moveDirInt;
+        set
+        {
+            _moveDirInt = value;
+            UpdateObjects();
+        }
+    }
+
+    // Liftで、移動先の位置を表す
+    public Vector3Int PositionInt2
+    {
+        get => PositionInt + MoveDirInt;
+        set
+        {
+            _moveDirInt = value - PositionInt;
             UpdateObjects();
         }
     }
@@ -126,6 +155,18 @@ public class Structure
     {
         get => (Vector3)PositionInt / GameConst.POSITION_SCALE;
         set => PositionInt = ToPositionInt(value);
+    }
+
+    public Vector3 MoveDir
+    {
+        get => (Vector3)MoveDirInt / GameConst.POSITION_SCALE;
+        set => MoveDirInt = ToPositionInt(value);
+    }
+
+    public Vector3 Position2
+    {
+        get => (Vector3)PositionInt2 / GameConst.POSITION_SCALE;
+        set => PositionInt2 = ToPositionInt(value);
     }
 
     public Vector3 LocalScale
@@ -174,6 +215,19 @@ public class Structure
         UpdateObjects();
     }
 
+    public Structure(StructureType type, Vector3Int pos, Vector3Int moveDir, Vector3Int scale, Stage parent)
+    {
+        Type = type;
+        _positionInt = pos;
+        _moveDirInt = moveDir;
+        _localScaleInt = scale;
+        Parent = parent;
+
+        SetObjs();
+        UpdateObjects();
+    }
+
+
     // objsにPrimitiveをセットする。位置等はUpdateObjects()で設定するのでしなくて良い
     private void SetObjs() => SetObjs(Type);
 
@@ -183,16 +237,16 @@ public class Structure
         switch (type)
         {
             case StructureType.Floor:
-                objs = new List<Primitive>() { new Primitive(PrimitiveType.Cube) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.FloorPrefab) };
                 break;
             case StructureType.Start:
-                SetObjs(StructureType.Floor);
+                objs = new List<Primitive>() { new Primitive(Prefabs.StartPrefab) };
                 break;
             case StructureType.Goal:
-                SetObjs(StructureType.Floor);
+                objs = new List<Primitive>() { new Primitive(Prefabs.GoalPrefab), new Primitive(Prefabs.GoalFlagPrefab) };
                 break;
             case StructureType.Board:
-                SetObjs(StructureType.Floor);
+                objs = new List<Primitive>() { new Primitive(Prefabs.BoardPrefab) };
                 break;
             case StructureType.Plate:
                 objs = new List<Primitive>() { new Primitive(PrimitiveType.Cylinder) };
@@ -203,12 +257,11 @@ public class Structure
             case StructureType.Arc:
                 objs = new List<Primitive>() { new Primitive(Prefabs.ArcPrefab) };
                 break;
-            case StructureType.Viewpoint:
-                objs = new List<Primitive>() { new Primitive(Prefabs.ViewpointArrow) };
+            case StructureType.Angle:
+                objs = new List<Primitive>() { new Primitive(Prefabs.AngleArrowPrefab) };
                 break;
             case StructureType.Lift:
-                SetObjs(StructureType.Floor);
-                objs[0].AddRigidbody(1f, true);
+                objs = new List<Primitive>() { new Primitive(Prefabs.LiftPrefab), new Primitive(Prefabs.LiftGoalPrefab, true) };
                 break;
         }
 
@@ -233,7 +286,12 @@ public class Structure
                 UpdateObjects(StructureType.Floor);
                 break;
             case StructureType.Goal:
-                UpdateObjects(StructureType.Floor);
+                {
+                    UpdateObjects(StructureType.Floor);
+                    // GoalFlag
+                    objs[1].Position = Position + new Vector3(0, LocalScale.y / 2, 0);
+                    objs[1].LocalScale = Vector3.one;
+                }
                 break;
             case StructureType.Board:
                 {
@@ -282,7 +340,7 @@ public class Structure
                     objs[0].Position = Position + objs[0].Rotation * new Vector3(0.05f * objs[0].LocalScale.x, 0.05f * objs[0].LocalScale.y, 0);
                 }
                 break;
-            case StructureType.Viewpoint:
+            case StructureType.Angle:
                 {
                     objs[0].Rotation = Rotation;
                     objs[0].LocalScale = (Quaternion.Inverse(objs[0].Rotation) * LocalScale).Abs();
@@ -291,11 +349,20 @@ public class Structure
                 break;
             case StructureType.Lift:
                 {
-                    objs[0].LocalScale = new Vector3(LocalScale.x, LIFT_THICKNESS, LocalScale.z);
-                    // y = Asin(ωt): A = LocalScale.y / 2, ω = 2 * Mathf.PI / LIFT_PERIOD
-                    objs[0].Position = Position
-                        + new Vector3(0, LocalScale.y * (YInversed ? -1 : 1) / 2 * Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)
-                        - LIFT_THICKNESS / 2, 0);
+                    objs[0].LocalScale = LocalScale;
+                    
+                    if (ActiveScene == SceneType.Play)
+                    {
+                        // ω = 2 * Mathf.PI / LIFT_PERIOD
+                        objs[0].Position = Position + ToPositionF(MoveDirInt)
+                            * (1 + Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)) / 2;
+                    }
+                    else
+                    {
+                        objs[0].Position = Position;
+                        objs[1].LocalScale = LocalScale;
+                        objs[1].Position = Position2;
+                    }
                 }
                 break;
         }
@@ -311,9 +378,11 @@ public class Structure
         {
             case StructureType.Lift:
                 {
-                    objs[0].MovePosition(Position
-                        + new Vector3(0, LocalScale.y * (YInversed ? -1 : 1) / 2 * Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)
-                        - LIFT_THICKNESS / 2, 0));
+                    if (ActiveScene == SceneType.Play)
+                    {
+                        objs[0].Position = Position + ToPositionF(MoveDirInt)
+                            * (1 + Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)) / 2;
+                    }
                 }
                 break;
         }
@@ -322,18 +391,18 @@ public class Structure
     // ワールドに生成
     public void Create()
     {
-        objs.ForEach(i => i.Create());
-        if (DetectsCollision) objs.ForEach(i => i.SetCollisionEvent());
+        UpdateObjects();
+
+        List<Primitive> range;
+        if (ActiveScene == SceneType.Create) range = objs;
+        else range = objs.FindAll(i => !i.CreateOnly);
+
+        range.ForEach(i => i.Create());
+        if (DetectsCollision) range.ForEach(i => i.SetCollisionEvent());
     }
 
     // ワールドから削除
     public void Destroy() => objs.ForEach(i => i.Destroy());
-
-    // 半透明に
-    public void Fade() => objs.ForEach(i => i.Fade());
-
-    // 不透明に
-    public void Opaque() => objs.ForEach(i => i.Opaque());
 
     // オブジェクト選択時、移動を表す矢印を表示する点(X+,Y+,Z+,X-,Y-,Z-)
     public void GetArrowRoots(out List<Vector3> roots)
@@ -402,6 +471,9 @@ public class Structure
     // 動的オブジェクトか
     public bool IsDynamic => DynamicList.Contains(Type);
 
+    // Position2を使うか
+    public bool HasPosition2 => HasPosition2List.Contains(Type);
+
     // ステージから削除できるか
     public bool IsDeletable => !(Type == StructureType.Start || Type == StructureType.Goal);
 
@@ -415,6 +487,14 @@ public class Structure
     public void OnAfterDeserialize()
     {
         SetObjs();
-        UpdateObjects();
+        //UpdateObjects();
     }
+
+    // 現在のScene
+    public SceneType ActiveScene => SceneManager.GetActiveScene().name == "Play Scene" ? SceneType.Play : SceneType.Create;
+}
+
+public enum SceneType
+{
+    Play, Create,
 }

@@ -408,8 +408,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u200B"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 498fbecbb2610f244b82994e7d23eb6e, type: 2}
-  m_sharedMaterial: {fileID: 7287074902876197785, guid: 498fbecbb2610f244b82994e7d23eb6e,
+  m_fontAsset: {fileID: 11400000, guid: 45546d561ab4d2741815e8e890e49681, type: 2}
+  m_sharedMaterial: {fileID: -7336928141379175611, guid: 45546d561ab4d2741815e8e890e49681,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -434,15 +434,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 14
-  m_fontSizeBase: 14
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -456,7 +456,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
-  m_enableExtraPadding: 1
+  m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
   m_parseCtrlCharacters: 1
@@ -981,8 +981,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Description
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 498fbecbb2610f244b82994e7d23eb6e, type: 2}
-  m_sharedMaterial: {fileID: 7287074902876197785, guid: 498fbecbb2610f244b82994e7d23eb6e,
+  m_fontAsset: {fileID: 11400000, guid: 45546d561ab4d2741815e8e890e49681, type: 2}
+  m_sharedMaterial: {fileID: -7336928141379175611, guid: 45546d561ab4d2741815e8e890e49681,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}

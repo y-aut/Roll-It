@@ -168,7 +168,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 5.3999634, y: -27.5}
+  m_AnchoredPosition: {x: 5.3999634, y: -28.8}
   m_SizeDelta: {x: 0, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &65940290354599138
@@ -201,8 +201,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Stage Name
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 498fbecbb2610f244b82994e7d23eb6e, type: 2}
-  m_sharedMaterial: {fileID: 7287074902876197785, guid: 498fbecbb2610f244b82994e7d23eb6e,
+  m_fontAsset: {fileID: 11400000, guid: 45546d561ab4d2741815e8e890e49681, type: 2}
+  m_sharedMaterial: {fileID: -7336928141379175611, guid: 45546d561ab4d2741815e8e890e49681,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}

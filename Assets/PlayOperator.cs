@@ -15,33 +15,33 @@ public class PlayOperator : MonoBehaviour
     public bool StopUpdate { get; set; } = false;
 
     // 視点
-    private RotationEnum _viewpoint = RotationEnum.Y270;   // デフォルトはZ+方向
-    public RotationEnum Viewpoint
+    private RotationEnum _angle = RotationEnum.Y270;   // デフォルトはZ+方向
+    public RotationEnum Angle
     {
-        get => _viewpoint;
+        get => _angle;
         set
         {
-            if (Viewpoint == value) return;
+            if (Angle == value) return;
             // 速度を0に
             var rb = Ball.Sphere.GetComponent<Rigidbody>();
             rb.velocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             
             // X+を0°とした回転前のカメラの回転量
-            int first = (int)Viewpoint * 90;
+            int first = (int)Angle * 90;
             // 回転後のカメラの回転量
             int last = (int)value * 90;
             // 回転量(°/f)
             int delta = (last - first + 360) % 360 == 270 ? -GameConst.ROTATE_VIEWPOINT_DEGREE : GameConst.ROTATE_VIEWPOINT_DEGREE;
 
-            StartCoroutine(RotateViewpointCoroutine(first, last, delta));
+            StartCoroutine(RotateAngleCoroutine(first, last, delta));
 
-            _viewpoint = value;
+            _angle = value;
         }
     }
 
     // 視点回転を行うコルーチン
-    private IEnumerator RotateViewpointCoroutine(int first, int last, int delta)
+    private IEnumerator RotateAngleCoroutine(int first, int last, int delta)
     {
         StopUpdate = true;
         Time.timeScale = 0f;
@@ -84,10 +84,10 @@ public class PlayOperator : MonoBehaviour
         foreach (var str in Stage.CollidedStructures())
         {
             str.Collided = false;
-            if (str.Type == StructureType.Viewpoint)
+            if (str.Type == StructureType.Angle)
             {
                 // 視点回転
-                Viewpoint = str.RotationInt;
+                Angle = str.RotationInt;
             }
         }
     }

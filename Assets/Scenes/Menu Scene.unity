@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -429,7 +429,7 @@ LightingSettings:
   m_PrefabAsset: {fileID: 0}
   m_Name: 
   serializedVersion: 2
-  m_GIWorkflowMode: 1
+  m_GIWorkflowMode: 0
   m_EnableBakedLightmaps: 1
   m_EnableRealtimeLightmaps: 0
   m_RealtimeEnvironmentLighting: 1
@@ -523,11 +523,27 @@ MonoBehaviour:
     type: 3}
   FrameCubePrefabObj: {fileID: 3037920031593065870, guid: 4836849d5f27bdc46ad91cb3b0d1d44e,
     type: 3}
+  FrameCubeIllegalPrefabObj: {fileID: 3037920031593065870, guid: af76778e17b3acc48b906df433af7149,
+    type: 3}
+  FloorPrefabObj: {fileID: 2255632354428109499, guid: b2431fa6803640a41968c0ab6df1ee0e,
+    type: 3}
+  StartPrefabObj: {fileID: 1664170307347302039, guid: 2923c5301d46fc8469c9d29741f09779,
+    type: 3}
+  GoalPrefabObj: {fileID: 9039419686012537759, guid: 3bed2b9fbfde68f4d85f58206100eb49,
+    type: 3}
+  GoalFlagPrefabObj: {fileID: 301880721134377274, guid: d64bdf2cd7487d04e9ed90e8183fc453,
+    type: 3}
+  BoardPrefabObj: {fileID: 5986451130454932828, guid: 45ec2e556e842b44eb7e4896bd3c8875,
+    type: 3}
   SlopePrefabObj: {fileID: 7072857930752478111, guid: f3cad630cca42554281d60736dbc0a94,
     type: 3}
   ArcPrefabObj: {fileID: 7460715442248354182, guid: 0130f3f659c11e340b704be467933cc2,
     type: 3}
-  ViewpointArrowObj: {fileID: 6393451307173250525, guid: 9f4a157a0edf2cb408ec5dfbb914355a,
+  AngleArrowPrefabObj: {fileID: 6393451307173250525, guid: 9f4a157a0edf2cb408ec5dfbb914355a,
+    type: 3}
+  LiftPrefabObj: {fileID: 4318931375622053694, guid: c694f7b5f4363f54c999e51274f34547,
+    type: 3}
+  LiftGoalPrefabObj: {fileID: 7500296333541903919, guid: ec699c7833be43c4cbe9dfebf0687787,
     type: 3}
   InputBoxPrefabObj: {fileID: 6269427580765542264, guid: d29d5c23d1b78154cab0288e69275212,
     type: 3}

@@ -86,4 +86,37 @@ public class Stage : ISerializationCallbackReceiver
     {
         Structs.ForEach(i => { i.Parent = this; i.OnAfterDeserialize(); });
     }
+
+    // posにscaleのオブジェクトを設置可能かどうか
+    public bool CheckSpace(Vector3Int posInt, Vector3Int scaleInt)
+    {
+        // 各頂点の座標を取得
+        var nega = posInt - scaleInt;
+        var posi = posInt + scaleInt;
+
+        // Stageの範囲内か
+        if ((nega - new Vector3Int(GameConst.X_NLIMIT, GameConst.Y_NLIMIT, GameConst.Z_NLIMIT)).NegativeExists()
+            || (new Vector3Int(GameConst.X_PLIMIT, GameConst.Y_PLIMIT, GameConst.Z_PLIMIT) - posi).NegativeExists())
+            return false;
+
+        // Start, Goalの真上にないか
+        for (int i = 0; i < 1; ++i)
+        {
+            Vector3Int nlim, plim;
+            if (i == 0)
+            {
+                nlim = Start.PositionInt - new Vector3Int(1, -Start.LocalScaleInt.y, 1);
+                plim = Start.PositionInt + new Vector3Int(1, 8, 1);
+            }
+            else
+            {
+                nlim = Goal.PositionInt - Goal.LocalScaleInt.YMinus();
+                plim = Goal.PositionInt + Goal.LocalScaleInt + new Vector3Int(0, 4, 0);
+            }
+            // xyz各方向からみて全てで重なりがあれば、直方体同士が重なっている
+            if ((posi - nlim).IsAllPositive() && (plim - nega).IsAllPositive()) return false;
+        }
+
+        return true;
+    }
 }
