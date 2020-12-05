@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Structureの種類
-// 追加するときは、Img, CreateOperator.ItemDragged, 各種List, SetObjs, UpdateObjects, GenerationIncrementedを更新する
+/* Structureの種類
+    追加するときは、Img, CreateOperator.ItemDragged, StructureTypeToCategory, 各種List, 
+    SetObjs, UpdateObjects, GenerationIncrementedを更新する
+*/
 [Serializable]
 public enum StructureType
 {
@@ -19,6 +21,46 @@ public enum StructureType
     Angle,      // 視点回転の矢印
     Lift,       // リフト
 
+}
+
+// Structureの種類
+public enum Category
+{
+    Basic,      // 基本
+    Moving,     // 動く
+    Movable,    // 質量をもつ
+    Other,      // 特殊（視点移動など）
+}
+
+public static partial class AddMethod
+{
+    // StructureTypeからCategoryへの変換
+    private static List<Category> StructureTypeToCategory = new List<Category>()
+    {
+        Category.Basic,     // Floor
+        Category.Basic,     // Start
+        Category.Basic,     // Goal
+        Category.Basic,     // Board
+        Category.Basic,     // Plate
+        Category.Basic,     // Slope
+        Category.Basic,     // Arc
+        Category.Other,     // Angle
+        Category.Moving,    // Lift
+    };
+
+    public static Category GetCategory(this StructureType type) => StructureTypeToCategory[(int)type];
+
+    // ImgのnameからStructureTypeへの変換
+    public static StructureType GetStructureTypeFromImageName(this string imgName)
+    {
+        return (StructureType)Enum.Parse(typeof(StructureType), imgName.Substring(3));
+    }
+
+    // BtnのnameからCategoryへの変換
+    public static Category GetCategoryFromButtonName(this string btnName)
+    {
+        return (Category)Enum.Parse(typeof(Category), btnName.Substring(3));
+    }
 }
 
 [Serializable]
@@ -60,12 +102,6 @@ public class Structure
     public static List<StructureType> DetectCollisionList
         => new List<StructureType>() {
             StructureType.Angle,
-        };
-
-    // 動的オブジェクトか
-    public static List<StructureType> DynamicList
-        => new List<StructureType>() {
-            StructureType.Lift,
         };
 
     // Position2を使うか
@@ -467,9 +503,6 @@ public class Structure
 
     // 衝突判定を行うか
     public bool DetectsCollision => DetectCollisionList.Contains(Type);
-
-    // 動的オブジェクトか
-    public bool IsDynamic => DynamicList.Contains(Type);
 
     // Position2を使うか
     public bool HasPosition2 => HasPosition2List.Contains(Type);

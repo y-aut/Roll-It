@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class AddMethod
+public static partial class AddMethod
 {
     public static Vector3 NewX(this Vector3 vec, float x) => new Vector3(x, vec.y, vec.z);
     public static Vector3 NewY(this Vector3 vec, float y) => new Vector3(vec.x, y, vec.z);

@@ -51,9 +51,15 @@ public class Prefabs : MonoBehaviour
     // ポップアップウィンドウ表示時のLocalScaleの曲線
     public static AnimationCurve OpenCurve;
     public static AnimationCurve CloseCurve;
+    // StageItem.ShowDetail時のHeightの曲線
+    public static AnimationCurve ShowDetailCurve;
+    // StructureIndexerの選択切り替え時のWidthの曲線
+    public static AnimationCurve StructureIndexerSelectCurve;
 
     public AnimationCurve OpenCurveObj;
     public AnimationCurve CloseCurveObj;
+    public AnimationCurve ShowDetailCurveObj;
+    public AnimationCurve StructureIndexerSelectCurveObj;
 
     public void SetPrefabs()
     {
@@ -80,6 +86,8 @@ public class Prefabs : MonoBehaviour
 
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;
+        ShowDetailCurve = ShowDetailCurveObj;
+        StructureIndexerSelectCurve = StructureIndexerSelectCurveObj;
     }
 
 

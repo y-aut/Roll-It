@@ -191,27 +191,27 @@ public class CreateOperator : MonoBehaviour
 
         if (dragged == null)
         {
-            switch (sender.name)
+            switch (sender.name.GetStructureTypeFromImageName())
             {
-                case "ImgFloor":
+                case StructureType.Floor:
                     dragged = new Structure(StructureType.Floor, pos, new Vector3Int(4, 1, 4), Stage);
                     break;
-                case "ImgBoard":
+                case StructureType.Board:
                     dragged = new Structure(StructureType.Board, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
-                case "ImgPlate":
+                case StructureType.Plate:
                     dragged = new Structure(StructureType.Plate, pos, new Vector3Int(4, 1, 4), Stage);
                     break;
-                case "ImgSlope":
+                case StructureType.Slope:
                     dragged = new Structure(StructureType.Slope, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
-                case "ImgArc":
+                case StructureType.Arc:
                     dragged = new Structure(StructureType.Arc, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
-                case "ImgAngle":
+                case StructureType.Angle:
                     dragged = new Structure(StructureType.Angle, pos, new Vector3Int(1, 1, 1), Stage);
                     break;
-                case "ImgLift":
+                case StructureType.Lift:
                     dragged = new Structure(StructureType.Lift, pos, new Vector3Int(0, 4, 0), new Vector3Int(4, 1, 4), Stage);
                     break;
                 default:

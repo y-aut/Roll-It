@@ -6,13 +6,13 @@ using UnityEngine.UI;
 // ダイアログボックスを表示
 public class Popup : MonoBehaviour
 {
-    const int POPUP_DURATION = 30;  // Open/Closeにかかるフレーム数
+    const float DURATION_TIME = 0.2f;  // Open/Closeにかかる秒数
 
-    public enum StateEnum { Opening, Closing, Other }
-    public StateEnum State { get; private set; } = StateEnum.Other;
+    private enum StateEnum { Opening, Closing, Other }
+    private StateEnum State { get; set; } = StateEnum.Other;
 
     GameObject PnlBlack;
-    int generation = 0;     // Open/Close処理を開始してから経過したフレーム数
+    float generation_time = 0f;     // Open/Close処理を開始してから経過した秒数
     float timeScaleDef;     // timeScaleを0に変更する前のtimeScale
 
     // Update is called once per frame
@@ -20,13 +20,15 @@ public class Popup : MonoBehaviour
     {
         if (State == StateEnum.Opening)
         {
-            gameObject.transform.localScale = Prefabs.OpenCurve.Evaluate(++generation / (float)POPUP_DURATION) * Vector3.one;
-            if (generation == POPUP_DURATION) State = StateEnum.Other;
+            generation_time += Time.unscaledDeltaTime;
+            gameObject.transform.localScale = Prefabs.OpenCurve.Evaluate(Mathf.Min(1f, generation_time / DURATION_TIME)) * Vector3.one;
+            if (generation_time >= DURATION_TIME) State = StateEnum.Other;
         }
         else if (State == StateEnum.Closing)
         {
-            gameObject.transform.localScale = Prefabs.CloseCurve.Evaluate(++generation / (float)POPUP_DURATION) * Vector3.one;
-            if (generation == POPUP_DURATION)
+            generation_time += Time.unscaledDeltaTime;
+            gameObject.transform.localScale = Prefabs.CloseCurve.Evaluate(Mathf.Min(1f, generation_time / DURATION_TIME)) * Vector3.one;
+            if (generation_time >= DURATION_TIME)
             {
                 PnlBlack.SetActive(false);
                 Time.timeScale = timeScaleDef;
@@ -46,14 +48,14 @@ public class Popup : MonoBehaviour
             .Find(i => i.gameObject.name == "PnlBlack").gameObject;
         PnlBlack.SetActive(true);
 
-        generation = 0;
+        generation_time = 0f;
         State = StateEnum.Opening;
     }
 
     public void CloseAndDestroy()
     {
         PnlBlack.SetActive(false);
-        generation = 0;
+        generation_time = 0f;
         State = StateEnum.Closing;
     }
 }

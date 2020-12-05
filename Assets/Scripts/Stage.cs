@@ -38,8 +38,8 @@ public class Stage : ISerializationCallbackReceiver
         ID = ++MaxID;
         Structs = new SerializableList<Structure>()
         {
-            new Structure(StructureType.Start, new Vector3Int(0,0,0), new Vector3Int(1,1,1), this),
-            new Structure(StructureType.Goal, new Vector3Int(0,0,10), new Vector3Int(1,1,1), this),
+            new Structure(StructureType.Start, new Vector3Int(0,0,0), new Vector3Int(4,1,4), this),
+            new Structure(StructureType.Goal, new Vector3Int(0,0,20), new Vector3Int(4,1,4), this),
         };
     }
 
@@ -99,23 +99,11 @@ public class Stage : ISerializationCallbackReceiver
             || (new Vector3Int(GameConst.X_PLIMIT, GameConst.Y_PLIMIT, GameConst.Z_PLIMIT) - posi).NegativeExists())
             return false;
 
-        // Start, Goalの真上にないか
-        for (int i = 0; i < 1; ++i)
-        {
-            Vector3Int nlim, plim;
-            if (i == 0)
-            {
-                nlim = Start.PositionInt - new Vector3Int(1, -Start.LocalScaleInt.y, 1);
-                plim = Start.PositionInt + new Vector3Int(1, 8, 1);
-            }
-            else
-            {
-                nlim = Goal.PositionInt - Goal.LocalScaleInt.YMinus();
-                plim = Goal.PositionInt + Goal.LocalScaleInt + new Vector3Int(0, 4, 0);
-            }
-            // xyz各方向からみて全てで重なりがあれば、直方体同士が重なっている
-            if ((posi - nlim).IsAllPositive() && (plim - nega).IsAllPositive()) return false;
-        }
+        // Startの真上にないか
+        Vector3Int nlim = Start.PositionInt - new Vector3Int(1, -Start.LocalScaleInt.y, 1);
+        Vector3Int plim = Start.PositionInt + new Vector3Int(1, 8, 1);
+        // xyz各方向からみて全てで重なりがあれば、直方体同士が重なっている
+        if ((posi - nlim).IsAllPositive() && (plim - nega).IsAllPositive()) return false;
 
         return true;
     }
