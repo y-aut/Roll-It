@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class StageItemOperator : MonoBehaviour
@@ -15,6 +17,18 @@ public class StageItemOperator : MonoBehaviour
     // 各種コントロール
     public GameObject PnlDetail;
     public GameObject BtnDetail;
+    public GameObject TxtName;
+    public GameObject BtnPlay;
+    public GameObject BtnEdit;
+    public GameObject BtnDelete;
+    public GameObject BtnPublish;
+    public GameObject BtnRename;
+    public GameObject TxtFigures;
+
+    public Canvas canvas;
+
+    // 対応するステージ
+    public Stage Stage { get; set; }
 
     private enum StateEnum { Opening, Closing, Other }
     private StateEnum State { get; set; } = StateEnum.Other;
@@ -33,6 +47,21 @@ public class StageItemOperator : MonoBehaviour
         }
     }
 
+    // 自分のステージか、オンラインのステージか
+    private bool _isMyStage = true;
+    public bool IsMyStage
+    {
+        get => _isMyStage;
+        set
+        {
+            _isMyStage = value;
+            BtnEdit.SetActive(value);
+            BtnDelete.SetActive(value);
+            BtnPublish.SetActive(value);
+            BtnRename.SetActive(value);
+        }
+    }
+
     // ShowDetailの値によって表示を切り替えるオブジェクト
     private bool DetailsVisible
     {
@@ -45,6 +74,9 @@ public class StageItemOperator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // 初期値
+        UpdateControls();
+
         heightDif = gameObject.GetComponent<RectTransform>().sizeDelta.y - PnlDetail.GetComponent<RectTransform>().sizeDelta.y;
 
         // アニメーションなしで閉める
@@ -110,5 +142,57 @@ public class StageItemOperator : MonoBehaviour
     {
         ShowDetail = !ShowDetail;
     }
+
+    // Stageをもとに更新
+    public void UpdateControls()
+    {
+        TxtName.GetComponent<TextMeshProUGUI>().text = Stage.Name;
+        if (IsMyStage)
+        {   // LocalDataがnullであってはいけない
+            BtnPublish.GetComponent<Button>().interactable = !Stage.LocalData.IsPublished;
+        }
+        TxtFigures.GetComponent<TextMeshProUGUI>().text = $"{Stage.ChallengeCount}\n" +
+            $"{Stage.ClearCount}\n{string.Format("{0:0.00}", Stage.ClearRate * 100)} %";
+    }
+
+    // Click Events
+    public void BtnEditClicked()
+    {
+        CreateOperator.Stage = Stage;
+        SceneManager.LoadScene("Create Scene");
+    }
+
+    public void BtnRenameClicked()
+    {
+        InputBox.ShowDialog(result =>
+        {
+            Stage.Name = result;
+            TxtName.GetComponent<TextMeshProUGUI>().text = result;
+            GameData.Save();
+        }, canvas.transform, "New name");
+    }
+
+    public void BtnPlayClicked()
+    {
+        PlayOperator.Ready(Stage, false, IsMyStage);
+        SceneManager.LoadScene("Play Scene");
+    }
+
+    public void BtnDeleteClicked()
+    {
+        GameData.Stages.Remove(Stage);
+        Destroy(gameObject);
+        GameData.Save();
+    }
+
+    public void BtnPublishClicked()
+    {
+        // クリアチェック
+
+
+        FirebaseIO.PublishStage(Stage);
+        GameData.Save();
+    }
+
 
 }

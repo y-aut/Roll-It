@@ -19,7 +19,7 @@ public class StickListener : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        ball = playOp.Ball.Sphere;
+        ball = playOp.Ball;
     }
 
     // Update is called once per frame
@@ -46,13 +46,13 @@ public class StickListener : MonoBehaviour
         // pの中心からの距離 <= stickBackの半径 - stickの半径
         var dist = (p - stickBack.transform.position).magnitude;
         var max = (stickBack.GetComponent<RectTransform>().sizeDelta.x - stick.GetComponent<RectTransform>().sizeDelta.x)
-            * stick.transform.lossyScale.x / 2;   // 解像度が変わるとlossyScaleも変わる
+            * GetPixelScale() / 2;   // 解像度が変わるとlossyScaleも変わる
         if (dist > max)
             p = (p - stickBack.transform.position) * max / dist + stickBack.transform.position;
 
         stick.transform.position = p;
 
-        acceleration = playOp.Angle.ToQuaternion() * Quaternion.Euler(90, 90, 0) * (p - stickBack.transform.position) / stick.transform.lossyScale.x;
+        acceleration = playOp.Angle.ToQuaternion() * Quaternion.Euler(90, 90, 0) * (p - stickBack.transform.position) / GetPixelScale();
     }
 
     public void Released()
@@ -60,5 +60,7 @@ public class StickListener : MonoBehaviour
         stick.transform.position = stickBack.transform.position;
         acceleration = new Vector3(0, 0, 0);
     }
+
+    private float GetPixelScale() => stick.transform.lossyScale.x;
 
 }

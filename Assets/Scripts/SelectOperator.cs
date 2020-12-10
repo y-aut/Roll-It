@@ -9,37 +9,62 @@ public class SelectOperator : MonoBehaviour
 {
     public Canvas canvas;
     public GameObject content;
-    public GameObject stageItemPrefab;
+    public Button BtnNew;
+
+    // 自分のステージか
+    public static bool IsMyStages { get; set; } = true;
 
     // Start is called before the first frame update
     void Start()
     {
-        // StageをContentに追加
-        var stages = GameData.MyStages;
-        for (int i = 0; i < stages.Count; ++i)
+        BtnNew.gameObject.SetActive(IsMyStages);
+        if (IsMyStages)
         {
-            var item = Instantiate(stageItemPrefab, content.transform, false);
-            var TxtName = new List<TextMeshProUGUI>(item.GetComponentsInChildren<TextMeshProUGUI>()).Find(j => j.gameObject.name == "TxtName");
-            TxtName.text = stages[i].Name;
-            TxtName.name = "TxtName_" + stages[i].ID;  // 名前変更時に探す
-
-            // イベントを追加
-            var btns = item.GetComponentsInChildren<Button>();
-            int id = stages[i].ID;  // 遅延評価を防ぐ
-            foreach (var btn in btns)
+            // StageをContentに追加
+            foreach (var stage in GameData.Stages)
             {
-                if (btn.name == "BtnEdit") btn.onClick.AddListener(() => BtnEditClicked(id));
-                else if (btn.name == "BtnRename") btn.onClick.AddListener(() => BtnRenameClicked(id));
-                else if (btn.name == "BtnPlay") btn.onClick.AddListener(() => BtnPlayClicked(id));
-                else if (btn.name == "BtnDelete") btn.onClick.AddListener(() => BtnDeleteClicked(id));
+                var item = Instantiate(Prefabs.StageItemPrefab, content.transform, false);
+                var script = item.GetComponent<StageItemOperator>();
+                script.Stage = stage;
+                script.canvas = canvas;
             }
+        }
+        else
+        {
+            // オンラインのステージを追加
+            FirebaseIO.GetAllStages();
+            StartCoroutine(LoadItemList());
+        }
+    }
+
+    // 非同期で読み込んだステージを反映
+    IEnumerator LoadItemList()
+    {
+        while (!FirebaseIO.LoadFinished)
+        {
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        foreach (var stage in FirebaseIO.AnswerStages)
+        {
+            var item = Instantiate(Prefabs.StageItemPrefab, content.transform, false);
+            var script = item.GetComponent<StageItemOperator>();
+            script.Stage = stage;
+            script.canvas = canvas;
+            script.IsMyStage = false;
         }
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if (Time.timeScale == 0f) return;
+
+        // 戻るボタン
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            BackToMenu();
+        }
     }
 
     public void BackToMenu()
@@ -51,39 +76,10 @@ public class SelectOperator : MonoBehaviour
     {
         var stage = new Stage();
         stage.Initialize();
-        GameData.MyStages.Add(stage);
+        GameData.Stages.Add(stage);
         CreateOperator.Stage = stage;
         SceneManager.LoadScene("Create Scene");
     }
 
-    public void BtnEditClicked(int stageId)
-    {
-        CreateOperator.Stage = GameData.MyStages.Find(i => i.ID == stageId);
-        SceneManager.LoadScene("Create Scene");
-    }
-
-    public void BtnRenameClicked(int stageId)
-    {
-        InputBox.ShowDialog(result =>
-        {
-            GameData.MyStages.Find(i => i.ID == stageId).Name = result;
-            var TxtName = new List<TextMeshProUGUI>(canvas.GetComponentsInChildren<TextMeshProUGUI>()).Find(i => i.gameObject.name == "TxtName_" + stageId);
-            TxtName.text = result;
-            GameData.Save();
-        }, canvas.transform, "New name");
-    }
-
-    public void BtnPlayClicked(int stageId)
-    {
-        PlayOperator.Stage = GameData.MyStages.Find(i => i.ID == stageId);
-        SceneManager.LoadScene("Play Scene");
-    }
-
-    public void BtnDeleteClicked(int stageId)
-    {
-        GameData.MyStages.Remove(GameData.MyStages.Find(i => i.ID == stageId));
-        SceneManager.LoadScene("Select Scene");
-        GameData.Save();
-    }
 
 }

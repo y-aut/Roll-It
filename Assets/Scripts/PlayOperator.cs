@@ -7,12 +7,16 @@ public class PlayOperator : MonoBehaviour
 {
     public Camera cam;
 
-    public static Stage Stage { get; set; }
-    public Ball Ball { get; private set; }
+    public static Stage Stage { get; private set; }
+    public static bool TestPlay { get; private set; }        // Create中の試験プレイ
+    public GameObject Ball;
     public PhysicMaterial ballMat;
 
     // Updateの処理をストップ
     public bool StopUpdate { get; set; } = false;
+
+    // 自分のステージか
+    public static bool IsMyStage { get; set; } = true;
 
     // 視点
     private RotationEnum _angle = RotationEnum.Y270;   // デフォルトはZ+方向
@@ -23,7 +27,7 @@ public class PlayOperator : MonoBehaviour
         {
             if (Angle == value) return;
             // 速度を0に
-            var rb = Ball.Sphere.GetComponent<Rigidbody>();
+            var rb = Ball.GetComponent<Rigidbody>();
             rb.velocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             
@@ -47,10 +51,10 @@ public class PlayOperator : MonoBehaviour
         Time.timeScale = 0f;
         for (int i = first; (i - last) % 360 != 0; i += delta)
         {
-            var buf = Ball.Sphere.transform.position;
+            var buf = Ball.transform.position;
             buf += Quaternion.Euler(0, i, 0) * new Vector3(-GameConst.PLAY_CAMDIST_HOR, GameConst.PLAY_CAMDIST_VER, 0);
             cam.transform.position = buf;
-            cam.transform.forward = Ball.Sphere.transform.position - cam.transform.position;
+            cam.transform.forward = Ball.transform.position - cam.transform.position;
             Canvas.ForceUpdateCanvases();
             yield return new WaitForSecondsRealtime(GameConst.ROTATE_VIEWPOINT_MS / 1000f);
         }
@@ -62,10 +66,23 @@ public class PlayOperator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        if (!IsMyStage)
+        {
+            FirebaseIO.IncrementChallengeCount(Stage.ID);
+        }
+
         Stage.Create();
-        Ball = gameObject.AddComponent<Ball>();
-        Ball.Sphere.transform.position = Stage.Start.Position + new Vector3(0, 2f, 0);
-        Ball.Sphere.GetComponent<SphereCollider>().material = ballMat;
+        Ball = Instantiate(Prefabs.BallPrefab);
+        Ball.name = Structure.BALL_NAME;
+        Ball.GetComponent<SphereCollider>().material = ballMat;
+        var rig = Ball.AddComponent<Rigidbody>();
+        rig.angularDrag = 1.0f;
+
+        Structure ball;
+        if (TestPlay && (ball = Stage.Ball) != null)    // 指定した位置からプレイ
+            Ball.transform.position = ball.Position;
+        else
+            Ball.transform.position = Stage.Start.Position + new Vector3(0, Ball.transform.localScale.y / 2, 0);
     }
 
     // Update is called once per frame
@@ -74,10 +91,28 @@ public class PlayOperator : MonoBehaviour
         if (StopUpdate) return;
         Stage.IncrementGeneration();
         // GameOver判定
-        if (Ball.Sphere.transform.position.y < GameConst.GAMEOVER_Y)
+        if (Ball.transform.position.y < Stage.GameOverY)
         {
             Stage.Destroy();
-            SceneManager.LoadScene("Select Scene");
+            if (TestPlay)
+                SceneManager.LoadScene("Create Scene");
+            else
+                SceneManager.LoadScene("Select Scene");
+            return;
+        }
+        // Clear判定
+        if (Stage.Goal.Collided)
+        {
+            Stage.Goal.Collided = false;
+            Stage.Destroy();
+            if (!IsMyStage)
+            {
+                FirebaseIO.IncrementClearCount(Stage.ID);
+            }
+            if (TestPlay)
+                SceneManager.LoadScene("Create Scene");
+            else
+                SceneManager.LoadScene("Select Scene");
             return;
         }
         // Collision判定
@@ -92,5 +127,12 @@ public class PlayOperator : MonoBehaviour
         }
     }
 
+    // ロード前に設定すべき変数
+    public static void Ready(Stage stage, bool isTestPlay, bool isMyStage)
+    {
+        Stage = stage;
+        TestPlay = isTestPlay;
+        IsMyStage = isMyStage;
+    }
 
 }

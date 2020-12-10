@@ -194,14 +194,17 @@ public class TransformTools
             for (int i = 0; i < ARROW_COUNT; ++i)
                 Arrows2.Add(UnityEngine.Object.Instantiate(Prefabs.ArrowPrefab));
         }
-        XZCubes = new List<GameObject>();
-        for (int i = 0; i < XZCUBE_COUNT; ++i)
-            XZCubes.Add(UnityEngine.Object.Instantiate(Prefabs.XZCubePrefab));
-        if (Focused.IsYResizable)
+        if (Focused.IsResizable)
         {
-            YCubes = new List<GameObject>();
-            for (int i = 0; i < YCUBE_COUNT; ++i)
-                YCubes.Add(UnityEngine.Object.Instantiate(Prefabs.YCubePrefab));
+            XZCubes = new List<GameObject>();
+            for (int i = 0; i < XZCUBE_COUNT; ++i)
+                XZCubes.Add(UnityEngine.Object.Instantiate(Prefabs.XZCubePrefab));
+            if (Focused.IsYResizable)
+            {
+                YCubes = new List<GameObject>();
+                for (int i = 0; i < YCUBE_COUNT; ++i)
+                    YCubes.Add(UnityEngine.Object.Instantiate(Prefabs.YCubePrefab));
+            }
         }
         if (Focused.IsRotatable)
             RotateArrow = UnityEngine.Object.Instantiate(Prefabs.RotateArrowPrefab);
@@ -222,12 +225,15 @@ public class TransformTools
 
         Focused.GetArrowRoots(out var roots);
         arrowRoots = roots;
-        Focused.GetXZResizeEdges(out var xzpos);
-        XZpos = xzpos;
-        if (Focused.IsYResizable)
+        if (Focused.IsResizable)
         {
-            Focused.GetYResizeVertexes(out var ypos);
-            Ypos = ypos;
+            Focused.GetXZResizeEdges(out var xzpos);
+            XZpos = xzpos;
+            if (Focused.IsYResizable)
+            {
+                Focused.GetYResizeVertexes(out var ypos);
+                Ypos = ypos;
+            }
         }
 
         // 矢印はデフォルトではZ軸正の向き
@@ -255,15 +261,18 @@ public class TransformTools
             }
         }
 
-        for (int i = 0; i < XZCUBE_COUNT; ++i)
-            XZCubes[i].transform.position = XZpos[i];
-        for (int i = 0; i < XZCUBE_COUNT; i += 2)
-            XZCubes[i].transform.rotation = Quaternion.Euler(0, 90, 0);
-        
-        if (Focused.IsYResizable)
+        if (Focused.IsResizable)
         {
-            for (int i = 0; i < YCUBE_COUNT; ++i)
-                YCubes[i].transform.position = Ypos[i];
+            for (int i = 0; i < XZCUBE_COUNT; ++i)
+                XZCubes[i].transform.position = XZpos[i];
+            for (int i = 0; i < XZCUBE_COUNT; i += 2)
+                XZCubes[i].transform.rotation = Quaternion.Euler(0, 90, 0);
+
+            if (Focused.IsYResizable)
+            {
+                for (int i = 0; i < YCUBE_COUNT; ++i)
+                    YCubes[i].transform.position = Ypos[i];
+            }
         }
 
         if (Focused.IsRotatable)
@@ -278,8 +287,11 @@ public class TransformTools
         UnityEngine.Object.Destroy(frameCubeIllegal);
         Arrows.ForEach(i => UnityEngine.Object.Destroy(i));
         if (Focused.HasPosition2) Arrows2.ForEach(i => UnityEngine.Object.Destroy(i));
-        XZCubes.ForEach(i => UnityEngine.Object.Destroy(i));
-        if (Focused.IsYResizable) YCubes.ForEach(i => UnityEngine.Object.Destroy(i));
+        if (Focused.IsResizable)
+        {
+            XZCubes.ForEach(i => UnityEngine.Object.Destroy(i));
+            if (Focused.IsYResizable) YCubes.ForEach(i => UnityEngine.Object.Destroy(i));
+        }
         if (Focused.IsRotatable) UnityEngine.Object.Destroy(RotateArrow);
         if (Focused.IsYInversable) UnityEngine.Object.Destroy(YInverseArrow);
     }
@@ -295,20 +307,13 @@ public class TransformTools
             {
                 eventID = EventTriggerType.PointerDown,
             };
-            entry.callback.AddListener(x => {
-                Dragged = arrow;
-                BeganDragged = true;
-                DraggedType = TransformToolType.Arrow;
-            });
+            entry.callback.AddListener(x => PointerDown(arrow, TransformToolType.Arrow));
             trigger.triggers.Add(entry);
             entry = new EventTrigger.Entry
             {
                 eventID = EventTriggerType.PointerUp,
             };
-            entry.callback.AddListener(x => {
-                Dragged = null;
-                FinishDragged = true;
-            });
+            entry.callback.AddListener(x => PointerUp());
             trigger.triggers.Add(entry);
         }
 
@@ -322,52 +327,20 @@ public class TransformTools
                 {
                     eventID = EventTriggerType.PointerDown,
                 };
-                entry.callback.AddListener(x => {
-                    Dragged = arrow;
-                    BeganDragged = true;
-                    DraggedType = TransformToolType.Arrow2;
-                });
+                entry.callback.AddListener(x => PointerDown(arrow, TransformToolType.Arrow2));
                 trigger.triggers.Add(entry);
                 entry = new EventTrigger.Entry
                 {
                     eventID = EventTriggerType.PointerUp,
                 };
-                entry.callback.AddListener(x => {
-                    Dragged = null;
-                    FinishDragged = true;
-                });
+                entry.callback.AddListener(x => PointerUp());
                 trigger.triggers.Add(entry);
             }
         }
 
-        foreach (var cube in XZCubes)
+        if (Focused.IsResizable)
         {
-            var trigger = cube.AddComponent<EventTrigger>();
-            trigger.triggers = new List<EventTrigger.Entry>();
-            var entry = new EventTrigger.Entry
-            {
-                eventID = EventTriggerType.PointerDown,
-            };
-            entry.callback.AddListener(x => {
-                Dragged = cube;
-                BeganDragged = true;
-                DraggedType = TransformToolType.XZCube;
-            });
-            trigger.triggers.Add(entry);
-            entry = new EventTrigger.Entry
-            {
-                eventID = EventTriggerType.PointerUp,
-            };
-            entry.callback.AddListener(x => {
-                Dragged = null;
-                FinishDragged = true;
-            });
-            trigger.triggers.Add(entry);
-        }
-
-        if (Focused.IsYResizable)
-        {
-            foreach (var cube in YCubes)
+            foreach (var cube in XZCubes)
             {
                 var trigger = cube.AddComponent<EventTrigger>();
                 trigger.triggers = new List<EventTrigger.Entry>();
@@ -375,21 +348,35 @@ public class TransformTools
                 {
                     eventID = EventTriggerType.PointerDown,
                 };
-                entry.callback.AddListener(x => {
-                    Dragged = cube;
-                    BeganDragged = true;
-                    DraggedType = TransformToolType.YCube;
-                });
+                entry.callback.AddListener(x => PointerDown(cube, TransformToolType.XZCube));
                 trigger.triggers.Add(entry);
                 entry = new EventTrigger.Entry
                 {
                     eventID = EventTriggerType.PointerUp,
                 };
-                entry.callback.AddListener(x => {
-                    Dragged = null;
-                    FinishDragged = true;
-                });
+                entry.callback.AddListener(x => PointerUp());
                 trigger.triggers.Add(entry);
+            }
+
+            if (Focused.IsYResizable)
+            {
+                foreach (var cube in YCubes)
+                {
+                    var trigger = cube.AddComponent<EventTrigger>();
+                    trigger.triggers = new List<EventTrigger.Entry>();
+                    var entry = new EventTrigger.Entry
+                    {
+                        eventID = EventTriggerType.PointerDown,
+                    };
+                    entry.callback.AddListener(x => PointerDown(cube, TransformToolType.YCube));
+                    trigger.triggers.Add(entry);
+                    entry = new EventTrigger.Entry
+                    {
+                        eventID = EventTriggerType.PointerUp,
+                    };
+                    entry.callback.AddListener(x => PointerUp());
+                    trigger.triggers.Add(entry);
+                }
             }
         }
 
@@ -418,6 +405,25 @@ public class TransformTools
                 Focused.YInversed = !Focused.YInversed;
             });
             trigger.triggers.Add(entry);
+        }
+    }
+
+    private void PointerDown(GameObject obj, TransformToolType type)
+    {
+        // 二本指ならスルー
+        if (Input.touchCount >= 2) return;
+
+        Dragged = obj;
+        BeganDragged = true;
+        DraggedType = type;
+    }
+
+    private void PointerUp()
+    {
+        if (Dragged != null)    // 二本指ならFinishDraggedだけtrueになってしまう
+        {
+            Dragged = null;
+            FinishDragged = true;
         }
     }
 

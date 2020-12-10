@@ -14,7 +14,7 @@ public class CollisionEvent : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.name == Ball.BALL_NAME)
+        if (other.gameObject.name == Structure.BALL_NAME)
             Primitive.Parent.Collided = true;
     }
 }

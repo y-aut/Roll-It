@@ -43,10 +43,17 @@ public class Popup : MonoBehaviour
         timeScaleDef = Time.timeScale;
         Time.timeScale = 0f;
 
-        PnlBlack = new List<Image>(
-            gameObject.transform.parent.gameObject.GetComponentsInChildren<Image>(true))
-            .Find(i => i.gameObject.name == "PnlBlack").gameObject;
-        PnlBlack.SetActive(true);
+        try
+        {
+            PnlBlack = new List<Image>(
+                gameObject.transform.parent.gameObject.GetComponentsInChildren<Image>(true))
+                .Find(i => i.gameObject.name == "PnlBlack").gameObject;
+            PnlBlack.SetActive(true);
+        }
+        catch (System.Exception)
+        {
+            throw new System.Exception("PnlBlack does not exist in the current scene.");
+        }
 
         generation_time = 0f;
         State = StateEnum.Opening;

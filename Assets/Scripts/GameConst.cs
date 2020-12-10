@@ -12,9 +12,6 @@ public static class GameConst
     // 半透明時のアルファ値
     public const int FADE_ALPHA = 100;
 
-    // ゲームオーバーになるy座標
-    public const int GAMEOVER_Y = -10;
-
     // プレイ時の視点のボールからの距離
     public const int PLAY_CAMDIST_HOR = 6;
     public const int PLAY_CAMDIST_VER = 3;

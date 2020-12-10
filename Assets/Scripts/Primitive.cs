@@ -9,15 +9,10 @@ using UnityEngine.EventSystems;
 public class Primitive
 {
     private GameObject obj;
-
-    // TypeかPrefabの一方を設定する
-    public PrimitiveType Type { get; set; }
     public GameObject Prefab { get; set; } = null;
 
     // Create Sceneでのみ表示
     public bool CreateOnly { get; private set; } = false;
-
-    public bool IsPrimitive => Prefab == null;
 
     public Structure Parent { get; set; }
 
@@ -55,11 +50,6 @@ public class Primitive
         }
     }
 
-    public Primitive(PrimitiveType type)
-    {
-        Type = type;
-    }
-
     public Primitive(GameObject prefab)
     {
         Prefab = prefab;
@@ -74,21 +64,7 @@ public class Primitive
     // ワールドに生成
     public void Create()
     {
-        if (IsPrimitive)
-        {
-            obj = GameObject.CreatePrimitive(Type);
-
-            // 専用ColliderがないCylinderはMeshに
-            if (Type == PrimitiveType.Cylinder)
-            {
-                obj.GetComponent<Collider>().enabled = false;
-                obj.AddComponent<MeshCollider>();
-            }
-        }
-        else
-        {
-            obj = UnityEngine.Object.Instantiate(Prefab);
-        }
+        obj = UnityEngine.Object.Instantiate(Prefab);
 
         UpdateObject();
         SetClickEvent();
@@ -102,12 +78,6 @@ public class Primitive
         obj.transform.position = Position;
         obj.transform.localScale = LocalScale;
         obj.transform.rotation = Rotation;
-    }
-
-    // objにactionを作用させる。Destroy時に必要
-    public void Act(Action<GameObject> action)
-    {
-        action(obj);
     }
 
     // objのアルファ値を変更
@@ -141,7 +111,11 @@ public class Primitive
     // Collisionイベントを追加
     public void SetCollisionEvent()
     {
-        var script = obj.AddComponent<CollisionEvent>();
+        CollisionEvent script;
+        // "Collider"という名前の子オブジェクトをもつ場合はそちらにつける
+        var child = obj.transform.Find("Collider");
+        if (child != null) script = child.gameObject.AddComponent<CollisionEvent>();
+        else script = obj.AddComponent<CollisionEvent>();
         script.Primitive = this;
     }
 

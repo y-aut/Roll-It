@@ -794,7 +794,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 119759691}
   m_HandleRect: {fileID: 119759690}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -1017,6 +1017,7 @@ MonoBehaviour:
   content: {fileID: 1018003175}
   stageItemPrefab: {fileID: 65940291356588578, guid: 01f30fef0a0475044bd8ec375ecc64f1,
     type: 3}
+  BtnNew: {fileID: 528209374}
 --- !u!1 &952943831
 GameObject:
   m_ObjectHideFlags: 0

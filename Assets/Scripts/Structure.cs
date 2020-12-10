@@ -20,7 +20,7 @@ public enum StructureType
     Arc,        // 円弧状の坂
     Angle,      // 視点回転の矢印
     Lift,       // リフト
-
+    Ball,       // ボール
 }
 
 // Structureの種類
@@ -46,6 +46,7 @@ public static partial class AddMethod
         Category.Basic,     // Arc
         Category.Other,     // Angle
         Category.Moving,    // Lift
+        Category.Other,     // Ball
     };
 
     public static Category GetCategory(this StructureType type) => StructureTypeToCategory[(int)type];
@@ -75,8 +76,9 @@ public enum RotationEnum
 public class Structure
 {
     const float BOARD_THICKNESS = 0.2f;     // Boardの厚み
-
     const int LIFT_PERIOD = 300;            // Liftの周期(f)
+
+    public const string BALL_NAME = "ball";        // Ballの名前（衝突判定で用いる）
 
     // 回転可能なStructureType
     public static List<StructureType> RotatableList
@@ -87,7 +89,13 @@ public class Structure
             StructureType.Angle,
         };
 
-    // Y軸方向にリサイズ可能なStructureType
+    // リサイズ不可能なStructureType
+    public static List<StructureType> NonresizableList
+        => new List<StructureType>() {
+            StructureType.Ball,
+        };
+
+    // Y軸方向にリサイズ不可能なStructureType
     public static List<StructureType> YNonresizableList
         => new List<StructureType>() {
             StructureType.Angle,
@@ -101,6 +109,7 @@ public class Structure
     // 衝突判定をするか
     public static List<StructureType> DetectCollisionList
         => new List<StructureType>() {
+            StructureType.Goal,
             StructureType.Angle,
         };
 
@@ -109,6 +118,18 @@ public class Structure
         => new List<StructureType>() {
             StructureType.Lift,
         };
+
+    // ステージに一つしか存在できないか
+    public static List<StructureType> OnlyOneList
+        => new List<StructureType>() {
+            StructureType.Ball,
+        };
+
+    // ステージの情報に保存しないStructureType
+    public static List<StructureType> UnsavedList
+    => new List<StructureType>() {
+            StructureType.Ball,
+    };
 
     [SerializeField]
     private StructureType _type;
@@ -285,7 +306,7 @@ public class Structure
                 objs = new List<Primitive>() { new Primitive(Prefabs.BoardPrefab) };
                 break;
             case StructureType.Plate:
-                objs = new List<Primitive>() { new Primitive(PrimitiveType.Cylinder) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.PlatePrefab) };
                 break;
             case StructureType.Slope:
                 objs = new List<Primitive>() { new Primitive(Prefabs.SlopePrefab) };
@@ -298,6 +319,9 @@ public class Structure
                 break;
             case StructureType.Lift:
                 objs = new List<Primitive>() { new Primitive(Prefabs.LiftPrefab), new Primitive(Prefabs.LiftGoalPrefab, true) };
+                break;
+            case StructureType.Ball:
+                objs = new List<Primitive>() { new Primitive(Prefabs.BallPrefab, true) };
                 break;
         }
 
@@ -401,6 +425,10 @@ public class Structure
                     }
                 }
                 break;
+            case StructureType.Ball:
+                objs[0].Position = Position;
+                objs[0].LocalScale = Prefabs.BallPrefab.transform.localScale;
+                break;
         }
     }
 
@@ -491,6 +519,8 @@ public class Structure
     public Vector3 GetYInverseArrowPos()
         => Position + new Vector3(LocalScale.x / 2 + 0.8f, 0, 0);
 
+    // いずれかの方向にサイズ変更が可能か
+    public bool IsResizable => !NonresizableList.Contains(Type);
 
     // Y方向のサイズ変更が可能か
     public bool IsYResizable => !YNonresizableList.Contains(Type);
@@ -506,6 +536,12 @@ public class Structure
 
     // Position2を使うか
     public bool HasPosition2 => HasPosition2List.Contains(Type);
+
+    // ステージに一つしか存在できないか
+    public bool IsOnlyOne => OnlyOneList.Contains(Type);
+
+    // ステージの情報に保存するか
+    public bool IsSaved => !UnsavedList.Contains(Type);
 
     // ステージから削除できるか
     public bool IsDeletable => !(Type == StructureType.Start || Type == StructureType.Goal);

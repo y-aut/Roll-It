@@ -38,7 +38,7 @@ public class CreateOperator : MonoBehaviour
         {
             clicked.Clicked = false;
             focused = clicked;
-            BtnDelete.interactable = focused.IsDeletable;            
+            BtnDelete.interactable = focused.IsDeletable;
 
             // 矢印、サイズ変更用キューブを表示
             if (tools != null) tools.Destroy();
@@ -85,6 +85,7 @@ public class CreateOperator : MonoBehaviour
             if (Input.touchCount <= 1)
             {
                 Vector2 p = Input.mousePosition;
+
                 // 上下左右
                 if (Input.GetMouseButtonDown(0) && !PointerOnPanel() && dragged == null)
                 {
@@ -92,7 +93,7 @@ public class CreateOperator : MonoBehaviour
                 }
                 else if (Input.GetMouseButton(0) && leftDowned != null && dragged == null)
                 {
-                    cam.transform.position += cam.transform.rotation * ((Vector3)(p - leftDowned)).XYMinus() / 30;
+                    cam.transform.position += cam.transform.rotation * ((Vector3)(p - leftDowned)).XYMinus() / (GetPixelScale() * 30);
                     leftDowned = p;
                 }
                 else if (Input.GetMouseButtonUp(0))
@@ -124,7 +125,7 @@ public class CreateOperator : MonoBehaviour
                     rightDowned = null;
                 }
             }
-            else if (Input.touchCount == 2)
+            else if (Input.touchCount >= 2)
             {
                 var t1 = Input.GetTouch(0);
                 var t2 = Input.GetTouch(1);
@@ -137,18 +138,18 @@ public class CreateOperator : MonoBehaviour
                 {
                     var d1 = t1.position - old1; var d2 = t2.position - old2;
 
-                    // 2つのベクトルのなす角θが|cosθ|>0.8なら拡大縮小
-                    if (d1 != Vector2.zero && d2 != Vector2.zero
-                        && Mathf.Abs(Vector2.Dot(d1, d2) / (d1.magnitude * d2.magnitude)) > 0.8)
+                    // 2つのベクトルのなす角θがcosθ<0なら拡大縮小
+                    if (d1 == Vector2.zero || d2 == Vector2.zero
+                        || (Vector2.Dot(d1, d2) / (d1.magnitude * d2.magnitude)) < 0f)
                     {
                         // 2点の距離の増加量をもとに拡大
-                        var scroll = ((t2.position - t1.position).magnitude - (old2 - old1).magnitude) / panel.transform.lossyScale.x / 50;
+                        var scroll = ((t2.position - t1.position).magnitude - (old2 - old1).magnitude) / (GetPixelScale() * 20);
                         cam.transform.position += (cam.transform.rotation * new Vector3(0, 0, scroll));
                     }
                     else
                     {
                         // 2点の移動量の平均をとって回転
-                        var avg = (t1.position - old1 + t2.position - old2) / 2 / panel.transform.lossyScale.x;
+                        var avg = (t1.position - old1 + t2.position - old2) / 2 / GetPixelScale();
                         var forw = cam.transform.forward;
                         var center = RotateCenter();
                         forw = Quaternion.AngleAxis(avg.x, cam.transform.rotation * Vector3.up) * Quaternion.AngleAxis(-avg.y, cam.transform.rotation * Vector3.right) * forw;
@@ -157,6 +158,7 @@ public class CreateOperator : MonoBehaviour
                     }
 
                     old1 = t1.position; old2 = t2.position;
+                    leftDowned = null;
                 }
             }
 
@@ -175,6 +177,9 @@ public class CreateOperator : MonoBehaviour
     // アイテムをドラッグ
     public void ItemDragged(GameObject sender)
     {
+        // 二本指ならピンチアウト時なのでスルー
+        if (Input.touchCount >= 2) return;
+
         // フィールド上にあるか
         if (PointerOnPanel())
         {
@@ -213,6 +218,9 @@ public class CreateOperator : MonoBehaviour
                     break;
                 case StructureType.Lift:
                     dragged = new Structure(StructureType.Lift, pos, new Vector3Int(0, 4, 0), new Vector3Int(4, 1, 4), Stage);
+                    break;
+                case StructureType.Ball:
+                    dragged = new Structure(StructureType.Ball, pos, new Vector3Int(1, 1, 1), Stage);
                     break;
                 default:
                     return;
@@ -284,4 +292,15 @@ public class CreateOperator : MonoBehaviour
         GameData.Save();
         SceneManager.LoadScene("Select Scene");
     }
+
+    // Test
+    public void BtnTestClicked()
+    {
+        GameData.Save();
+        PlayOperator.Ready(Stage, true, true);
+        SceneManager.LoadScene("Play Scene");
+    }
+
+    // 画面のスケールを取得う
+    private float GetPixelScale() => panel.transform.lossyScale.x;
 }

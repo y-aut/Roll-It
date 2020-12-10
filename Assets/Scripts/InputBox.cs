@@ -12,10 +12,11 @@ public class InputBox : MonoBehaviour
     private string defaultString;
     private string description;
 
-    private TMP_InputField Text;    // TextMeshProUGUI.Textはゼロ幅スペースが入る
-    private Button BtnOK;
-    private Button BtnCancel;
-    private Popup popup;
+    public TMP_InputField InputField;    // TextMeshProUGUI.Textはゼロ幅スペースが入る
+    public Button BtnOK;
+    public Button BtnCancel;
+    public TextMeshProUGUI TxtDesc;
+    public Popup popup;
     private Action<string> OKClickedAction;     // OKボタンが押されたときにコールする
 
     public static void ShowDialog(Action<string> OKClicked, Transform parent, string desc, bool allowEmpty = false, bool allowCancel = true, string defaultString = "")
@@ -28,36 +29,36 @@ public class InputBox : MonoBehaviour
         script.defaultString = defaultString;
         script.description = desc;
         script.OKClickedAction = OKClicked;
-        script.popup = input.GetComponent<Popup>();
         script.popup.Open();
     }
 
     private void Start()
     {
-        Text = gameObject.GetComponentInChildren<TMP_InputField>();
-        Text.text = defaultString;
-        var TxtDesc = new List<TextMeshProUGUI>(gameObject.GetComponentsInChildren<TextMeshProUGUI>()).Find(i => i.gameObject.name == "TxtDesc");
+        InputField.text = defaultString;
         TxtDesc.text = description;
-        var buttons = new List<Button>(GetComponentsInChildren<Button>());
-        BtnOK = buttons.Find(i => i.gameObject.name == "BtnOK");
-        BtnCancel = buttons.Find(i => i.gameObject.name == "BtnCancel");
         if (!AllowCancel)
         {
-            BtnOK.gameObject.transform.position = BtnCancel.gameObject.transform.position;
+            BtnOK.gameObject.transform.localPosition = BtnCancel.gameObject.transform.localPosition;
             BtnCancel.gameObject.SetActive(false);
         }
     }
 
     private void Update()
     {
-        BtnOK.interactable = Text.text != "" || AllowEmpty;
+        BtnOK.interactable = InputField.text != "" || AllowEmpty;
+
+        // 戻るボタン
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            BtnCancel_Click();
+        }
     }
 
     public void BtnOK_Click()
     {
-        if (Text.text == "" && !AllowEmpty) return;
+        if (InputField.text == "" && !AllowEmpty) return;
         popup.CloseAndDestroy();
-        OKClickedAction(Text.text);
+        OKClickedAction(InputField.text);
     }
 
     public void BtnCancel_Click()

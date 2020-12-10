@@ -14,11 +14,13 @@ public class Prefabs : MonoBehaviour
     public static GameObject FrameCubeIllegalPrefab;      // 設置不可能な場所での外枠のキューブのプレハブ
 
     // Structures
+    public static GameObject BallPrefab;            // Ballのプレハブ
     public static GameObject FloorPrefab;           // Floorのプレハブ
     public static GameObject StartPrefab;           // Startのプレハブ
     public static GameObject GoalPrefab;            // Goalのプレハブ
     public static GameObject GoalFlagPrefab;        // Goalの旗のプレハブ
     public static GameObject BoardPrefab;           // Boardのプレハブ
+    public static GameObject PlatePrefab;           // Plateのプレハブ
     public static GameObject SlopePrefab;           // Slopeのプレハブ
     public static GameObject ArcPrefab;             // Arcのプレハブ
     public static GameObject AngleArrowPrefab;      // Angleのプレハブ
@@ -26,6 +28,8 @@ public class Prefabs : MonoBehaviour
     public static GameObject LiftGoalPrefab;        // Liftの行き先のプレハブ
 
     public static GameObject InputBoxPrefab;        // InputBoxのプレハブ
+    public static GameObject MessageBoxPrefab;      // MessageBoxのプレハブ
+    public static GameObject StageItemPrefab;       // StageItemのプレハブ
 
     public GameObject ArrowPrefabObj;
     public GameObject XZCubePrefabObj;
@@ -35,11 +39,13 @@ public class Prefabs : MonoBehaviour
     public GameObject FrameCubePrefabObj;
     public GameObject FrameCubeIllegalPrefabObj;
 
+    public GameObject BallPrefabObj;
     public GameObject FloorPrefabObj;
     public GameObject StartPrefabObj;
     public GameObject GoalPrefabObj;
     public GameObject GoalFlagPrefabObj;
     public GameObject BoardPrefabObj;
+    public GameObject PlatePrefabObj;
     public GameObject SlopePrefabObj;
     public GameObject ArcPrefabObj;
     public GameObject AngleArrowPrefabObj;
@@ -47,6 +53,8 @@ public class Prefabs : MonoBehaviour
     public GameObject LiftGoalPrefabObj;
 
     public GameObject InputBoxPrefabObj;
+    public GameObject MessageBoxPrefabObj;
+    public GameObject StageItemPrefabObj;
 
     // ポップアップウィンドウ表示時のLocalScaleの曲線
     public static AnimationCurve OpenCurve;
@@ -63,6 +71,7 @@ public class Prefabs : MonoBehaviour
 
     public void SetPrefabs()
     {
+        BallPrefab = BallPrefabObj;
         ArrowPrefab = ArrowPrefabObj;
         XZCubePrefab = XZCubePrefabObj;
         YCubePrefab = YCubePrefabObj;
@@ -76,6 +85,7 @@ public class Prefabs : MonoBehaviour
         GoalPrefab = GoalPrefabObj;
         GoalFlagPrefab = GoalFlagPrefabObj;
         BoardPrefab = BoardPrefabObj;
+        PlatePrefab = PlatePrefabObj;
         SlopePrefab = SlopePrefabObj;
         ArcPrefab = ArcPrefabObj;
         AngleArrowPrefab = AngleArrowPrefabObj;
@@ -83,6 +93,8 @@ public class Prefabs : MonoBehaviour
         LiftGoalPrefab = LiftGoalPrefabObj;
 
         InputBoxPrefab = InputBoxPrefabObj;
+        MessageBoxPrefab = MessageBoxPrefabObj;
+        StageItemPrefab = StageItemPrefabObj;
 
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;

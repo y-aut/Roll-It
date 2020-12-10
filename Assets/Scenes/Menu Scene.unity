@@ -215,6 +215,7 @@ RectTransform:
   m_Children:
   - {fileID: 1156351835}
   - {fileID: 940405310}
+  - {fileID: 598954448}
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -223,6 +224,81 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &598954447
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 598954448}
+  - component: {fileID: 598954450}
+  - component: {fileID: 598954449}
+  m_Layer: 5
+  m_Name: PnlBlack
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &598954448
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 598954447}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 118869966}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &598954449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 598954447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.2509804}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &598954450
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 598954447}
+  m_CullTransparentMesh: 0
 --- !u!1 &730592139
 GameObject:
   m_ObjectHideFlags: 0
@@ -373,7 +449,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1266548305}
         m_TargetAssemblyTypeName: MenuOperator, Assembly-CSharp
-        m_MethodName: SelectStages
+        m_MethodName: BtnCreateClicked
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -525,6 +601,8 @@ MonoBehaviour:
     type: 3}
   FrameCubeIllegalPrefabObj: {fileID: 3037920031593065870, guid: af76778e17b3acc48b906df433af7149,
     type: 3}
+  BallPrefabObj: {fileID: 4268612413603920118, guid: c6f200ec55b6935429f92233ea18a674,
+    type: 3}
   FloorPrefabObj: {fileID: 2255632354428109499, guid: b2431fa6803640a41968c0ab6df1ee0e,
     type: 3}
   StartPrefabObj: {fileID: 1664170307347302039, guid: 2923c5301d46fc8469c9d29741f09779,
@@ -534,6 +612,8 @@ MonoBehaviour:
   GoalFlagPrefabObj: {fileID: 301880721134377274, guid: d64bdf2cd7487d04e9ed90e8183fc453,
     type: 3}
   BoardPrefabObj: {fileID: 5986451130454932828, guid: 45ec2e556e842b44eb7e4896bd3c8875,
+    type: 3}
+  PlatePrefabObj: {fileID: 1328486439140754755, guid: 6dab14ce8f8233441bad1083c643d72a,
     type: 3}
   SlopePrefabObj: {fileID: 7072857930752478111, guid: f3cad630cca42554281d60736dbc0a94,
     type: 3}
@@ -546,6 +626,10 @@ MonoBehaviour:
   LiftGoalPrefabObj: {fileID: 7500296333541903919, guid: ec699c7833be43c4cbe9dfebf0687787,
     type: 3}
   InputBoxPrefabObj: {fileID: 6269427580765542264, guid: d29d5c23d1b78154cab0288e69275212,
+    type: 3}
+  MessageBoxPrefabObj: {fileID: 6269427580765542264, guid: e666235730c2c2b4bb3f4bc74ec57415,
+    type: 3}
+  StageItemPrefabObj: {fileID: 65940291356588578, guid: 01f30fef0a0475044bd8ec375ecc64f1,
     type: 3}
   OpenCurveObj:
     serializedVersion: 2
@@ -679,7 +763,7 @@ GameObject:
   - component: {fileID: 1156351837}
   - component: {fileID: 1156351836}
   m_Layer: 5
-  m_Name: BtnPlay
+  m_Name: BtnFind
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -750,7 +834,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1266548305}
         m_TargetAssemblyTypeName: MenuOperator, Assembly-CSharp
-        m_MethodName: PlayStages
+        m_MethodName: BtnFindClicked
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -991,7 +1075,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Play Stages
+  m_text: Find Stages
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: ed8cadb0c7f2e0e4caef65e6a8b4288d, type: 2}

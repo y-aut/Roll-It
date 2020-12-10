@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "768928729649",
+    "firebase_url": "https://roll-it-55f61-default-rtdb.firebaseio.com",
+    "project_id": "roll-it-55f61",
+    "storage_bucket": "roll-it-55f61.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:768928729649:android:ec2cea0d4a8756ddb02310",
+        "android_client_info": {
+          "package_name": "com.Procrastinator.RollIt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "768928729649-4d8u00f83gbjp30mne0v765hijnr22rl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD04eSnTkbbl5jC8LdsR5aIeTBBiCLNwSk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "768928729649-4d8u00f83gbjp30mne0v765hijnr22rl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
