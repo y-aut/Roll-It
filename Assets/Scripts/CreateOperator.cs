@@ -10,6 +10,7 @@ public class CreateOperator : MonoBehaviour
     public Camera cam;
     public static Stage Stage { get; set; }
     public GameObject panel;
+    public Canvas canvas;
     public Button BtnDelete;
 
     private Vector2? leftDowned;
@@ -19,6 +20,8 @@ public class CreateOperator : MonoBehaviour
     private Structure dragged;      // ドラッグ中のオブジェクト（半透明）
     private Structure focused;      // フォーカスされているオブジェクト
     private TransformTools tools;   // 移動用矢印
+
+    private bool hasEdited;         // 一度でも編集されたか
 
     const int CAM_RADIUS = 10;      // カメラの回転時、中心となる点のカメラからの距離
     const int CAM_RADIUS_MAX = 20;  // Focus中のオブジェクトからこれ以上離れていたらCAM_RADIUSを半径とする
@@ -36,6 +39,21 @@ public class CreateOperator : MonoBehaviour
         var clicked = Stage.ClickedStructure();
         if (clicked != null)
         {
+            // 確認
+            if (Stage.LocalData.IsClearChecked && clicked.IsSaved)
+            {
+                if (IsConfirming) return;   // Modal表示中
+
+                ConfirmIfClearChecked(() =>
+                {
+                    Stage.LocalData.IsClearChecked = false;
+                }, () =>
+                {
+                    clicked.Clicked = false;
+                });
+                return;
+            }
+
             clicked.Clicked = false;
             focused = clicked;
             BtnDelete.interactable = focused.IsDeletable;
@@ -87,9 +105,12 @@ public class CreateOperator : MonoBehaviour
                 Vector2 p = Input.mousePosition;
 
                 // 上下左右
-                if (Input.GetMouseButtonDown(0) && !PointerOnPanel() && dragged == null)
+                if (Input.GetMouseButtonDown(0) && dragged == null)
                 {
-                    leftDowned = p;
+                    if (!PointerOnPanel())
+                        leftDowned = p;
+                    else
+                        leftDowned = null;
                 }
                 else if (Input.GetMouseButton(0) && leftDowned != null && dragged == null)
                 {
@@ -222,6 +243,9 @@ public class CreateOperator : MonoBehaviour
                 case StructureType.Ball:
                     dragged = new Structure(StructureType.Ball, pos, new Vector3Int(1, 1, 1), Stage);
                     break;
+                case StructureType.Chopsticks:
+                    dragged = new Structure(StructureType.Chopsticks, pos, new Vector3Int(4, 4, 4), Stage);
+                    break;
                 default:
                     return;
             }
@@ -239,6 +263,23 @@ public class CreateOperator : MonoBehaviour
     {
         if (dragged != null)
         {
+            if (Stage.LocalData.IsClearChecked && dragged.IsSaved)
+            {
+                if (IsConfirming) return;
+
+                ConfirmIfClearChecked(() =>
+                {
+                    Stage.LocalData.IsClearChecked = false;
+                    ItemReleased();
+                }, () =>
+                {
+                    // 削除
+                    Stage.Delete(dragged);
+                    dragged.Destroy();
+                    dragged = null;
+                });
+                return;
+            }
             if (Stage.CheckSpace(dragged.PositionInt, dragged.LocalScaleInt))
             {
                 // 置ける場所なら置く
@@ -297,9 +338,23 @@ public class CreateOperator : MonoBehaviour
     public void BtnTestClicked()
     {
         GameData.Save();
-        PlayOperator.Ready(Stage, true, true);
+        PlayOperator.Ready(Stage, true, true, false);
         SceneManager.LoadScene("Play Scene");
     }
+
+    // クリアチェックしている場合の確認
+    private void ConfirmIfClearChecked(System.Action okClicked, System.Action cancelClicked)
+    {
+        IsConfirming = true;
+        MessageBox.ShowDialog(canvas.transform,
+            "If you edit this stage, a clear check needs to be done again. Are you sure you want to edit?",
+            MessageBoxType.YesNo,
+            () => { okClicked(); IsConfirming = false; },
+            () => { cancelClicked(); IsConfirming = false; });
+    }
+
+    // クリアチェックの確認ダイアログを表示しているか
+    private bool IsConfirming = false;
 
     // 画面のスケールを取得う
     private float GetPixelScale() => panel.transform.lossyScale.x;

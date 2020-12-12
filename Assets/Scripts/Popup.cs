@@ -15,6 +15,9 @@ public class Popup : MonoBehaviour
     float generation_time = 0f;     // Open/Close処理を開始してから経過した秒数
     float timeScaleDef;     // timeScaleを0に変更する前のtimeScale
 
+    // Closeするまで待機してもらう
+    public bool IsClosing => State == StateEnum.Closing;
+
     // Update is called once per frame
     void Update()
     {
@@ -32,7 +35,7 @@ public class Popup : MonoBehaviour
             {
                 PnlBlack.SetActive(false);
                 Time.timeScale = timeScaleDef;
-                Destroy(gameObject);
+                State = StateEnum.Other;
             }
         }
     }
@@ -59,7 +62,8 @@ public class Popup : MonoBehaviour
         State = StateEnum.Opening;
     }
 
-    public void CloseAndDestroy()
+    // Destroyは各自で
+    public void Close()
     {
         PnlBlack.SetActive(false);
         generation_time = 0f;

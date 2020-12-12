@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using Firebase;
 using Firebase.Database;
@@ -27,30 +28,66 @@ public static class FirebaseIO
     public static bool LoadFinished;
     // 非同期で読み込んだリスト
     public static List<Stage> AnswerStages;
-    // 非同期で読み込んだ数値
-    public static int AnswerInt;
 
     // ユーザーを登録する
-    public static bool RegisterUser(User user)
+    public static async Task<bool> RegisterUser(User user)
     {
         if (!Available) return false;
 
-        var entry = Users.Push();
-        user.ID = new IDType(entry.Key);
-        entry.SetRawJsonValueAsync(JsonUtility.ToJson(user));
+        IDType id;
+        DatabaseReference entry;
+        DataSnapshot val;
+        do
+        {
+            id = IDType.Generate();
+            entry = Users.Child(id.ToString());
+            val = await entry.GetValueAsync();
+        } while (val.HasChildren);
+
+        user.ID = id;
+        var _ = entry.SetRawJsonValueAsync(JsonUtility.ToJson(user));
 
         return true;
     }
 
     // ステージを公開する
-    public static bool PublishStage(Stage stage)
+    public static async Task<bool> PublishStage(Stage stage)
     {
         if (!Available) return false;
 
-        var entry = Stages.Push();
-        stage.ID = new IDType(entry.Key);
+        LoadFinished = false;
+
+        IDType id;
+        DatabaseReference entry;
+        DataSnapshot val;
+        do
+        {
+            id = IDType.Generate();
+            entry = Stages.Child(id.ToString());
+            val = await entry.GetValueAsync();
+        } while (val.HasChildren);
+
+        stage.ID = id;
         stage.PublishedDate = DateTime.Now;
-        entry.SetRawJsonValueAsync(JsonUtility.ToJson(stage));
+        await entry.SetRawJsonValueAsync(JsonUtility.ToJson(stage));
+        stage.LocalData.IsPublished = true;
+
+        LoadFinished = true;
+
+        return true;
+    }
+
+    // ステージを非公開にする
+    public static async Task<bool> UnpublishStage(Stage stage)
+    {
+        if (!Available) return false;
+
+        LoadFinished = false;
+
+        await Stages.Child(stage.ID.ToString()).RemoveValueAsync();
+        stage.LocalData.IsPublished = false;
+
+        LoadFinished = true;
 
         return true;
     }

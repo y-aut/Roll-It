@@ -14,9 +14,10 @@ public class MessageBox : MonoBehaviour
     public Button BtnCancel;
     public TextMeshProUGUI TxtDesc;
     public Popup popup;
-    private Action OKClickedAction;     // OKボタンが押されたときにコールする
+    private Action OKClickedAction;         // OKボタンが押されたときにコールする
+    private Action CancelClickedAction;     // キャンセルボタンが押されたときにコールする
 
-    public static void ShowDialog(Action OKClicked, Transform parent, string desc, MessageBoxType type)
+    public static void ShowDialog(Transform parent, string desc, MessageBoxType type, Action OKClicked, Action CancelClicked = null)
     {
         var msgbox = Instantiate(Prefabs.MessageBoxPrefab, parent, false);
         msgbox.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
@@ -24,6 +25,7 @@ public class MessageBox : MonoBehaviour
         script.AnswerType = type;
         script.description = desc;
         script.OKClickedAction = OKClicked;
+        script.CancelClickedAction = CancelClicked ?? (() => { });
         script.popup.Open();
     }
 
@@ -32,13 +34,13 @@ public class MessageBox : MonoBehaviour
         TxtDesc.text = description;
         if (AnswerType == MessageBoxType.OKOnly || AnswerType == MessageBoxType.YesOnly)
         {
-            BtnOK.gameObject.transform.position = BtnCancel.gameObject.transform.position;
+            BtnOK.gameObject.transform.localPosition = BtnCancel.gameObject.transform.localPosition;
             BtnCancel.gameObject.SetActive(false);
         }
         if (AnswerType == MessageBoxType.YesNo || AnswerType == MessageBoxType.YesOnly)
         {
-            BtnOK.gameObject.GetComponent<TextMeshProUGUI>().text = "Yes";
-            BtnCancel.gameObject.GetComponent<TextMeshProUGUI>().text = "No";
+            BtnOK.gameObject.GetComponentInChildren<TextMeshProUGUI>().text = "Yes";
+            BtnCancel.gameObject.GetComponentInChildren<TextMeshProUGUI>().text = "No";
         }
     }
 
@@ -53,13 +55,21 @@ public class MessageBox : MonoBehaviour
 
     public void BtnOK_Click()
     {
-        popup.CloseAndDestroy();
-        OKClickedAction();
+        popup.Close();
+        StartCoroutine(WaitClose(OKClickedAction));
     }
 
     public void BtnCancel_Click()
     {
-        popup.CloseAndDestroy();
+        popup.Close();
+        StartCoroutine(WaitClose(CancelClickedAction));
+    }
+
+    private IEnumerator WaitClose(Action after)
+    {
+        while (popup.IsClosing) yield return new WaitForSeconds(0.1f);
+        after();
+        Destroy(popup.gameObject);
     }
 }
 

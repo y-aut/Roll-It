@@ -595,7 +595,7 @@ MonoBehaviour:
     type: 3}
   RotateArrowPrefabObj: {fileID: 1133037696046169419, guid: 2182bb8dcc32f4345a368fb3a4f0de20,
     type: 3}
-  YInverseArrowPrefabObj: {fileID: 6604495384606412483, guid: 243bd45bef27f1044b52cf2e113c9b2c,
+  InverseArrowPrefabObj: {fileID: 6604495384606412483, guid: 243bd45bef27f1044b52cf2e113c9b2c,
     type: 3}
   FrameCubePrefabObj: {fileID: 3037920031593065870, guid: 4836849d5f27bdc46ad91cb3b0d1d44e,
     type: 3}
@@ -625,11 +625,15 @@ MonoBehaviour:
     type: 3}
   LiftGoalPrefabObj: {fileID: 7500296333541903919, guid: ec699c7833be43c4cbe9dfebf0687787,
     type: 3}
+  ChopstickPrefabObj: {fileID: 5352079436958817036, guid: c6d2fdcf133a834408dcb3c15931bd8d,
+    type: 3}
   InputBoxPrefabObj: {fileID: 6269427580765542264, guid: d29d5c23d1b78154cab0288e69275212,
     type: 3}
   MessageBoxPrefabObj: {fileID: 6269427580765542264, guid: e666235730c2c2b4bb3f4bc74ec57415,
     type: 3}
   StageItemPrefabObj: {fileID: 65940291356588578, guid: 01f30fef0a0475044bd8ec375ecc64f1,
+    type: 3}
+  NowLoadingPrefabObj: {fileID: 3654175831499933651, guid: b6e1402c9c71c5c489ab50e04092cfc3,
     type: 3}
   OpenCurveObj:
     serializedVersion: 2

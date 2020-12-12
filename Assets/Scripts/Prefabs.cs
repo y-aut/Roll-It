@@ -9,7 +9,7 @@ public class Prefabs : MonoBehaviour
     public static GameObject XZCubePrefab;         // XZリサイズ用キューブ
     public static GameObject YCubePrefab;          // Yリサイズ用キューブ
     public static GameObject RotateArrowPrefab;    // 回転用矢印
-    public static GameObject YInverseArrowPrefab;  // Y反転用矢印
+    public static GameObject InverseArrowPrefab;   // 反転用矢印
     public static GameObject FrameCubePrefab;      // 外枠のキューブのプレハブ
     public static GameObject FrameCubeIllegalPrefab;      // 設置不可能な場所での外枠のキューブのプレハブ
 
@@ -26,16 +26,18 @@ public class Prefabs : MonoBehaviour
     public static GameObject AngleArrowPrefab;      // Angleのプレハブ
     public static GameObject LiftPrefab;            // Liftのプレハブ
     public static GameObject LiftGoalPrefab;        // Liftの行き先のプレハブ
+    public static GameObject ChopstickPrefab;       // Chopsticksのプレハブ
 
     public static GameObject InputBoxPrefab;        // InputBoxのプレハブ
     public static GameObject MessageBoxPrefab;      // MessageBoxのプレハブ
     public static GameObject StageItemPrefab;       // StageItemのプレハブ
+    public static GameObject NowLoadingPrefab;      // NowLoadingのプレハブ
 
     public GameObject ArrowPrefabObj;
     public GameObject XZCubePrefabObj;
     public GameObject YCubePrefabObj;
     public GameObject RotateArrowPrefabObj;
-    public GameObject YInverseArrowPrefabObj;
+    public GameObject InverseArrowPrefabObj;
     public GameObject FrameCubePrefabObj;
     public GameObject FrameCubeIllegalPrefabObj;
 
@@ -51,10 +53,12 @@ public class Prefabs : MonoBehaviour
     public GameObject AngleArrowPrefabObj;
     public GameObject LiftPrefabObj;
     public GameObject LiftGoalPrefabObj;
+    public GameObject ChopstickPrefabObj;
 
     public GameObject InputBoxPrefabObj;
     public GameObject MessageBoxPrefabObj;
     public GameObject StageItemPrefabObj;
+    public GameObject NowLoadingPrefabObj;
 
     // ポップアップウィンドウ表示時のLocalScaleの曲線
     public static AnimationCurve OpenCurve;
@@ -76,7 +80,7 @@ public class Prefabs : MonoBehaviour
         XZCubePrefab = XZCubePrefabObj;
         YCubePrefab = YCubePrefabObj;
         RotateArrowPrefab = RotateArrowPrefabObj;
-        YInverseArrowPrefab = YInverseArrowPrefabObj;
+        InverseArrowPrefab = InverseArrowPrefabObj;
         FrameCubePrefab = FrameCubePrefabObj;
         FrameCubeIllegalPrefab = FrameCubeIllegalPrefabObj;
 
@@ -91,10 +95,12 @@ public class Prefabs : MonoBehaviour
         AngleArrowPrefab = AngleArrowPrefabObj;
         LiftPrefab = LiftPrefabObj;
         LiftGoalPrefab = LiftGoalPrefabObj;
+        ChopstickPrefab = ChopstickPrefabObj;
 
         InputBoxPrefab = InputBoxPrefabObj;
         MessageBoxPrefab = MessageBoxPrefabObj;
         StageItemPrefab = StageItemPrefabObj;
+        NowLoadingPrefab = NowLoadingPrefabObj;
 
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;

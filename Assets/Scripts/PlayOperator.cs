@@ -6,9 +6,11 @@ using UnityEngine.SceneManagement;
 public class PlayOperator : MonoBehaviour
 {
     public Camera cam;
+    public Canvas canvas;
 
     public static Stage Stage { get; private set; }
     public static bool TestPlay { get; private set; }        // Create中の試験プレイ
+    public static bool ClearCheck { get; private set; }     // クリアチェック
     public GameObject Ball;
     public PhysicMaterial ballMat;
 
@@ -66,6 +68,8 @@ public class PlayOperator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        NowLoading.Show(canvas.transform, "Loading the stage...");
+
         if (!IsMyStage)
         {
             FirebaseIO.IncrementChallengeCount(Stage.ID);
@@ -83,6 +87,8 @@ public class PlayOperator : MonoBehaviour
             Ball.transform.position = ball.Position;
         else
             Ball.transform.position = Stage.Start.Position + new Vector3(0, Ball.transform.localScale.y / 2, 0);
+
+        NowLoading.Close();
     }
 
     // Update is called once per frame
@@ -109,6 +115,11 @@ public class PlayOperator : MonoBehaviour
             {
                 FirebaseIO.IncrementClearCount(Stage.ID);
             }
+            else if (ClearCheck || (IsMyStage && !TestPlay && !Stage.LocalData.IsClearChecked)
+                || (TestPlay && Stage.Ball == null))
+            {   // 普通にプレイしてクリアしたときでもクリアチェックOKとする
+                Stage.LocalData.IsClearChecked = true;
+            }
             if (TestPlay)
                 SceneManager.LoadScene("Create Scene");
             else
@@ -128,11 +139,12 @@ public class PlayOperator : MonoBehaviour
     }
 
     // ロード前に設定すべき変数
-    public static void Ready(Stage stage, bool isTestPlay, bool isMyStage)
+    public static void Ready(Stage stage, bool isTestPlay, bool isMyStage, bool isClearCheck)
     {
         Stage = stage;
         TestPlay = isTestPlay;
         IsMyStage = isMyStage;
+        ClearCheck = isClearCheck;
     }
 
 }

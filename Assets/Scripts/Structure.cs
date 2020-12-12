@@ -21,6 +21,7 @@ public enum StructureType
     Angle,      // 視点回転の矢印
     Lift,       // リフト
     Ball,       // ボール
+    Chopsticks, // 箸
 }
 
 // Structureの種類
@@ -47,6 +48,7 @@ public static partial class AddMethod
         Category.Other,     // Angle
         Category.Moving,    // Lift
         Category.Other,     // Ball
+        Category.Basic,     // Chopsticks
     };
 
     public static Category GetCategory(this StructureType type) => StructureTypeToCategory[(int)type];
@@ -77,6 +79,8 @@ public class Structure
 {
     const float BOARD_THICKNESS = 0.2f;     // Boardの厚み
     const int LIFT_PERIOD = 300;            // Liftの周期(f)
+    const float CHOPSTICKS_SPACE = 0.5f;      // Chopsticksの間隔
+    const float CHOPSTICKS_DIAMETER = 0.2f;   // Chopsticksの直径
 
     public const string BALL_NAME = "ball";        // Ballの名前（衝突判定で用いる）
 
@@ -87,6 +91,7 @@ public class Structure
             StructureType.Slope,
             StructureType.Arc,
             StructureType.Angle,
+            StructureType.Chopsticks,
         };
 
     // リサイズ不可能なStructureType
@@ -101,9 +106,21 @@ public class Structure
             StructureType.Angle,
         };
 
+    // X軸方向に反転可能なStructureType
+    public static List<StructureType> XInversableList
+        => new List<StructureType>() {
+            StructureType.Chopsticks,
+        };
+
     // Y軸方向に反転可能なStructureType
     public static List<StructureType> YInversableList
         => new List<StructureType>() {
+        };
+
+    // Z軸方向に反転可能なStructureType
+    public static List<StructureType> ZInversableList
+        => new List<StructureType>() {
+            StructureType.Chopsticks,
         };
 
     // 衝突判定をするか
@@ -187,10 +204,7 @@ public class Structure
         get => _localScaleInt.Abs();
         set
         {
-            if (YInversed)
-                _localScaleInt = value.YMinus();
-            else
-                _localScaleInt = value;
+            _localScaleInt = value;
             UpdateObjects();
         }
     }
@@ -232,14 +246,42 @@ public class Structure
         set => LocalScaleInt = ToLocalScaleInt(value);
     }
 
-    // 反転はLocalScaleの符号で表す
-    public bool YInversed
+    // X軸方向の反転
+    [SerializeField]
+    private bool _xInversed = false;
+    public bool XInversed
     {
-        get => _localScaleInt.y < 0;
+        get => _xInversed;
         set
         {
-            if (YInversed == value) return;
-            _localScaleInt = _localScaleInt.YMinus();
+            _xInversed = value;
+            UpdateObjects();
+        }
+    }
+
+    // Y軸方向の反転
+    [SerializeField]
+    private bool _yInversed = false;
+    public bool YInversed
+    {
+        get => _yInversed;
+        set
+        {
+            _yInversed = value;
+            UpdateObjects();
+        }
+    }
+
+    // Z軸方向の反転
+    [SerializeField]
+    private bool _zInversed = false;
+    public bool ZInversed
+    {
+        get => _zInversed;
+        set
+        {
+            _zInversed = value;
+            UpdateObjects();
         }
     }
 
@@ -322,6 +364,9 @@ public class Structure
                 break;
             case StructureType.Ball:
                 objs = new List<Primitive>() { new Primitive(Prefabs.BallPrefab, true) };
+                break;
+            case StructureType.Chopsticks:
+                objs = new List<Primitive>() { new Primitive(Prefabs.ChopstickPrefab), new Primitive(Prefabs.ChopstickPrefab) };
                 break;
         }
 
@@ -429,6 +474,54 @@ public class Structure
                 objs[0].Position = Position;
                 objs[0].LocalScale = Prefabs.BallPrefab.transform.localScale;
                 break;
+            case StructureType.Chopsticks:
+                {
+                    // !YInversed, RotateなしのときはX-Y+Z-の頂点からX+Y-Z+の頂点に設置
+                    Vector3 r1, r2;
+                    switch (RotationInt)
+                    {
+                        case RotationEnum.IDENTITY:
+                            r1 = Position - LocalScale.YMinus() / 2 + ToLocalScaleF(new Vector3Int(1, 0, 0)) / 2;
+                            r2 = Position + LocalScale.YMinus() / 2 - ToLocalScaleF(new Vector3Int(1, 0, 0)) / 2;
+                            break;
+                        case RotationEnum.Y90:
+                            r1 = Position + LocalScale.XMinus() / 2 - ToLocalScaleF(new Vector3Int(0, 0, 1)) / 2;
+                            r2 = Position - LocalScale.XMinus() / 2 + ToLocalScaleF(new Vector3Int(0, 0, 1)) / 2;
+                            break;
+                        case RotationEnum.Y180:
+                            r1 = Position + LocalScale / 2 - ToLocalScaleF(new Vector3Int(1, 0, 0)) / 2;
+                            r2 = Position - LocalScale / 2 + ToLocalScaleF(new Vector3Int(1, 0, 0)) / 2;
+                            break;
+                        default:    // RotationEnum.Y270:
+                            r1 = Position + LocalScale.ZMinus() / 2 + ToLocalScaleF(new Vector3Int(0, 0, 1)) / 2;
+                            r2 = Position - LocalScale.ZMinus() / 2 - ToLocalScaleF(new Vector3Int(0, 0, 1)) / 2;
+                            break;
+                    }
+                    if (XInversed)
+                    {
+                        var tmp = r1.x; r1.x = r2.x; r2.x = tmp;
+                    }
+                    if (ZInversed)
+                    {
+                        var tmp = r1.z; r1.z = r2.z; r2.z = tmp;
+                    }
+
+                    // r1からr2までの円柱を設置
+                    var m = (r1 + r2) / 2;
+                    objs[0].Position = m - new Vector3(0, CHOPSTICKS_DIAMETER / 2, 0);
+                    // デフォルトではY軸方向
+                    objs[0].LocalScale = new Vector3(CHOPSTICKS_DIAMETER, (r1 - m).magnitude, CHOPSTICKS_DIAMETER);
+                    objs[0].Rotation = Quaternion.FromToRotation(Vector3.up, r2 - r1);
+
+                    objs[1].Position = objs[0].Position;
+                    objs[1].LocalScale = objs[0].LocalScale;
+                    objs[1].Rotation = objs[0].Rotation;
+
+                    // 間隔をあける
+                    objs[0].Position += Rotation * new Vector3(CHOPSTICKS_SPACE / 2, 0, 0);
+                    objs[1].Position += Rotation * new Vector3(-CHOPSTICKS_SPACE / 2, 0, 0);
+                }
+                break;
         }
     }
 
@@ -515,9 +608,17 @@ public class Structure
     public Vector3 GetRotateArrowPos()
         => Position + new Vector3(0, LocalScale.y / 2 + 1f, 0);
 
+    // オブジェクト選択時、X方向の反転を表す矢印を表示する点
+    public Vector3 GetXInverseArrowPos()
+        => Position + new Vector3(0, 0, -LocalScale.z / 2 - 0.8f);
+
     // オブジェクト選択時、Y方向の反転を表す矢印を表示する点
     public Vector3 GetYInverseArrowPos()
         => Position + new Vector3(LocalScale.x / 2 + 0.8f, 0, 0);
+
+    // オブジェクト選択時、Z方向の反転を表す矢印を表示する点
+    public Vector3 GetZInverseArrowPos()
+        => Position + new Vector3(0, -LocalScale.y / 2 - 0.8f, 0);
 
     // いずれかの方向にサイズ変更が可能か
     public bool IsResizable => !NonresizableList.Contains(Type);
@@ -528,8 +629,10 @@ public class Structure
     // 回転可能か
     public bool IsRotatable => RotatableList.Contains(Type);
 
-    // Y軸方向に反転可能か
+    // 各軸方向に反転可能か
+    public bool IsXInversable => XInversableList.Contains(Type);
     public bool IsYInversable => YInversableList.Contains(Type);
+    public bool IsZInversable => ZInversableList.Contains(Type);
 
     // 衝突判定を行うか
     public bool DetectsCollision => DetectCollisionList.Contains(Type);

@@ -40,9 +40,11 @@ public class SelectOperator : MonoBehaviour
     // 非同期で読み込んだステージを反映
     IEnumerator LoadItemList()
     {
+        NowLoading.Show(canvas.transform, "Loading stages...");
+
         while (!FirebaseIO.LoadFinished)
         {
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSecondsRealtime(0.5f);
         }
 
         foreach (var stage in FirebaseIO.AnswerStages)
@@ -53,6 +55,8 @@ public class SelectOperator : MonoBehaviour
             script.canvas = canvas;
             script.IsMyStage = false;
         }
+
+        NowLoading.Close();
     }
 
     // Update is called once per frame

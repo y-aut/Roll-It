@@ -17,7 +17,7 @@ public class TransformTools
 
     private GameObject frameCube, frameCubeIllegal;
     private List<GameObject> Arrows, Arrows2, XZCubes, YCubes;
-    private GameObject RotateArrow, YInverseArrow;
+    private GameObject RotateArrow, XInverseArrow, YInverseArrow, ZInverseArrow;
 
     // Arrowの向いている方向
     public Ray ArrowRay(int index)
@@ -208,8 +208,12 @@ public class TransformTools
         }
         if (Focused.IsRotatable)
             RotateArrow = UnityEngine.Object.Instantiate(Prefabs.RotateArrowPrefab);
+        if (Focused.IsXInversable)
+            XInverseArrow = UnityEngine.Object.Instantiate(Prefabs.InverseArrowPrefab);
         if (Focused.IsYInversable)
-            YInverseArrow = UnityEngine.Object.Instantiate(Prefabs.YInverseArrowPrefab);
+            YInverseArrow = UnityEngine.Object.Instantiate(Prefabs.InverseArrowPrefab);
+        if (Focused.IsZInversable)
+            ZInverseArrow = UnityEngine.Object.Instantiate(Prefabs.InverseArrowPrefab);
 
         IsLegal = true;
         UpdateObjects();
@@ -277,8 +281,22 @@ public class TransformTools
 
         if (Focused.IsRotatable)
             RotateArrow.transform.position = Focused.GetRotateArrowPos();
+
+        // 反転矢印はデフォルトではX軸方向(Z+向き)
+        if (Focused.IsXInversable)
+        {
+            XInverseArrow.transform.position = Focused.GetXInverseArrowPos();
+        }
         if (Focused.IsYInversable)
+        {
             YInverseArrow.transform.position = Focused.GetYInverseArrowPos();
+            YInverseArrow.transform.rotation = Quaternion.Euler(0, -90, 90);
+        }
+        if (Focused.IsZInversable)
+        {
+            ZInverseArrow.transform.position = Focused.GetZInverseArrowPos();
+            ZInverseArrow.transform.rotation = Quaternion.Euler(-90, 90, 0);
+        }
     }
 
     public void Destroy()
@@ -293,7 +311,9 @@ public class TransformTools
             if (Focused.IsYResizable) YCubes.ForEach(i => UnityEngine.Object.Destroy(i));
         }
         if (Focused.IsRotatable) UnityEngine.Object.Destroy(RotateArrow);
+        if (Focused.IsXInversable) UnityEngine.Object.Destroy(XInverseArrow);
         if (Focused.IsYInversable) UnityEngine.Object.Destroy(YInverseArrow);
+        if (Focused.IsZInversable) UnityEngine.Object.Destroy(ZInverseArrow);
     }
 
     // Down/Upイベントを追加
@@ -393,6 +413,20 @@ public class TransformTools
             trigger.triggers.Add(entry);
         }
 
+        if (Focused.IsXInversable)
+        {
+            var trigger = XInverseArrow.AddComponent<EventTrigger>();
+            trigger.triggers = new List<EventTrigger.Entry>();
+            var entry = new EventTrigger.Entry
+            {
+                eventID = EventTriggerType.PointerDown,
+            };
+            entry.callback.AddListener(x => {
+                Focused.XInversed = !Focused.XInversed;
+            });
+            trigger.triggers.Add(entry);
+        }
+
         if (Focused.IsYInversable)
         {
             var trigger = YInverseArrow.AddComponent<EventTrigger>();
@@ -406,6 +440,21 @@ public class TransformTools
             });
             trigger.triggers.Add(entry);
         }
+
+        if (Focused.IsZInversable)
+        {
+            var trigger = ZInverseArrow.AddComponent<EventTrigger>();
+            trigger.triggers = new List<EventTrigger.Entry>();
+            var entry = new EventTrigger.Entry
+            {
+                eventID = EventTriggerType.PointerDown,
+            };
+            entry.callback.AddListener(x => {
+                Focused.ZInversed = !Focused.ZInversed;
+            });
+            trigger.triggers.Add(entry);
+        }
+
     }
 
     private void PointerDown(GameObject obj, TransformToolType type)

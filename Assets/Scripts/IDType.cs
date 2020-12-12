@@ -4,37 +4,75 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // IDの型
+// 0-9, A-Z の36文字 * 6文字
 [Serializable]
 public struct IDType
 {
     public static IDType Empty => new IDType();
 
     [SerializeField]
-    long p1, p2;
+    uint p;      // 31bit にすると 36^6 でおさえられる
 
-    public IDType(string base64)
+    private IDType(uint _p) { p = _p; }
+
+    public IDType(string str)
     {
-        // url-safeな20文字のbase64文字列をバイト列に変換
-        base64 = base64.Replace('-', '+').Replace('_', '/');
-        // 末尾に1byte加えて16byteにする
-        byte[] bytes = new byte[16];
-        Array.Copy(Convert.FromBase64String(base64), bytes, 15);
-
-        p1 = BitConverter.ToInt64(bytes, 0);
-        p2 = BitConverter.ToInt64(bytes, 8);
+        // 数字+大文字アルファベット36文字 * 6
+        p = 0;
+        foreach (var c in str)
+        {
+            p *= 36;
+            if ('0' <= c && c <= '9') p += (uint)(c - '0');
+            else p += (uint)(c - 'A' + 10);
+        }
     }
 
-    public static bool operator ==(IDType left, IDType right) => left.p1 == right.p1 && left.p2 == right.p2;
+    public static bool TryParse(string str, out IDType id)
+    {
+        id = new IDType();
+        if (str.Length != 6) return false;
+
+        foreach (var c in str)
+        {
+            id.p *= 36;
+            if ('0' <= c && c <= '9') id.p += (uint)(c - '0');
+            else if ('A' <= c && c <= 'Z') id.p += (uint)(c - 'A' + 10);
+            else if ('a' <= c && c <= 'z') id.p += (uint)(c - 'a' + 10);
+            else return false;
+        }
+
+        return true;
+    }
+
+    public static IDType Generate()
+    {
+        // IDを生成する
+
+        // タイムスタンプ: 86400秒 * 12倍精度 < 2^20
+        // 乱数: 2^11
+
+        var r = new System.Random();
+        return new IDType(((uint)((DateTime.Now - DateTime.Today).TotalSeconds * 12) << 11)
+            + (uint)r.Next(0, 1 << 11));
+    }
+
+    public static bool operator ==(IDType left, IDType right) => left.p == right.p;
     public static bool operator !=(IDType left, IDType right) => !(left == right);
 
     public override string ToString()
     {
-        var bytes = new List<byte>(BitConverter.GetBytes(p1));
-        bytes.AddRange(BitConverter.GetBytes(p2));
-        bytes.RemoveAt(bytes.Count - 1);
-        return Convert.ToBase64String(bytes.ToArray()).Replace('+', '-').Replace('/', '_');
+        System.Text.StringBuilder sb = new System.Text.StringBuilder("");
+        uint id = p;
+        for (int i = 0; i < 6; ++i)
+        {
+            var sur = id % 36;
+            if (sur < 10) sb.Insert(0, (char)('0' + sur));
+            else sb.Insert(0, (char)('A' + sur - 10));
+            id /= 36;
+        }
+        return sb.ToString();
     }
 
     public override bool Equals(object obj) => base.Equals(obj);
-    public override int GetHashCode() => (int)p1;
+    public override int GetHashCode() => (int)p;
 }

@@ -24,6 +24,7 @@ public class StageItemOperator : MonoBehaviour
     public GameObject BtnPublish;
     public GameObject BtnRename;
     public GameObject TxtFigures;
+    public GameObject ImgCheck;
 
     public Canvas canvas;
 
@@ -149,7 +150,8 @@ public class StageItemOperator : MonoBehaviour
         TxtName.GetComponent<TextMeshProUGUI>().text = Stage.Name;
         if (IsMyStage)
         {   // LocalDataがnullであってはいけない
-            BtnPublish.GetComponent<Button>().interactable = !Stage.LocalData.IsPublished;
+            BtnPublish.GetComponentInChildren<TextMeshProUGUI>().text = Stage.LocalData.IsPublished ? "Unpublish" : "Publish";
+            ImgCheck.SetActive(Stage.LocalData.IsClearChecked);
         }
         TxtFigures.GetComponent<TextMeshProUGUI>().text = $"{Stage.ChallengeCount}\n" +
             $"{Stage.ClearCount}\n{string.Format("{0:0.00}", Stage.ClearRate * 100)} %";
@@ -158,41 +160,111 @@ public class StageItemOperator : MonoBehaviour
     // Click Events
     public void BtnEditClicked()
     {
+        if (Stage.LocalData.IsPublished)
+        {
+            MessageBox.ShowDialog(canvas.transform, "Stages in public cannot be edited. You need to unpublish this stage first.", MessageBoxType.OKOnly, () => { });
+            return;
+        }
         CreateOperator.Stage = Stage;
         SceneManager.LoadScene("Create Scene");
     }
 
     public void BtnRenameClicked()
     {
-        InputBox.ShowDialog(result =>
+        if (Stage.LocalData.IsPublished)
+        {
+            MessageBox.ShowDialog(canvas.transform, "Stages in public cannot be renamed. You need to unpublish this stage first.", MessageBoxType.OKOnly, () => { });
+            return;
+        }
+        InputBox.ShowDialog(canvas.transform, "New name", result =>
         {
             Stage.Name = result;
             TxtName.GetComponent<TextMeshProUGUI>().text = result;
             GameData.Save();
-        }, canvas.transform, "New name");
+        });
     }
 
     public void BtnPlayClicked()
     {
-        PlayOperator.Ready(Stage, false, IsMyStage);
+        PlayOperator.Ready(Stage, false, IsMyStage, false);
         SceneManager.LoadScene("Play Scene");
     }
 
     public void BtnDeleteClicked()
     {
-        GameData.Stages.Remove(Stage);
-        Destroy(gameObject);
-        GameData.Save();
+        if (Stage.LocalData.IsPublished)
+        {
+            MessageBox.ShowDialog(canvas.transform, "Stages in public cannot be deleted. You need to unpublish this stage first.", MessageBoxType.OKOnly, () => { });
+            return;
+        }
+
+        MessageBox.ShowDialog(canvas.transform, "Are you sure you want to delete this stage?",
+            MessageBoxType.YesNo, () =>
+        {
+            GameData.Stages.Remove(Stage);
+            Destroy(gameObject);
+            GameData.Save();
+        });
     }
 
     public void BtnPublishClicked()
     {
-        // クリアチェック
+        if (Stage.LocalData.IsPublished)
+        {
+            if (!FirebaseIO.Available)
+            {
+                ErrorMessage.FirebaseUnavailable(canvas.transform);
+                return;
+            }
+            var _ = FirebaseIO.UnpublishStage(Stage);
+            StartCoroutine(UnpublishStage());
+        }
+        else
+        {
+            // クリアチェック
+            if (!Stage.LocalData.IsClearChecked)
+            {
+                MessageBox.ShowDialog(canvas.transform, "A clear check needs to be done to publish this stage. Do you want to try it?",
+                    MessageBoxType.YesNo, () =>
+                {
+                    PlayOperator.Ready(Stage, false, true, true);
+                    SceneManager.LoadScene("Play Scene");
+                });
+                return;
+            }
 
-
-        FirebaseIO.PublishStage(Stage);
-        GameData.Save();
+            if (!FirebaseIO.Available)
+            {
+                ErrorMessage.FirebaseUnavailable(canvas.transform);
+                return;
+            }
+            var _ = FirebaseIO.PublishStage(Stage);
+            StartCoroutine(PublishStage());
+        }
     }
 
+    private IEnumerator UnpublishStage()
+    {
+        NowLoading.Show(canvas.transform, "Unpublishing the stage...");
+
+        while (!FirebaseIO.LoadFinished) yield return new WaitForSecondsRealtime(0.1f);
+
+        GameData.Save();
+        UpdateControls();
+
+        NowLoading.Close();
+    }
+
+    private IEnumerator PublishStage()
+    {
+        NowLoading.Show(canvas.transform, "Publishing the stage...");
+
+        while (!FirebaseIO.LoadFinished) yield return new WaitForSecondsRealtime(0.1f);
+
+        GameData.Save();
+        UpdateControls();
+
+        NowLoading.Close();
+    }
 
 }
