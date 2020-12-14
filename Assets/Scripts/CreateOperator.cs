@@ -21,10 +21,17 @@ public class CreateOperator : MonoBehaviour
     private Structure focused;      // フォーカスされているオブジェクト
     private TransformTools tools;   // 移動用矢印
 
-    private bool hasEdited;         // 一度でも編集されたか
+    private static bool AskName;    // 終了時に名前をつけてもらうか
 
     const int CAM_RADIUS = 10;      // カメラの回転時、中心となる点のカメラからの距離
     const int CAM_RADIUS_MAX = 20;  // Focus中のオブジェクトからこれ以上離れていたらCAM_RADIUSを半径とする
+
+    // ロード前に設定すべき変数
+    public static void Ready(Stage stage, bool askName)
+    {
+        Stage = stage;
+        AskName = askName;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -246,6 +253,12 @@ public class CreateOperator : MonoBehaviour
                 case StructureType.Chopsticks:
                     dragged = new Structure(StructureType.Chopsticks, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
+                case StructureType.Jump:
+                    dragged = new Structure(StructureType.Jump, pos, new Vector3Int(4, 1, 4), Stage);
+                    break;
+                case StructureType.Box:
+                    dragged = new Structure(StructureType.Box, pos, new Vector3Int(1, 1, 1), Stage);
+                    break;
                 default:
                     return;
             }
@@ -330,8 +343,21 @@ public class CreateOperator : MonoBehaviour
     // Finish
     public void BtnFinishClicked()
     {
-        GameData.Save();
-        SceneManager.LoadScene("Select Scene");
+        if (AskName)
+        {
+            // 名前を尋ねる
+            InputBox.ShowDialog(canvas.transform, "Name the new stage.", result =>
+            {
+                Stage.Name = result;
+                GameData.Save();
+                SceneManager.LoadScene("Select Scene");
+            }, allowCancel: false);
+        }
+        else
+        {
+            GameData.Save();
+            SceneManager.LoadScene("Select Scene");
+        }
     }
 
     // Test

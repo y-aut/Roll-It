@@ -81,7 +81,7 @@ public class SelectOperator : MonoBehaviour
         var stage = new Stage();
         stage.Initialize();
         GameData.Stages.Add(stage);
-        CreateOperator.Stage = stage;
+        CreateOperator.Ready(stage, true);
         SceneManager.LoadScene("Create Scene");
     }
 

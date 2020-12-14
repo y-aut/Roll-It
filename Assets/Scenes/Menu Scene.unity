@@ -627,6 +627,10 @@ MonoBehaviour:
     type: 3}
   ChopstickPrefabObj: {fileID: 5352079436958817036, guid: c6d2fdcf133a834408dcb3c15931bd8d,
     type: 3}
+  JumpPrefabObj: {fileID: 9039419686012537759, guid: 51ba11d56a0561d4792d2b21ab40cada,
+    type: 3}
+  BoxPrefabObj: {fileID: 2255632354428109499, guid: 66bc40ce05e3b2041855f6cc9cdd4069,
+    type: 3}
   InputBoxPrefabObj: {fileID: 6269427580765542264, guid: d29d5c23d1b78154cab0288e69275212,
     type: 3}
   MessageBoxPrefabObj: {fileID: 6269427580765542264, guid: e666235730c2c2b4bb3f4bc74ec57415,
@@ -634,6 +638,8 @@ MonoBehaviour:
   StageItemPrefabObj: {fileID: 65940291356588578, guid: 01f30fef0a0475044bd8ec375ecc64f1,
     type: 3}
   NowLoadingPrefabObj: {fileID: 3654175831499933651, guid: b6e1402c9c71c5c489ab50e04092cfc3,
+    type: 3}
+  PausePanelPrefabObj: {fileID: 2905706418642229344, guid: 291f1eafe80a3b144a6ff244b8c4341d,
     type: 3}
   OpenCurveObj:
     serializedVersion: 2

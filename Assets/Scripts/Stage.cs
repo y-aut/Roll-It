@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // ステージはマス目によって構成される。
 [Serializable]
@@ -162,6 +163,9 @@ public class Stage : ISerializationCallbackReceiver
 
     // ゲームオーバーになる高さ
     public float GameOverY => Structs.Min(i => i.Position.y - i.LocalScale.y / 2) - 5f;
+
+    // 現在のScene
+    public static SceneType ActiveScene => SceneManager.GetActiveScene().name == "Play Scene" ? SceneType.Play : SceneType.Create;
 }
 
 [Serializable]

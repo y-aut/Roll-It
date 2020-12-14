@@ -27,11 +27,14 @@ public class Prefabs : MonoBehaviour
     public static GameObject LiftPrefab;            // Liftのプレハブ
     public static GameObject LiftGoalPrefab;        // Liftの行き先のプレハブ
     public static GameObject ChopstickPrefab;       // Chopsticksのプレハブ
+    public static GameObject JumpPrefab;            // Jumpのプレハブ
+    public static GameObject BoxPrefab;             // Boxのプレハブ
 
     public static GameObject InputBoxPrefab;        // InputBoxのプレハブ
     public static GameObject MessageBoxPrefab;      // MessageBoxのプレハブ
     public static GameObject StageItemPrefab;       // StageItemのプレハブ
     public static GameObject NowLoadingPrefab;      // NowLoadingのプレハブ
+    public static GameObject PausePanelPrefab;      // PausePanelのプレハブ
 
     public GameObject ArrowPrefabObj;
     public GameObject XZCubePrefabObj;
@@ -54,11 +57,14 @@ public class Prefabs : MonoBehaviour
     public GameObject LiftPrefabObj;
     public GameObject LiftGoalPrefabObj;
     public GameObject ChopstickPrefabObj;
+    public GameObject JumpPrefabObj;
+    public GameObject BoxPrefabObj;
 
     public GameObject InputBoxPrefabObj;
     public GameObject MessageBoxPrefabObj;
     public GameObject StageItemPrefabObj;
     public GameObject NowLoadingPrefabObj;
+    public GameObject PausePanelPrefabObj;
 
     // ポップアップウィンドウ表示時のLocalScaleの曲線
     public static AnimationCurve OpenCurve;
@@ -96,11 +102,14 @@ public class Prefabs : MonoBehaviour
         LiftPrefab = LiftPrefabObj;
         LiftGoalPrefab = LiftGoalPrefabObj;
         ChopstickPrefab = ChopstickPrefabObj;
+        JumpPrefab = JumpPrefabObj;
+        BoxPrefab = BoxPrefabObj;
 
         InputBoxPrefab = InputBoxPrefabObj;
         MessageBoxPrefab = MessageBoxPrefabObj;
         StageItemPrefab = StageItemPrefabObj;
         NowLoadingPrefab = NowLoadingPrefabObj;
+        PausePanelPrefab = PausePanelPrefabObj;
 
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;

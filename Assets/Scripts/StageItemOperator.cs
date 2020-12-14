@@ -165,7 +165,7 @@ public class StageItemOperator : MonoBehaviour
             MessageBox.ShowDialog(canvas.transform, "Stages in public cannot be edited. You need to unpublish this stage first.", MessageBoxType.OKOnly, () => { });
             return;
         }
-        CreateOperator.Stage = Stage;
+        CreateOperator.Ready(Stage, false);
         SceneManager.LoadScene("Create Scene");
     }
 
@@ -181,7 +181,7 @@ public class StageItemOperator : MonoBehaviour
             Stage.Name = result;
             TxtName.GetComponent<TextMeshProUGUI>().text = result;
             GameData.Save();
-        });
+        }, defaultString: Stage.Name);
     }
 
     public void BtnPlayClicked()

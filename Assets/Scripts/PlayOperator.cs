@@ -135,6 +135,11 @@ public class PlayOperator : MonoBehaviour
                 // 視点回転
                 Angle = str.RotationInt;
             }
+            else if (str.Type == StructureType.Jump)
+            {
+                // ジャンプ
+                Ball.GetComponent<Rigidbody>().AddForce(Vector3.up * 7, ForceMode.Impulse);
+            }
         }
     }
 
@@ -145,6 +150,27 @@ public class PlayOperator : MonoBehaviour
         TestPlay = isTestPlay;
         IsMyStage = isMyStage;
         ClearCheck = isClearCheck;
+    }
+
+    public void Pause()
+    {
+        PausePanel.ShowDialog(this, canvas.transform);
+    }
+
+    public void Restart()
+    {
+        Stage.Destroy();
+        SceneManager.LoadScene("Play Scene");
+    }
+
+    public void Quit()
+    {
+        Stage.Destroy();
+        if (TestPlay)
+            SceneManager.LoadScene("Create Scene");
+        else
+            SceneManager.LoadScene("Select Scene");
+        return;
     }
 
 }

@@ -13,6 +13,8 @@ public class Primitive
 
     // Create Sceneでのみ表示
     public bool CreateOnly { get; private set; } = false;
+    // PlayモードではKinematicをfalseに
+    public bool NonKinematic { get; private set; } = false;
 
     public Structure Parent { get; set; }
 
@@ -50,15 +52,11 @@ public class Primitive
         }
     }
 
-    public Primitive(GameObject prefab)
-    {
-        Prefab = prefab;
-    }
-
-    public Primitive(GameObject prefab, bool createOnly)
+    public Primitive(GameObject prefab, bool createOnly = false, bool nonKinematic = false)
     {
         Prefab = prefab;
         CreateOnly = createOnly;
+        NonKinematic = nonKinematic;
     }
 
     // ワールドに生成
@@ -67,6 +65,7 @@ public class Primitive
         obj = UnityEngine.Object.Instantiate(Prefab);
 
         UpdateObject();
+        SetKinematic();
         SetClickEvent();
     }
 
@@ -78,6 +77,12 @@ public class Primitive
         obj.transform.position = Position;
         obj.transform.localScale = LocalScale;
         obj.transform.rotation = Rotation;
+    }
+
+    private void SetKinematic()
+    {
+        if (NonKinematic)
+            obj.GetComponent<Rigidbody>().isKinematic = Stage.ActiveScene == SceneType.Create;
     }
 
     // objのアルファ値を変更
