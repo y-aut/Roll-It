@@ -5,6 +5,8 @@ using UnityEngine;
 
 public static partial class AddMethod
 {
+    public static T Last<T>(this List<T> list) => list[list.Count - 1];
+
     public static Vector3 NewX(this Vector3 vec, float x) => new Vector3(x, vec.y, vec.z);
     public static Vector3 NewY(this Vector3 vec, float y) => new Vector3(vec.x, y, vec.z);
     public static Vector3 NewZ(this Vector3 vec, float z) => new Vector3(vec.x, vec.y, z);
@@ -24,6 +26,10 @@ public static partial class AddMethod
     public static bool IsAllPositive(this Vector3Int vec) => vec.x > 0 && vec.y > 0 && vec.z > 0;
     public static bool NegativeExists(this Vector3 vec) => vec.x < 0 || vec.y < 0 || vec.z < 0;
     public static bool NegativeExists(this Vector3Int vec) => vec.x < 0 || vec.y < 0 || vec.z < 0;
+    public static bool IsAllMoreThanOrEqual(this Vector3Int vec, int min) => vec.x >= min && vec.y >= min && vec.z >= min;
+    public static bool IsAllLessThan(this Vector3Int vec, int max) => vec.x < max && vec.y < max && vec.z < max;
+    public static bool IsAllBetween(this Vector3Int vec, int min, int max)
+        => IsAllMoreThanOrEqual(vec, min) && IsAllLessThan(vec, max);
 
     public static Quaternion ToQuaternion(this RotationEnum rotation)
     {

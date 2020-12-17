@@ -90,6 +90,11 @@ public class Structure
 
     public const string BALL_NAME = "ball";        // Ballの名前（衝突判定で用いる）
 
+    // LocalScaleの最大サイズ
+    public const int LOCALSCALE_LIMIT = 1024;
+    // MoveDirの最大サイズ
+    public const int MOVEDIR_LIMIT = 512;
+
     // 回転可能なStructureType
     public static List<StructureType> RotatableList
         => new List<StructureType>() {
@@ -155,9 +160,11 @@ public class Structure
             StructureType.Ball,
     };
 
-    [SerializeField]
-    private StructureType _type;
-    public StructureType Type { get => _type; private set => _type = value; }
+    public StructureType Type { get; private set; }
+
+    // テクスチャ
+    private int _texture = 0;
+    public int Texture { get => _texture; private set => _texture = value; }
 
     [NonSerialized]
     private List<Primitive> objs;
@@ -188,6 +195,7 @@ public class Structure
         get => _moveDirInt;
         set
         {
+            if (!value.IsAllBetween(-MOVEDIR_LIMIT, MOVEDIR_LIMIT)) return;
             _moveDirInt = value;
             UpdateObjects();
         }
@@ -197,18 +205,14 @@ public class Structure
     public Vector3Int PositionInt2
     {
         get => PositionInt + MoveDirInt;
-        set
-        {
-            _moveDirInt = value - PositionInt;
-            UpdateObjects();
-        }
+        set => MoveDirInt = value - PositionInt;
     }
 
     [SerializeField]
-    private Vector3Int _localScaleInt;      // Inverseの情報を含むので、負の値になりうる
-    public Vector3Int LocalScaleInt         // 負の値にならない
+    private Vector3Int _localScaleInt;
+    public Vector3Int LocalScaleInt
     {
-        get => _localScaleInt.Abs();
+        get => _localScaleInt;
         set
         {
             _localScaleInt = value;
@@ -292,6 +296,10 @@ public class Structure
         }
     }
 
+    // 付加データ
+    private int _tag = 0;
+    public int Tag { get => _tag; private set => _tag = value; }
+
     public Quaternion Rotation => RotationInt.ToQuaternion();
 
     // Z-fightingを防ぐために少しだけY方向にズラしたPosition
@@ -337,6 +345,25 @@ public class Structure
         UpdateObjects();
     }
 
+    // StructureZipから解凍するときに用いる
+    public Structure(StructureType type, int texture, Vector3Int pos, Vector3Int scale,
+        Vector3Int moveDir, RotationEnum rot, bool xInv, bool yInv, bool zInv, int tag, Stage parent)
+    {
+        Type = type;
+        _texture = texture;
+        _positionInt = pos;
+        _localScaleInt = scale;
+        _moveDirInt = moveDir;
+        _rotationInt = rot;
+        _xInversed = xInv;
+        _yInversed = yInv;
+        _zInversed = zInv;
+        _tag = tag;
+        Parent = parent;
+
+        SetObjs();
+        UpdateObjects();
+    }
 
     // objsにPrimitiveをセットする。位置等はUpdateObjects()で設定するのでしなくて良い
     private void SetObjs() => SetObjs(Type);
@@ -473,7 +500,7 @@ public class Structure
                 {
                     objs[0].LocalScale = LocalScale;
                     
-                    if (Stage.ActiveScene == SceneType.Play)
+                    if (Scenes.GetActiveScene() == SceneType.Play)
                     {
                         // ω = 2 * Mathf.PI / LIFT_PERIOD
                         objs[0].Position = PositionShifted + ToPositionF(MoveDirInt)
@@ -558,7 +585,7 @@ public class Structure
         {
             case StructureType.Lift:
                 {
-                    if (Stage.ActiveScene == SceneType.Play)
+                    if (Scenes.GetActiveScene() == SceneType.Play)
                     {
                         objs[0].Position = Position + ToPositionF(MoveDirInt)
                             * (1 + Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)) / 2;
@@ -572,9 +599,10 @@ public class Structure
     public void Create()
     {
         UpdateObjects();
+        Collided = false;
 
         List<Primitive> range;
-        if (Stage.ActiveScene == SceneType.Create) range = objs;
+        if (Scenes.GetActiveScene() == SceneType.Create) range = objs;
         else range = objs.FindAll(i => !i.CreateOnly);
 
         range.ForEach(i => i.Create());
@@ -685,9 +713,4 @@ public class Structure
         //UpdateObjects();
     }
 
-}
-
-public enum SceneType
-{
-    Play, Create,
 }

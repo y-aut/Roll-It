@@ -11,8 +11,18 @@ public class PlayOperator : MonoBehaviour
     public static Stage Stage { get; private set; }
     public static bool TestPlay { get; private set; }        // Create中の試験プレイ
     public static bool ClearCheck { get; private set; }     // クリアチェック
+
+    public GameObject StickBack;
+    public GameObject Stick;
+    public GameObject BtnPause;
+
     public GameObject Ball;
     public PhysicMaterial ballMat;
+    public GameObject ImgClear;
+    public Fade FadeComponent;
+
+    private EffectManager effect;
+    private bool Cleared;   // クリアしたか（演出中）
 
     // Updateの処理をストップ
     public bool StopUpdate { get; set; } = false;
@@ -72,8 +82,11 @@ public class PlayOperator : MonoBehaviour
 
         if (!IsMyStage)
         {
-            FirebaseIO.IncrementChallengeCount(Stage.ID);
+            _ = FirebaseIO.IncrementChallengeCount(Stage.ID);
         }
+
+        effect = new EffectManager();
+        Cleared = false;
 
         Stage.Create();
         Ball = Instantiate(Prefabs.BallPrefab);
@@ -95,35 +108,34 @@ public class PlayOperator : MonoBehaviour
     void FixedUpdate()
     {
         if (StopUpdate) return;
+        if (Cleared) return;
+
         Stage.IncrementGeneration();
         // GameOver判定
         if (Ball.transform.position.y < Stage.GameOverY)
         {
             Stage.Destroy();
             if (TestPlay)
-                SceneManager.LoadScene("Create Scene");
+                Scenes.LoadScene(SceneType.Create);
             else
-                SceneManager.LoadScene("Select Scene");
+                Scenes.LoadScene(SceneType.Select);
             return;
         }
         // Clear判定
         if (Stage.Goal.Collided)
         {
             Stage.Goal.Collided = false;
-            Stage.Destroy();
-            if (!IsMyStage)
-            {
-                FirebaseIO.IncrementClearCount(Stage.ID);
-            }
-            else if (ClearCheck || (IsMyStage && !TestPlay && !Stage.LocalData.IsClearChecked)
+            if (ClearCheck || (IsMyStage && !TestPlay && !Stage.LocalData.IsClearChecked)
                 || (TestPlay && Stage.Ball == null))
             {   // 普通にプレイしてクリアしたときでもクリアチェックOKとする
                 Stage.LocalData.IsClearChecked = true;
             }
-            if (TestPlay)
-                SceneManager.LoadScene("Create Scene");
-            else
-                SceneManager.LoadScene("Select Scene");
+            Cleared = true;
+
+            Stick.SetActive(false);
+            StickBack.SetActive(false);
+            BtnPause.SetActive(false);
+            StartCoroutine(DoClearEvent());
             return;
         }
         // Collision判定
@@ -140,6 +152,36 @@ public class PlayOperator : MonoBehaviour
                 // ジャンプ
                 Ball.GetComponent<Rigidbody>().AddForce(Vector3.up * 7, ForceMode.Impulse);
             }
+        }
+    }
+
+    private IEnumerator DoClearEvent()
+    {
+        var endFrame = new WaitForEndOfFrame();
+
+        effect.StageClear(ImgClear);
+        while (effect.Cleared)
+        {
+            effect.Update();
+            yield return endFrame;
+        }
+        
+        if (!IsMyStage)
+        {
+            ResultOperator.Stage = Stage;
+            FadeComponent.FadeIn(1f, () =>
+            {
+                Stage.Destroy();
+                Scenes.LoadScene(SceneType.Result);
+            });
+        }
+        else
+        {
+            Stage.Destroy();
+            if (TestPlay)
+                Scenes.LoadScene(SceneType.Create);
+            else
+                Scenes.LoadScene(SceneType.Select);
         }
     }
 
@@ -160,16 +202,16 @@ public class PlayOperator : MonoBehaviour
     public void Restart()
     {
         Stage.Destroy();
-        SceneManager.LoadScene("Play Scene");
+        Scenes.LoadScene(SceneType.Play);
     }
 
     public void Quit()
     {
         Stage.Destroy();
         if (TestPlay)
-            SceneManager.LoadScene("Create Scene");
+            Scenes.LoadScene(SceneType.Create);
         else
-            SceneManager.LoadScene("Select Scene");
+            Scenes.LoadScene(SceneType.Select);
         return;
     }
 

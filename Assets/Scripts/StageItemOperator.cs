@@ -23,16 +23,22 @@ public class StageItemOperator : MonoBehaviour
     public GameObject BtnDelete;
     public GameObject BtnPublish;
     public GameObject BtnRename;
-    public GameObject TxtFigures;
     public GameObject ImgCheck;
+    public TextMeshProUGUI TxtChallengeCount;
+    public TextMeshProUGUI TxtClearCount;
+    public TextMeshProUGUI TxtClearRate;
+    public RawImage ImgPreview;
 
     public Canvas canvas;
+    public SelectOperator selectOp;
 
     // 対応するステージ
     public Stage Stage { get; set; }
 
     private enum StateEnum { Opening, Closing, Other }
     private StateEnum State { get; set; } = StateEnum.Other;
+
+    private bool gotImage = false;
 
     // 展開中かどうか
     private bool _showDetail = true;
@@ -45,7 +51,25 @@ public class StageItemOperator : MonoBehaviour
             generation_time = 0f;
             State = value ? StateEnum.Opening : StateEnum.Closing;
             _showDetail = value;
+            if (value && !gotImage)
+            {
+                StartCoroutine(GetPreview());
+            }
         }
+    }
+
+    private IEnumerator GetPreview()
+    {
+        selectOp.CreatePreview(Stage);
+        yield return new WaitForEndOfFrame();  // カメラが更新されるのを待つ
+
+        var source = ImgPreview.texture;
+        var copy = new RenderTexture((RenderTexture)source);
+        Graphics.CopyTexture(source, copy);
+        ImgPreview.texture = copy;
+
+        if (selectOp.PrevStage == Stage)
+            gotImage = true;    // 他のステージになっているときは諦める
     }
 
     // 自分のステージか、オンラインのステージか
@@ -153,8 +177,9 @@ public class StageItemOperator : MonoBehaviour
             BtnPublish.GetComponentInChildren<TextMeshProUGUI>().text = Stage.LocalData.IsPublished ? "Unpublish" : "Publish";
             ImgCheck.SetActive(Stage.LocalData.IsClearChecked);
         }
-        TxtFigures.GetComponent<TextMeshProUGUI>().text = $"{Stage.ChallengeCount}\n" +
-            $"{Stage.ClearCount}\n{string.Format("{0:0.00}", Stage.ClearRate * 100)} %";
+        TxtChallengeCount.text = Stage.ChallengeCount.ToString();
+        TxtClearCount.text = Stage.ClearCount.ToString();
+        TxtClearRate.text = $"{string.Format("{0:0.00}", Stage.ClearRate * 100)} %";
     }
 
     // Click Events
@@ -166,7 +191,7 @@ public class StageItemOperator : MonoBehaviour
             return;
         }
         CreateOperator.Ready(Stage, false);
-        SceneManager.LoadScene("Create Scene");
+        Scenes.LoadScene(SceneType.Create);
     }
 
     public void BtnRenameClicked()
@@ -187,7 +212,7 @@ public class StageItemOperator : MonoBehaviour
     public void BtnPlayClicked()
     {
         PlayOperator.Ready(Stage, false, IsMyStage, false);
-        SceneManager.LoadScene("Play Scene");
+        Scenes.LoadScene(SceneType.Play);
     }
 
     public void BtnDeleteClicked()
@@ -207,17 +232,19 @@ public class StageItemOperator : MonoBehaviour
         });
     }
 
-    public void BtnPublishClicked()
+    public async void BtnPublishClicked()
     {
         if (Stage.LocalData.IsPublished)
         {
-            if (!FirebaseIO.Available)
-            {
-                ErrorMessage.FirebaseUnavailable(canvas.transform);
-                return;
-            }
-            var _ = FirebaseIO.UnpublishStage(Stage);
-            StartCoroutine(UnpublishStage());
+            // Unpublish
+            NowLoading.Show(canvas.transform, "Unpublishing the stage...");
+
+            await FirebaseIO.UnpublishStage(Stage);
+
+            GameData.Save();
+            UpdateControls();
+
+            NowLoading.Close();
         }
         else
         {
@@ -228,43 +255,22 @@ public class StageItemOperator : MonoBehaviour
                     MessageBoxType.YesNo, () =>
                 {
                     PlayOperator.Ready(Stage, false, true, true);
-                    SceneManager.LoadScene("Play Scene");
+                    Scenes.LoadScene(SceneType.Play);
                 });
-                return;
             }
-
-            if (!FirebaseIO.Available)
+            else
             {
-                ErrorMessage.FirebaseUnavailable(canvas.transform);
-                return;
+                // Publish
+                NowLoading.Show(canvas.transform, "Publishing the stage...");
+
+                await FirebaseIO.PublishStage(Stage);
+
+                GameData.Save();
+                UpdateControls();
+
+                NowLoading.Close();
             }
-            var _ = FirebaseIO.PublishStage(Stage);
-            StartCoroutine(PublishStage());
         }
     }
-
-    private IEnumerator UnpublishStage()
-    {
-        NowLoading.Show(canvas.transform, "Unpublishing the stage...");
-
-        while (!FirebaseIO.LoadFinished) yield return new WaitForSecondsRealtime(0.1f);
-
-        GameData.Save();
-        UpdateControls();
-
-        NowLoading.Close();
-    }
-
-    private IEnumerator PublishStage()
-    {
-        NowLoading.Show(canvas.transform, "Publishing the stage...");
-
-        while (!FirebaseIO.LoadFinished) yield return new WaitForSecondsRealtime(0.1f);
-
-        GameData.Save();
-        UpdateControls();
-
-        NowLoading.Close();
-    }
-
+    
 }

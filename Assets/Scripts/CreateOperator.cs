@@ -85,8 +85,8 @@ public class CreateOperator : MonoBehaviour
             else
             {
                 tools.Drag(cam.ScreenPointToRay(Input.mousePosition), out var deltaPos, out var deltaPos2, out var deltaScale);
-                // Scaleが0以下になる変形はしない
-                if ((focused.LocalScaleInt + deltaScale).IsAllPositive())
+                // 0 < Scale < GameConst.LOCALSCALE_LIMIT
+                if ((focused.LocalScaleInt + deltaScale).IsAllBetween(1, Structure.LOCALSCALE_LIMIT))
                 {
                     focused.PositionInt += deltaPos;
                     if (focused.HasPosition2) focused.PositionInt2 += deltaPos2;
@@ -191,8 +191,8 @@ public class CreateOperator : MonoBehaviour
             }
 
             // カメラが範囲外に出ていたら戻す
-            cam.transform.position = AddMethod.Fix(Structure.ToPositionF(new Vector3Int(GameConst.X_NLIMIT, GameConst.Y_NLIMIT, GameConst.Z_NLIMIT)),
-                cam.transform.position, Structure.ToPositionF(new Vector3Int(GameConst.X_PLIMIT, GameConst.Y_PLIMIT, GameConst.Z_PLIMIT)));
+            cam.transform.position = AddMethod.Fix(Structure.ToPositionF(new Vector3Int(-GameConst.STAGE_LIMIT, -GameConst.STAGE_LIMIT, -GameConst.STAGE_LIMIT)),
+                cam.transform.position, Structure.ToPositionF(new Vector3Int(GameConst.STAGE_LIMIT - 1, GameConst.STAGE_LIMIT - 1, GameConst.STAGE_LIMIT - 1)));
         }
 
     }
@@ -350,13 +350,13 @@ public class CreateOperator : MonoBehaviour
             {
                 Stage.Name = result;
                 GameData.Save();
-                SceneManager.LoadScene("Select Scene");
+                Scenes.LoadScene(SceneType.Select);
             }, allowCancel: false);
         }
         else
         {
             GameData.Save();
-            SceneManager.LoadScene("Select Scene");
+            Scenes.LoadScene(SceneType.Select);
         }
     }
 
@@ -365,7 +365,7 @@ public class CreateOperator : MonoBehaviour
     {
         GameData.Save();
         PlayOperator.Ready(Stage, true, true, false);
-        SceneManager.LoadScene("Play Scene");
+        Scenes.LoadScene(SceneType.Play);
     }
 
     // クリアチェックしている場合の確認

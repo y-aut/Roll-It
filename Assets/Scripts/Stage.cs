@@ -6,44 +6,36 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // ステージはマス目によって構成される。
-[Serializable]
-public class Stage : ISerializationCallbackReceiver
+public class Stage
 {
     // ローカルデータ
-    [NonSerialized]
     public StageLocal LocalData;
 
     // ステージID（公開時に一意のIDを取得する）
-    [SerializeField]
     public IDType ID;
 
     // ステージ名
-    [SerializeField]
     public string Name = "New Stage";
 
     // 作者ID
-    [SerializeField]
-    private IDType AuthorID;
+    public IDType AuthorID;
 
     // 公開日時
-    [SerializeField]
     public DateTime PublishedDate;
 
     // クリア人数
-    [SerializeField]
     public int ClearCount;
 
     // チャレンジ人数
-    [SerializeField]
     public int ChallengeCount;
 
     // 各評価の人数
-    [SerializeField]
     public int PosEvaCount; // Positive Evaluation Count
-    [SerializeField]
-    public int NeuEvaCount; // Neutral Evaluation Count
-    [SerializeField]
     public int NegEvaCount; // Negative Evaluation Count
+    public int NeuEvaCount => ClearCount - (PosEvaCount + NegEvaCount);
+
+    // ストラクチャ
+    public List<Structure> Structs;
 
     // クリア率
     public float ClearRate => ChallengeCount == 0 ? 0f : (float)ClearCount / ChallengeCount;
@@ -60,18 +52,13 @@ public class Stage : ISerializationCallbackReceiver
         Structs.ForEach(i => i.GenerationIncremented());
     }
 
-    [NonSerialized]
-    private List<Structure> Structs;
-    [SerializeField]
-    private SerializableList<Structure> SavedStructs;   // 保存されるStructures
-
     // Structs[0]はスタート、[1]はゴール
     public Structure Start => Structs[0];
     public Structure Goal => Structs[1];
     public Structure Ball => Structs.Find(i => i.Type == StructureType.Ball);
 
-    // FromJsonは引数なしのコンストラクタを自動で呼び出すので、新規ステージの初期化部は分ける
-    public void Initialize()
+    // 新規作成
+    public Stage()
     {
         LocalData = new StageLocal();
         LocalData.Initialize();
@@ -81,6 +68,20 @@ public class Stage : ISerializationCallbackReceiver
             new Structure(StructureType.Goal, new Vector3Int(0,0,20), new Vector3Int(4,1,4), this),
         };
         AuthorID = GameData.User.ID;
+    }
+
+    // StageZipから解凍するときに用いる
+    public Stage(IDType id, string name, IDType authorID, DateTime published, int clear, int challenge, int pos, int neg, StructureZipCollection strs)
+    {
+        ID = id;
+        Name = name;
+        AuthorID = authorID;
+        PublishedDate = published;
+        ClearCount = clear;
+        ChallengeCount = challenge;
+        PosEvaCount = pos;
+        NegEvaCount = neg;
+        Structs = strs.ToStructures(this);
     }
 
     public void Create()
@@ -112,7 +113,7 @@ public class Stage : ISerializationCallbackReceiver
     {
         Structs.Remove(item);
     }
-    
+
     // クリックされたStructureを返す
     public Structure ClickedStructure()
     {
@@ -126,20 +127,6 @@ public class Stage : ISerializationCallbackReceiver
     // 衝突したStructureを返す
     public List<Structure> CollidedStructures() => Structs.FindAll(i => i.Collided);
 
-    public void OnBeforeSerialize()
-    {
-        // 保存しないStructureは除外
-        SavedStructs = new SerializableList<Structure>();
-        foreach (var i in Structs)
-            if (i.IsSaved) SavedStructs.Add(i);
-    }
-
-    public void OnAfterDeserialize()
-    {
-        Structs = SavedStructs;
-        Structs.ForEach(i => { i.Parent = this; i.OnAfterDeserialize(); });
-    }
-
     // posにscaleのオブジェクトを設置可能かどうか
     public bool CheckSpace(Vector3Int posInt, Vector3Int scaleInt)
     {
@@ -148,8 +135,7 @@ public class Stage : ISerializationCallbackReceiver
         var posi = posInt + scaleInt;
 
         // Stageの範囲内か
-        if ((nega - new Vector3Int(GameConst.X_NLIMIT, GameConst.Y_NLIMIT, GameConst.Z_NLIMIT)).NegativeExists()
-            || (new Vector3Int(GameConst.X_PLIMIT, GameConst.Y_PLIMIT, GameConst.Z_PLIMIT) - posi).NegativeExists())
+        if (!(nega.IsAllMoreThanOrEqual(-GameConst.STAGE_LIMIT) && posi.IsAllLessThan(GameConst.STAGE_LIMIT)))
             return false;
 
         // Startの真上にないか
@@ -164,8 +150,6 @@ public class Stage : ISerializationCallbackReceiver
     // ゲームオーバーになる高さ
     public float GameOverY => Structs.Min(i => i.Position.y - i.LocalScale.y / 2) - 5f;
 
-    // 現在のScene
-    public static SceneType ActiveScene => SceneManager.GetActiveScene().name == "Play Scene" ? SceneType.Play : SceneType.Create;
 }
 
 [Serializable]
@@ -182,4 +166,9 @@ public class StageLocal
     public void Initialize()
     {
     }
+}
+
+public enum EvaluationEnum
+{
+    None, Good, Neutral, Bad,
 }

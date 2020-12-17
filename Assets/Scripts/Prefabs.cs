@@ -35,6 +35,7 @@ public class Prefabs : MonoBehaviour
     public static GameObject StageItemPrefab;       // StageItemのプレハブ
     public static GameObject NowLoadingPrefab;      // NowLoadingのプレハブ
     public static GameObject PausePanelPrefab;      // PausePanelのプレハブ
+    public static GameObject ProfilePanelPrefab;    // ProfilePanelのプレハブ
 
     public GameObject ArrowPrefabObj;
     public GameObject XZCubePrefabObj;
@@ -65,6 +66,7 @@ public class Prefabs : MonoBehaviour
     public GameObject StageItemPrefabObj;
     public GameObject NowLoadingPrefabObj;
     public GameObject PausePanelPrefabObj;
+    public GameObject ProfilePanelPrefabObj;
 
     // ポップアップウィンドウ表示時のLocalScaleの曲線
     public static AnimationCurve OpenCurve;
@@ -110,6 +112,7 @@ public class Prefabs : MonoBehaviour
         StageItemPrefab = StageItemPrefabObj;
         NowLoadingPrefab = NowLoadingPrefabObj;
         PausePanelPrefab = PausePanelPrefabObj;
+        ProfilePanelPrefab = ProfilePanelPrefabObj;
 
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;

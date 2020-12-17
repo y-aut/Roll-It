@@ -22,11 +22,6 @@ public static class GameConst
     public const int ROTATE_VIEWPOINT_DEGREE = 2;
 
     // ステージの限界座標
-    public const int X_NLIMIT = -500;
-    public const int X_PLIMIT = 500;
-    public const int Y_NLIMIT = -500;
-    public const int Y_PLIMIT = 500;
-    public const int Z_NLIMIT = -500;
-    public const int Z_PLIMIT = 500;
+    public const int STAGE_LIMIT = 1024;
 
 }

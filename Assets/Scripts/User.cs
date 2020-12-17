@@ -4,42 +4,49 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // ユーザー情報を表すクラス
-[Serializable]
 public class User
 {
     // ユーザーID
-    [SerializeField]
     public IDType ID = IDType.Empty;
 
     // ユーザー名
-    [SerializeField]
     public string Name = "";
 
-    // 作成日時
-    [SerializeField]
+    // アカウント作成日時
     public DateTime StartDate;
 
     // 最終ログイン日時
-    [SerializeField]
     public DateTime LastDate;
 
-    // 公開したステージ数
-    [SerializeField]
-    public int PublishedCount = 0;
-
     // クリアしたステージ数（重複なし）
-    [SerializeField]
     public int ClearedCount = 0;
 
+    // 総高評価数
+    public int PosEvaCount = 0;
+
+    // 公開したステージ
+    public List<IDType> PublishedStages;
+
     // ローカルデータ
-    [NonSerialized]
     public UserLocal LocalData;
 
-    public void Initialize()
+    public User()
     {
         StartDate = DateTime.Now;
+        PublishedStages = new List<IDType>();
         LocalData = new UserLocal();
-        LocalData.Initialize();
+    }
+
+    // UserZipからの解凍時に用いる
+    public User(IDType id, string name, DateTime start, DateTime last, int clear, int posEva, IDTypeCollection published)
+    {
+        ID = id;
+        Name = name;
+        StartDate = start;
+        LastDate = last;
+        ClearedCount = clear;
+        PosEvaCount = posEva;
+        PublishedStages = published.ToList();
     }
 
     public void Login()
@@ -54,10 +61,20 @@ public class UserLocal
 {
     // クリアしたステージのIDリスト
     [SerializeField]
-    public List<int> ClearedIDs;
+    public List<IDType> ClearedIDs;
 
-    public void Initialize()
+    // 高評価したステージのIDリスト
+    [SerializeField]
+    public List<IDType> PosEvaIDs;
+
+    // 低評価したステージのIDリスト
+    [SerializeField]
+    public List<IDType> NegEvaIDs;
+
+    public UserLocal()
     {
-        ClearedIDs = new List<int>();
+        ClearedIDs = new List<IDType>();
+        PosEvaIDs = new List<IDType>();
+        NegEvaIDs = new List<IDType>();
     }
 }

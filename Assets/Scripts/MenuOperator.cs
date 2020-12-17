@@ -24,6 +24,7 @@ public class MenuOperator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+
     }
 
     // Update is called once per frame
@@ -35,13 +36,18 @@ public class MenuOperator : MonoBehaviour
     public void BtnFindClicked()
     {
         SelectOperator.IsMyStages = false;
-        SceneManager.LoadScene("Select Scene");
+        Scenes.LoadScene(SceneType.Select);
     }
 
     public void BtnCreateClicked()
     {
         SelectOperator.IsMyStages = true;
-        SceneManager.LoadScene("Select Scene");
+        Scenes.LoadScene(SceneType.Select);
+    }
+
+    public void BtnProfileClicked()
+    {
+        ProfilePanelOperator.ShowDialog(canvas.transform);
     }
 
     private async void FirstAwake()

@@ -10,16 +10,24 @@ public class SelectOperator : MonoBehaviour
     public Canvas canvas;
     public GameObject content;
     public Button BtnNew;
+    public Camera PrevCam;
+
+    public Stage PrevStage { get; set; }    // Previewで表示しているStage
 
     // 自分のステージか
     public static bool IsMyStages { get; set; } = true;
 
     // Start is called before the first frame update
-    void Start()
+    async void Start()
     {
         BtnNew.gameObject.SetActive(IsMyStages);
         if (IsMyStages)
         {
+            // ローカルのStagesを更新
+            NowLoading.Show(canvas.transform, "Updating stages...");
+            await FirebaseIO.UpdateMyStages();
+            NowLoading.Close();
+
             // StageをContentに追加
             foreach (var stage in GameData.Stages)
             {
@@ -27,36 +35,27 @@ public class SelectOperator : MonoBehaviour
                 var script = item.GetComponent<StageItemOperator>();
                 script.Stage = stage;
                 script.canvas = canvas;
+                script.selectOp = this;
             }
         }
         else
         {
             // オンラインのステージを追加
-            FirebaseIO.GetAllStages();
-            StartCoroutine(LoadItemList());
+            NowLoading.Show(canvas.transform, "Loading stages...");
+
+            var stages = await FirebaseIO.GetAllStages();
+            foreach (var stage in stages)
+            {
+                var item = Instantiate(Prefabs.StageItemPrefab, content.transform, false);
+                var script = item.GetComponent<StageItemOperator>();
+                script.Stage = stage;
+                script.canvas = canvas;
+                script.IsMyStage = false;
+                script.selectOp = this;
+            }
+
+            NowLoading.Close();
         }
-    }
-
-    // 非同期で読み込んだステージを反映
-    IEnumerator LoadItemList()
-    {
-        NowLoading.Show(canvas.transform, "Loading stages...");
-
-        while (!FirebaseIO.LoadFinished)
-        {
-            yield return new WaitForSecondsRealtime(0.5f);
-        }
-
-        foreach (var stage in FirebaseIO.AnswerStages)
-        {
-            var item = Instantiate(Prefabs.StageItemPrefab, content.transform, false);
-            var script = item.GetComponent<StageItemOperator>();
-            script.Stage = stage;
-            script.canvas = canvas;
-            script.IsMyStage = false;
-        }
-
-        NowLoading.Close();
     }
 
     // Update is called once per frame
@@ -73,16 +72,25 @@ public class SelectOperator : MonoBehaviour
 
     public void BackToMenu()
     {
-        SceneManager.LoadScene("Menu Scene");
+        Scenes.LoadScene(SceneType.Menu);
     }
 
     public void BtnNewClicked()
     {
         var stage = new Stage();
-        stage.Initialize();
         GameData.Stages.Add(stage);
         CreateOperator.Ready(stage, true);
-        SceneManager.LoadScene("Create Scene");
+        Scenes.LoadScene(SceneType.Create);
+    }
+
+    // オブジェクトを配置してPrevCamで表示する
+    public void CreatePreview(Stage stage)
+    {
+        if (PrevStage != null) PrevStage.Destroy();
+        PrevStage = stage;
+        stage.Create();
+        PrevCam.transform.position = stage.Start.Position
+            + new Vector3(0, GameConst.PLAY_CAMDIST_VER + Prefabs.BallPrefab.transform.localScale.y, -GameConst.PLAY_CAMDIST_HOR);
     }
 
 

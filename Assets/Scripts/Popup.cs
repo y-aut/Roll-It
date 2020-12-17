@@ -11,7 +11,14 @@ public class Popup : MonoBehaviour
     private enum StateEnum { Opening, Closing, Other }
     private StateEnum State { get; set; } = StateEnum.Other;
 
+    // PnlBlackがあるCanvasをさす
+    // 初めに開かれるPopupウィンドウはその親がCanvasなので、親を設定する
+    // 次以降に開かれるPopupはその親もPopupなので、そのPnlBlackCanvasをコピー
+    GameObject PnlBlackCanvas;
+
     GameObject PnlBlack;
+    bool pnlBlackVisible;   // もともとPnlBlackが見えていたか
+    int pnlBlackIndex;      // PnlBlackのSiblingIndex
     float generation_time = 0f;     // Open/Close処理を開始してから経過した秒数
     float timeScaleDef;     // timeScaleを0に変更する前のtimeScale
 
@@ -33,7 +40,6 @@ public class Popup : MonoBehaviour
             gameObject.transform.localScale = Prefabs.CloseCurve.Evaluate(Mathf.Min(1f, generation_time / DURATION_TIME)) * Vector3.one;
             if (generation_time >= DURATION_TIME)
             {
-                PnlBlack.SetActive(false);
                 Time.timeScale = timeScaleDef;
                 State = StateEnum.Other;
             }
@@ -48,9 +54,17 @@ public class Popup : MonoBehaviour
 
         try
         {
-            PnlBlack = new List<Image>(
-                gameObject.transform.parent.gameObject.GetComponentsInChildren<Image>(true))
+            PnlBlackCanvas = gameObject.transform.parent.gameObject;
+            var parentPopup = PnlBlackCanvas.GetComponent<Popup>();
+            // 親もPopupウィンドウのときは、親のPnlBlackCanvasをコピー
+            if (parentPopup != null)
+                PnlBlackCanvas = parentPopup.PnlBlackCanvas;
+            
+            PnlBlack = new List<Image>(PnlBlackCanvas.GetComponentsInChildren<Image>(true))
                 .Find(i => i.gameObject.name == "PnlBlack").gameObject;
+            pnlBlackVisible = PnlBlack.activeInHierarchy;
+            pnlBlackIndex = PnlBlack.transform.GetSiblingIndex();
+            PnlBlack.transform.SetSiblingIndex(transform.GetSiblingIndex() - 1);  // 上から2番目に設定
             PnlBlack.SetActive(true);
         }
         catch (System.Exception)
@@ -65,7 +79,8 @@ public class Popup : MonoBehaviour
     // Destroyは各自で
     public void Close()
     {
-        PnlBlack.SetActive(false);
+        if (!pnlBlackVisible) PnlBlack.SetActive(false);
+        PnlBlack.transform.SetSiblingIndex(pnlBlackIndex);
         generation_time = 0f;
         State = StateEnum.Closing;
     }

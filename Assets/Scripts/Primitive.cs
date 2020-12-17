@@ -82,7 +82,7 @@ public class Primitive
     private void SetKinematic()
     {
         if (NonKinematic)
-            obj.GetComponent<Rigidbody>().isKinematic = Stage.ActiveScene == SceneType.Create;
+            obj.GetComponent<Rigidbody>().isKinematic = Scenes.GetActiveScene() != SceneType.Play;
     }
 
     // objのアルファ値を変更

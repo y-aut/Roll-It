@@ -72,7 +72,7 @@ public class InputBox : MonoBehaviour
 
     private IEnumerator WaitClose(Action after)
     {
-        while (popup.IsClosing) yield return new WaitForSeconds(0.1f);
+        while (popup.IsClosing) yield return new WaitForEndOfFrame();
         after();
         Destroy(popup.gameObject);
     }

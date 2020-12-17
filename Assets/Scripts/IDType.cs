@@ -13,7 +13,7 @@ public struct IDType
     [SerializeField]
     uint p;      // 31bit にすると 36^6 でおさえられる
 
-    private IDType(uint _p) { p = _p; }
+    public IDType(uint _p) { p = _p; }
 
     public IDType(string str)
     {
@@ -73,6 +73,39 @@ public struct IDType
         return sb.ToString();
     }
 
+    public static explicit operator uint(IDType id) => id.p;
+
     public override bool Equals(object obj) => base.Equals(obj);
     public override int GetHashCode() => (int)p;
+}
+
+[Serializable]
+public class IDTypeCollection
+{
+    [SerializeField]
+    private List<long> v;
+
+    public IDTypeCollection(List<IDType> src)
+    {
+        v = new List<long>();
+        for (int i = 0; i < src.Count / 2; ++i)
+            v.Add((long)src[i * 2] << 32 | (uint)src[i * 2 + 1]);
+        if (src.Count % 2 == 1)
+            v.Add((long)src.Last() << 32 | (uint)IDType.Empty);
+    }
+
+    public List<IDType> ToList()
+    {
+        var list = new List<IDType>();
+        foreach (var i in v)
+        {
+            list.Add(new IDType((uint)(i >> 32)));
+            list.Add(new IDType((uint)(i & 0xffffffff)));
+        }
+        if (list.Count != 0 && list.Last() == IDType.Empty) list.RemoveAt(list.Count - 1);
+        return list;
+    }
+
+    public List<long> GetRawList() => v;
+
 }
