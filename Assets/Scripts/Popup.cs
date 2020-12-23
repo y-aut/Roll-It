@@ -21,6 +21,7 @@ public class Popup : MonoBehaviour
     int pnlBlackIndex;      // PnlBlackのSiblingIndex
     float generation_time = 0f;     // Open/Close処理を開始してから経過した秒数
     float timeScaleDef;     // timeScaleを0に変更する前のtimeScale
+    bool flgDestroy = false;    // Close()した後に自動でDestroyするか
 
     // Closeするまで待機してもらう
     public bool IsClosing => State == StateEnum.Closing;
@@ -42,6 +43,7 @@ public class Popup : MonoBehaviour
             {
                 Time.timeScale = timeScaleDef;
                 State = StateEnum.Other;
+                if (flgDestroy) Destroy(gameObject);
             }
         }
     }
@@ -83,5 +85,11 @@ public class Popup : MonoBehaviour
         PnlBlack.transform.SetSiblingIndex(pnlBlackIndex);
         generation_time = 0f;
         State = StateEnum.Closing;
+    }
+
+    public void CloseAndDestroy()
+    {
+        flgDestroy = true;
+        Close();
     }
 }

@@ -73,7 +73,7 @@ public struct IDType
         return sb.ToString();
     }
 
-    public static explicit operator uint(IDType id) => id.p;
+    public uint GetRawVal() => p;
 
     public override bool Equals(object obj) => base.Equals(obj);
     public override int GetHashCode() => (int)p;
@@ -89,9 +89,14 @@ public class IDTypeCollection
     {
         v = new List<long>();
         for (int i = 0; i < src.Count / 2; ++i)
-            v.Add((long)src[i * 2] << 32 | (uint)src[i * 2 + 1]);
+            v.Add(AddMethod.Pack((int)src[i * 2].GetRawVal(), (int)src[i * 2 + 1].GetRawVal()));
         if (src.Count % 2 == 1)
-            v.Add((long)src.Last() << 32 | (uint)IDType.Empty);
+            v.Add(AddMethod.Pack((int)src.Last().GetRawVal(), (int)IDType.Empty.GetRawVal()));
+    }
+
+    public IDTypeCollection(List<long> rawList)
+    {
+        v = new List<long>(rawList);
     }
 
     public List<IDType> ToList()
@@ -99,13 +104,34 @@ public class IDTypeCollection
         var list = new List<IDType>();
         foreach (var i in v)
         {
-            list.Add(new IDType((uint)(i >> 32)));
-            list.Add(new IDType((uint)(i & 0xffffffff)));
+            list.Add(new IDType((uint)i.GetUpper()));
+            list.Add(new IDType((uint)i.GetLower()));
         }
         if (list.Count != 0 && list.Last() == IDType.Empty) list.RemoveAt(list.Count - 1);
         return list;
     }
 
     public List<long> GetRawList() => v;
+}
 
+[Serializable]
+public class IDPair
+{
+    [SerializeField]
+    private long v;
+
+    public IDPair(IDType id1, IDType id2)
+    {
+        v = AddMethod.Pack((int)id1.GetRawVal(), (int)id2.GetRawVal());
+    }
+
+    public IDPair(long rawVal)
+    {
+        v = rawVal;
+    }
+
+    public long GetRawVal() => v;
+
+    public IDType ID1 => new IDType((uint)v.GetUpper());
+    public IDType ID2 => new IDType((uint)v.GetLower());
 }

@@ -25,7 +25,7 @@ public class MessageBox : MonoBehaviour
         script.AnswerType = type;
         script.description = desc;
         script.OKClickedAction = OKClicked;
-        script.CancelClickedAction = CancelClicked ?? (() => { });
+        script.CancelClickedAction = CancelClicked;
         script.popup.Open();
     }
 
@@ -44,15 +44,6 @@ public class MessageBox : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        // 戻るボタン
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            BtnCancel_Click();
-        }
-    }
-
     public void BtnOK_Click()
     {
         popup.Close();
@@ -67,8 +58,8 @@ public class MessageBox : MonoBehaviour
 
     private IEnumerator WaitClose(Action after)
     {
-        while (popup.IsClosing) yield return new WaitForSeconds(0.1f);
-        after();
+        while (popup.IsClosing) yield return new WaitForEndOfFrame();
+        after?.Invoke();
         Destroy(popup.gameObject);
     }
 }

@@ -27,6 +27,9 @@ public class StructureZip
         p = _p; q = _q;
     }
 
+    public long GetRawP() => p;
+    public long GetRawQ() => q;
+
     // Pack
     public StructureZip(Structure src)
     {
@@ -114,8 +117,27 @@ public class StructureZipCollection
         v = src;
     }
 
+    public StructureZipCollection(List<long> rawList)
+    {
+        v = new List<StructureZip>();
+        for (int i = 0; i < rawList.Count; i += 2)
+        {
+            v.Add(new StructureZip(rawList[i], rawList[i + 1]));
+        }
+    }
+
     public static implicit operator List<StructureZip>(StructureZipCollection col) => col.v;
 
     public List<Structure> ToStructures(Stage parent) => v.Select(i => i.ToStructure(parent)).ToList();
 
+    public List<long> GetRawList()
+    {
+        var res = new List<long>();
+        foreach (var i in v)
+        {
+            res.Add(i.GetRawP());
+            res.Add(i.GetRawQ());
+        }
+        return res;
+    }
 }

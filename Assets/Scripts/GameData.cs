@@ -24,15 +24,37 @@ public static class GameData
         PlayerPrefs.SetString(USERLOCAL_STRING, JsonUtility.ToJson(User.LocalData));
     }
 
-    public static void Load()
+    public static bool Load(Transform parent)
     {
+        bool success = true;
+
         if (PlayerPrefs.HasKey(STAGES_STRING))
         {
-            Stages = JsonUtility.FromJson<StageZipCollection>(PlayerPrefs.GetString(STAGES_STRING)).ToStages();
+            try
+            {
+                Stages = JsonUtility.FromJson<StageZipCollection>(PlayerPrefs.GetString(STAGES_STRING)).ToStages();
 
-            var locals = JsonUtility.FromJson<SerializableList<StageLocal>>(PlayerPrefs.GetString(STAGELOCALS_STRING));
-            for (int i = 0; i < Stages.Count; ++i)
-                Stages[i].LocalData = locals[i];
+                var locals = JsonUtility.FromJson<SerializableList<StageLocal>>(PlayerPrefs.GetString(STAGELOCALS_STRING));
+                for (int i = 0; i < Stages.Count; ++i)
+                    Stages[i].LocalData = locals[i];
+            }
+            catch (System.Exception)
+            {
+                success = false;
+            }
+            finally
+            {
+                if (Stages == null)
+                    Stages = new List<Stage>();
+                else
+                {
+                    foreach (var stage in Stages)
+                    {
+                        if (stage.LocalData == null)
+                            stage.LocalData = new StageLocal();
+                    }
+                }
+            }
         }
         else
         {
@@ -41,14 +63,31 @@ public static class GameData
 
         if (PlayerPrefs.HasKey(USER_STRING))
         {
-            User = JsonUtility.FromJson<UserZip>(PlayerPrefs.GetString(USER_STRING)).ToUser();
-            User.LocalData = JsonUtility.FromJson<UserLocal>(PlayerPrefs.GetString(USERLOCAL_STRING));
+            try
+            {
+                User = JsonUtility.FromJson<UserZip>(PlayerPrefs.GetString(USER_STRING)).ToUser();
+                User.LocalData = JsonUtility.FromJson<UserLocal>(PlayerPrefs.GetString(USERLOCAL_STRING));
+            }
+            catch (System.Exception)
+            {
+                success = false;
+            }
+            finally
+            {
+                if (User == null)
+                    User = new User();
+                else if (User.LocalData == null)
+                    User.LocalData = new UserLocal();
+            }
         }
         else
         {
             User = new User();
         }
+
         User.Login();
+
+        return success;
     }
 
 }

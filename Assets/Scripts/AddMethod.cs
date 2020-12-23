@@ -6,6 +6,7 @@ using UnityEngine;
 public static partial class AddMethod
 {
     public static T Last<T>(this List<T> list) => list[list.Count - 1];
+    public static T LastOrDefault<T>(this List<T> list, T def) => list.Count == 0 ? def : list.Last();
 
     public static Vector3 NewX(this Vector3 vec, float x) => new Vector3(x, vec.y, vec.z);
     public static Vector3 NewY(this Vector3 vec, float y) => new Vector3(vec.x, y, vec.z);
@@ -78,6 +79,16 @@ public static partial class AddMethod
     public static Vector3 Fix(Vector3 nlim, Vector3 p, Vector3 plim)
         => new Vector3(Fix(nlim.x, p.x, plim.x), Fix(nlim.y, p.y, plim.y), Fix(nlim.z, p.z, plim.z));
 
+    // 32bit整数2つを64bit整数に
+    public static long Pack(int upper, int lower) => (long)upper << 32 | (uint)lower;
 
+    // 64bit整数を32bit整数2つに
+    public static int GetUpper(this long packed) => (int)(packed >> 32);
+    public static int GetLower(this long packed) => (int)(packed & 0xffffffffL);
+
+    // 上位32bitをインクリメント
+    public static long GetUpperIncremented(this long packed) => packed + (1L << 32);
+    // 上位32bitをデクリメント
+    public static long GetUpperDecremented(this long packed) => packed - (1L << 32);
 }
 

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -20,7 +21,11 @@ public class Stage
     // 作者ID
     public IDType AuthorID;
 
-    // 公開日時
+    // 作者情報（一度取得したら保持しておく。Stageとして保存はしない）
+    public User Author { get; set; }
+    public async Task GetAuthor() => Author = await FirebaseIO.GetUser(AuthorID);
+
+    // 公開日時(UTC)
     public DateTime PublishedDate;
 
     // クリア人数
@@ -171,4 +176,10 @@ public class StageLocal
 public enum EvaluationEnum
 {
     None, Good, Neutral, Bad,
+}
+
+// Stageクラスのもつパラメータ
+public enum StageParams
+{
+    ID, Name, AuthorID, PublishedDate, ClearCount, ChallengeCount, PosEvaCount, NegEvaCount, Structs
 }

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: d31856223d9f3a64b93e7540f70d53a7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - cam: {instanceID: 0}
+  - panel: {instanceID: 0}
+  - arrowPrefab: {instanceID: 0}
+  - XZResizeCubePrefab: {instanceID: 0}
+  - YResizeCubePrefab: {instanceID: 0}
+  - FrameCubePrefab: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

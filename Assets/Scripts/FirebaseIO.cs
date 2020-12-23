@@ -5,52 +5,53 @@ using System.Threading.Tasks;
 using System.Linq;
 using UnityEngine;
 using Firebase;
-using Firebase.Database;
+using Firebase.Firestore;
 
-// Firebase Databaseへの読み書きを行う
+// Firebaseへの読み書きを行う
 public static class FirebaseIO
 {
     // Firebaseが利用可能かどうか
     public static bool Available { get; set; } = false;
 
-    // Database References
-    public static DatabaseReference Root
+    // Collection Reference
+    public static void SetReference()
     {
-        set
-        {
-            Users = value.Child("Users");
-            Stages = value.Child("Stages");
-        }
+        Root = FirebaseFirestore.DefaultInstance;
+        Users = Root.Collection("Users");
+        Stages = Root.Collection("Stages");
     }
-    public static DatabaseReference Users { get; set; }
-    public static DatabaseReference Stages { get; set; }
-    public static DatabaseReference Me => Users.Child(GameData.User.ID.ToString());
+
+    private static FirebaseFirestore Root { get; set; }
+    private static CollectionReference Users { get; set; }
+    private static CollectionReference Stages { get; set; }
+    private static DocumentReference Me => Users.Document(GameData.User.ID.ToString());
 
     // ユーザーを登録する
     public static async Task RegisterUser(User user)
     {
-        if (!Available) throw new GameException(GameExceptionEnum.FirebaseUnavailable);
+        if (!Available) throw GameException.FirebaseUnavailable;
 
         IDType id;
-        DatabaseReference entry;
-        DataSnapshot val;
+        DocumentReference entry;
+        DocumentSnapshot val;
         do
         {
             id = IDType.Generate();
-            entry = Users.Child(id.ToString());
-            val = await entry.GetValueAsync();
-        } while (val.HasChildren);
+            entry = Users.Document(id.ToString());
+            val = await entry.GetSnapshotAsync();
+        } while (val.Exists);
 
         user.ID = id;
-        await entry.SetRawJsonValueAsync(JsonUtility.ToJson(new UserZip(user)));
+        await entry.SetAsync(new UserZip(user));
     }
 
     // ユーザー名を変更する
     public static async Task ChangeUserName(string newName)
     {
-        if (!Available) throw new GameException(GameExceptionEnum.FirebaseUnavailable);
+        if (!Available) throw GameException.FirebaseUnavailable;
 
-        await Me.Child("n").SetValueAsync(newName);
+        await Me.UpdateAsync(new Dictionary<string, object>()
+            { { UserZip.GetKey(UserParams.Name), newName } });
         GameData.User.Name = newName;
         GameData.Save();
     }
@@ -58,28 +59,29 @@ public static class FirebaseIO
     // ステージを公開する
     public static async Task PublishStage(Stage stage)
     {
-        if (!Available) throw new GameException(GameExceptionEnum.FirebaseUnavailable);
+        if (!Available) throw GameException.FirebaseUnavailable;
 
         IDType id;
-        DatabaseReference entry;
-        DataSnapshot val;
+        DocumentReference entry;
+        DocumentSnapshot val;
         do
         {
             id = IDType.Generate();
-            entry = Stages.Child(id.ToString());
-            val = await entry.GetValueAsync();
-        } while (val.HasChildren);
+            entry = Stages.Document(id.ToString());
+            val = await entry.GetSnapshotAsync();
+        } while (val.Exists);
 
         stage.ID = id;
-        stage.PublishedDate = DateTime.Now;
-        await entry.SetRawJsonValueAsync(JsonUtility.ToJson(new StageZip(stage)));
+        stage.PublishedDate = DateTime.Now.ToUniversalTime();
+        await entry.SetAsync(new StageZip(stage));
         stage.LocalData.IsPublished = true;
 
         // ユーザーデータのPublishedStagesに追加
         GameData.User.PublishedStages.Add(id);
+
+        // PublishedStagesをすべて更新する
         var ids = new IDTypeCollection(GameData.User.PublishedStages);
-        await Me.Child("p").Child("v")
-            .Child((ids.GetRawList().Count - 1).ToString()).SetValueAsync(ids.GetRawList().Last());
+        await Me.UpdateAsync(UserZip.GetKey(UserParams.PublishedStages), ids.GetRawList());
 
         GameData.Save();
     }
@@ -87,99 +89,201 @@ public static class FirebaseIO
     // ステージを非公開にする
     public static async Task UnpublishStage(Stage stage)
     {
-        if (!Available) throw new GameException(GameExceptionEnum.FirebaseUnavailable);
+        if (!Available) throw GameException.FirebaseUnavailable;
 
-        await Stages.Child(stage.ID.ToString()).RemoveValueAsync();
+        await Stages.Document(stage.ID.ToString()).DeleteAsync();
         stage.LocalData.IsPublished = false;
 
         // ユーザーデータのPublishedStagesから削除
         GameData.User.PublishedStages.Remove(stage.ID);
+
+        // PublishedStagesをすべて更新する
         var ids = new IDTypeCollection(GameData.User.PublishedStages);
-        await Users.Child(GameData.User.ID.ToString()).Child("p")
-            .SetRawJsonValueAsync(JsonUtility.ToJson(ids));
+        await Me.UpdateAsync(UserZip.GetKey(UserParams.PublishedStages), ids.GetRawList());
 
         GameData.Save();
     }
 
-    // 公開中のステージを取得し、actionによる操作を行う
-    public static async Task<List<Stage>> GetAllStages()
-    {
-        if (!Available) throw new GameException(GameExceptionEnum.FirebaseUnavailable);
+    // 直近に取得した最後のステージ
+    private static DocumentSnapshot LastSnapShot;
 
+    // 公開中のステージをkeyの値が大きい順にLIMIT個を取得する（0ページ目）
+    public static async Task<List<Stage>> GetStagesAtFirstPage(string key)
+    {
+        if (!Available) throw GameException.FirebaseUnavailable;
+        
         var stages = new List<StageZip>();
-        var values = await Stages.GetValueAsync();
-        foreach (var i in values.Children)
+        var values = await Stages.OrderByDescending(key).Limit(StageViewContentOperator.STAGE_LIMIT).GetSnapshotAsync();
+        if (values.Count != 0) LastSnapShot = values.Last();
+
+        foreach (var i in values.Documents)
         {
-            stages.Add(JsonUtility.FromJson<StageZip>(i.GetRawJsonValue()));
+            stages.Add(i.ConvertTo<StageZip>());
         }
 
         return new StageZipCollection(stages).ToStages();
     }
 
+    // 次のページを取得する
+    public static async Task<List<Stage>> GetStagesAtNextPage(string key)
+    {
+        if (!Available) throw GameException.FirebaseUnavailable;
+        
+        var stages = new List<StageZip>();
+        var values = await Stages.OrderByDescending(key).StartAfter(LastSnapShot)
+            .Limit(StageViewContentOperator.STAGE_LIMIT).GetSnapshotAsync();
+        LastSnapShot = values.Last();
+
+        foreach (var i in values.Documents)
+        {
+            stages.Add(i.ConvertTo<StageZip>());
+        }
+
+        return new StageZipCollection(stages).ToStages();
+    }
+
+    // 公開中のステージをkeyの値が最も小さいもののIDを取得する
+    // ステージが一つも存在しないときは、Emptyを返す
+    public static async Task<IDType> GetLastStageID(string key)
+    {
+        if (!Available) throw GameException.FirebaseUnavailable;
+        
+        var value = await Stages.OrderBy(key).Limit(1).GetSnapshotAsync();
+
+        if (value.Count == 0) return IDType.Empty;
+        else return value.First().ConvertTo<StageZip>().ToStage().ID;
+    }
+
     // 作ったステージのローカルデータを更新
     public static async Task UpdateMyStages()
     {
-        if (!Available) throw new GameException(GameExceptionEnum.FirebaseUnavailable);
+        if (!Available) throw GameException.FirebaseUnavailable;
 
-        // c(Clear), t(Try), l(Like), d(Dislike)を取得
+        // 公開中のステージを全て取得
         var published = GameData.Stages.Where(i => i.LocalData.IsPublished);
-        Task<DataSnapshot>[] tasks = new Task<DataSnapshot>[published.Count() * 4];
-        for (int i = 0; i < published.Count(); ++i)
-        {
-            tasks[i * 4 + 0] = Stages.Child(published.ElementAt(i).ID.ToString()).Child("c").GetValueAsync();
-            tasks[i * 4 + 1] = Stages.Child(published.ElementAt(i).ID.ToString()).Child("t").GetValueAsync();
-            tasks[i * 4 + 2] = Stages.Child(published.ElementAt(i).ID.ToString()).Child("l").GetValueAsync();
-            tasks[i * 4 + 3] = Stages.Child(published.ElementAt(i).ID.ToString()).Child("d").GetValueAsync();
-        }
+        var tasks = new List<Task<DocumentSnapshot>>();
+
+        foreach (var stage in published)
+            tasks.Add(Stages.Document(stage.ID.ToString()).GetSnapshotAsync());
         var vals = await Task.WhenAll(tasks);
 
         for (int i = 0; i < published.Count(); ++i)
         {
-            published.ElementAt(i).ClearCount       = int.Parse(vals[i * 4 + 0].Value.ToString());
-            published.ElementAt(i).ChallengeCount   = int.Parse(vals[i * 4 + 1].Value.ToString());
-            published.ElementAt(i).PosEvaCount      = int.Parse(vals[i * 4 + 2].Value.ToString());
-            published.ElementAt(i).NegEvaCount      = int.Parse(vals[i * 4 + 3].Value.ToString());
+            var stage = vals[i].ConvertTo<StageZip>().ToStage();
+            published.ElementAt(i).ClearCount = stage.ClearCount;
+            published.ElementAt(i).ChallengeCount = stage.ChallengeCount;
+            published.ElementAt(i).PosEvaCount = stage.PosEvaCount;
+            published.ElementAt(i).NegEvaCount = stage.NegEvaCount;
         }
     }
 
-    // キーに対応する数字を+1する
-    private static async Task IncrementCount(IDType id, string key)
+    // ユーザーデータを同期
+    public static async Task SyncUser()
     {
-        if (!Available) throw new GameException(GameExceptionEnum.FirebaseUnavailable);
+        if (!Available) throw GameException.FirebaseUnavailable;
 
-        var add = Stages.Child(id.ToString()).Child(key);
+        var user = (await Me.GetSnapshotAsync()).ConvertTo<UserZip>().ToUser();
+        User.Sync(GameData.User, user);
+        await Me.SetAsync(new UserZip(user));
+    }
 
-        var res = await add.GetValueAsync();
-        await add.SetValueAsync(int.Parse(res.Value.ToString()) + 1);
+    // ステージのIDからステージを取得
+    public static async Task<Stage> GetStage(IDType stageID)
+    {
+        var res = await Stages.Document(stageID.ToString()).GetSnapshotAsync();
+        return res.ConvertTo<StageZip>().ToStage();
+    }
+
+    // ユーザーIDからユーザーを取得
+    public static async Task<User> GetUser(IDType userID)
+    {
+        var res = await Users.Document(userID.ToString()).GetSnapshotAsync();
+        if (!res.Exists) return User.NotFound;
+        return res.ConvertTo<UserZip>().ToUser();
+    }
+
+    // ステージのキーに対応する数字を+1する
+    private static async Task IncrementCount(IDType stageID, StageParams par)
+    {
+        await Stages.Document(stageID.ToString()).UpdateAsync(StageZip.GetKey(par), FieldValue.Increment(1));
+    }
+
+    // Userのパラメータに対応する数字を+1する
+    private static async Task IncrementUserCount(IDType userID, UserParams par)
+    {
+        await Users.Document(userID.ToString()).UpdateAsync(UserZip.GetKey(par), FieldValue.Increment(1));
+    }
+
+    // Userのパラメータに対応する数字を-1する
+    private static async Task DecrementUserCount(IDType userID, UserParams par)
+    {
+        await Users.Document(userID.ToString()).UpdateAsync(UserZip.GetKey(par), FieldValue.Increment(-1));
     }
 
     // ステージのクリア回数を+1する
-    public static async Task IncrementClearCount(IDType id)
+    public static async Task IncrementClearCount(Stage stage)
     {
-        await IncrementCount(id, "c");
-        GameData.User.LocalData.ClearedIDs.Add(id);
+        ++stage.ClearCount;
+        if (GameData.User.LocalData.ClearedIDs.Contains(stage.ID))
+        {
+            await IncrementCount(stage.ID, StageParams.ClearCount);
+        }
+        else
+        {
+            await Task.WhenAll(IncrementCount(stage.ID, StageParams.ClearCount),
+                IncrementUserCount(GameData.User.ID, UserParams.ClearCount));
+            GameData.User.LocalData.ClearedIDs.Add(stage.ID);
+        }
+
         GameData.Save();
     }
 
     // ステージのチャレンジ回数を+1する
-    public static async Task IncrementChallengeCount(IDType id)
+    public static async Task IncrementChallengeCount(Stage stage)
     {
-        await IncrementCount(id, "t");
+        ++stage.ChallengeCount;
+        await Task.WhenAll(IncrementCount(stage.ID, StageParams.ChallengeCount),
+            IncrementUserCount(stage.AuthorID, UserParams.ChallengedCount));
     }
 
     // ステージの高評価数を+1する
-    public static async Task IncrementPosEvaCount(IDType id)
+    public static async Task IncrementPosEvaCount(Stage stage)
     {
-        await IncrementCount(id, "l");
-        GameData.User.LocalData.PosEvaIDs.Add(id);
+        ++stage.PosEvaCount;
+        await Task.WhenAll(IncrementCount(stage.ID, StageParams.PosEvaCount),
+            IncrementUserCount(stage.AuthorID, UserParams.PosEvaCount));
+        
+        GameData.User.LocalData.PosEvaIDs.Add(stage.ID);
         GameData.Save();
     }
 
     // ステージの低評価数を+1する
-    public static async Task IncrementNegEvaCount(IDType id)
+    public static async Task IncrementNegEvaCount(Stage stage)
     {
-        await IncrementCount(id, "d");
-        GameData.User.LocalData.NegEvaIDs.Add(id);
+        ++stage.NegEvaCount;
+        await IncrementCount(stage.ID, StageParams.NegEvaCount);
+
+        GameData.User.LocalData.NegEvaIDs.Add(stage.ID);
+        GameData.Save();
+    }
+
+    // ユーザーをお気に入りに登録する
+    public static async Task IncrementFavoredCount(User user)
+    {
+        ++user.FavoredCount;
+        await IncrementUserCount(user.ID, UserParams.FavoredCount);
+
+        GameData.User.LocalData.FavorUserIDs.Add(user.ID);
+        GameData.Save();
+    }
+
+    // ユーザーをお気に入りから解除する
+    public static async Task DecrementFavoredCount(User user)
+    {
+        --user.FavoredCount;
+        await DecrementUserCount(user.ID, UserParams.FavoredCount);
+
+        GameData.User.LocalData.FavorUserIDs.Remove(user.ID);
         GameData.Save();
     }
 }

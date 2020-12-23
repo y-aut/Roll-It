@@ -82,7 +82,7 @@ public class PlayOperator : MonoBehaviour
 
         if (!IsMyStage)
         {
-            _ = FirebaseIO.IncrementChallengeCount(Stage.ID);
+            _ = FirebaseIO.IncrementChallengeCount(Stage);
         }
 
         effect = new EffectManager();
@@ -114,11 +114,7 @@ public class PlayOperator : MonoBehaviour
         // GameOver判定
         if (Ball.transform.position.y < Stage.GameOverY)
         {
-            Stage.Destroy();
-            if (TestPlay)
-                Scenes.LoadScene(SceneType.Create);
-            else
-                Scenes.LoadScene(SceneType.Select);
+            Restart();
             return;
         }
         // Clear判定
@@ -135,7 +131,7 @@ public class PlayOperator : MonoBehaviour
             Stick.SetActive(false);
             StickBack.SetActive(false);
             BtnPause.SetActive(false);
-            StartCoroutine(DoClearEvent());
+            DoClearEvent();
             return;
         }
         // Collision判定
@@ -155,34 +151,28 @@ public class PlayOperator : MonoBehaviour
         }
     }
 
-    private IEnumerator DoClearEvent()
+    private void DoClearEvent()
     {
-        var endFrame = new WaitForEndOfFrame();
-
-        effect.StageClear(ImgClear);
-        while (effect.Cleared)
+        StartCoroutine(effect.StageClear(ImgClear, () =>
         {
-            effect.Update();
-            yield return endFrame;
-        }
-        
-        if (!IsMyStage)
-        {
-            ResultOperator.Stage = Stage;
-            FadeComponent.FadeIn(1f, () =>
+            if (!IsMyStage)
+            {
+                FadeComponent.FadeIn(1f, () =>
+                {
+                    Stage.Destroy();
+                    MenuOperator.ReadyForResult(Stage);
+                    Scenes.LoadScene(SceneType.Menu);
+                });
+            }
+            else
             {
                 Stage.Destroy();
-                Scenes.LoadScene(SceneType.Result);
-            });
-        }
-        else
-        {
-            Stage.Destroy();
-            if (TestPlay)
-                Scenes.LoadScene(SceneType.Create);
-            else
-                Scenes.LoadScene(SceneType.Select);
-        }
+                if (TestPlay)
+                    Scenes.LoadScene(SceneType.Create);
+                else
+                    Scenes.LoadScene(SceneType.Menu);
+            }
+        }));
     }
 
     // ロード前に設定すべき変数
@@ -211,7 +201,7 @@ public class PlayOperator : MonoBehaviour
         if (TestPlay)
             Scenes.LoadScene(SceneType.Create);
         else
-            Scenes.LoadScene(SceneType.Select);
+            Scenes.LoadScene(SceneType.Menu);
         return;
     }
 

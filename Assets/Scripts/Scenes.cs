@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public enum SceneType
 {
-    Menu, Play, Create, Select, Result,
+    Menu, Play, Create,
 }
 
 public static class Scenes
@@ -21,10 +21,6 @@ public static class Scenes
                 return SceneType.Play;
             case "Create Scene":
                 return SceneType.Create;
-            case "Select Scene":
-                return SceneType.Select;
-            case "Result Scene":
-                return SceneType.Result;
             default:
                 throw GameException.Unreachable;
         }
@@ -32,6 +28,7 @@ public static class Scenes
 
     public static void LoadScene(SceneType scene)
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene((int)scene);
     }
 }

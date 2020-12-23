@@ -30,7 +30,7 @@ public class InputBox : MonoBehaviour
         script.defaultString = defaultString;
         script.description = desc;
         script.OKClickedAction = OKClicked;
-        script.CancelClickedAction = CancelClicked ?? (() => { });
+        script.CancelClickedAction = CancelClicked;
         script.popup.Open();
     }
 
@@ -50,7 +50,7 @@ public class InputBox : MonoBehaviour
         BtnOK.interactable = InputField.text != "" || AllowEmpty;
 
         // 戻るボタン
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (AllowCancel && Input.GetKeyDown(KeyCode.Escape))
         {
             BtnCancel_Click();
         }
@@ -73,7 +73,7 @@ public class InputBox : MonoBehaviour
     private IEnumerator WaitClose(Action after)
     {
         while (popup.IsClosing) yield return new WaitForEndOfFrame();
-        after();
+        after?.Invoke();
         Destroy(popup.gameObject);
     }
 }

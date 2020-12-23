@@ -350,13 +350,13 @@ public class CreateOperator : MonoBehaviour
             {
                 Stage.Name = result;
                 GameData.Save();
-                Scenes.LoadScene(SceneType.Select);
+                Scenes.LoadScene(SceneType.Menu);
             }, allowCancel: false);
         }
         else
         {
             GameData.Save();
-            Scenes.LoadScene(SceneType.Select);
+            Scenes.LoadScene(SceneType.Menu);
         }
     }
 

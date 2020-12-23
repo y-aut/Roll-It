@@ -12,17 +12,32 @@ public class User
     // ユーザー名
     public string Name = "";
 
-    // アカウント作成日時
+    // 所持しているコインの数
+    public int Coin = 0;
+
+    // 購入したコインの総数
+    public int PurchasedCoin = 0;
+
+    // アカウントの状態
+    public UserType Type = UserType.None;
+
+    // アカウント作成日時(UTC)
     public DateTime StartDate;
 
-    // 最終ログイン日時
+    // 最終ログイン日時(UTC)
     public DateTime LastDate;
 
     // クリアしたステージ数（重複なし）
-    public int ClearedCount = 0;
+    public int ClearCount = 0;
+
+    // 作ったコースが遊ばれた回数
+    public int ChallengedCount = 0;
 
     // 総高評価数
     public int PosEvaCount = 0;
+
+    // お気に入り登録された回数
+    public int FavoredCount = 0;
 
     // 公開したステージ
     public List<IDType> PublishedStages;
@@ -30,28 +45,53 @@ public class User
     // ローカルデータ
     public UserLocal LocalData;
 
+    // 見つからなかったユーザー
+    public static User NotFound = new User() { ID = IDType.Empty, Name = "Not Found" };
+
     public User()
     {
-        StartDate = DateTime.Now;
+        StartDate = DateTime.Now.ToUniversalTime();
         PublishedStages = new List<IDType>();
         LocalData = new UserLocal();
     }
 
     // UserZipからの解凍時に用いる
-    public User(IDType id, string name, DateTime start, DateTime last, int clear, int posEva, IDTypeCollection published)
+    public User(IDType id, string name, int coin, int purchased, UserType type, DateTime start, DateTime last,
+        int clear, int challenged, int posEva, int favored, IDTypeCollection published)
     {
         ID = id;
         Name = name;
+        Coin = coin;
+        PurchasedCoin = purchased;
+        Type = type;
         StartDate = start;
         LastDate = last;
-        ClearedCount = clear;
+        ClearCount = clear;
+        ChallengedCount = challenged;
         PosEvaCount = posEva;
+        FavoredCount = favored;
         PublishedStages = published.ToList();
     }
 
     public void Login()
     {
-        LastDate = DateTime.Now;
+        LastDate = DateTime.Now.ToUniversalTime();
+    }
+
+    // ローカルデータとサーバーデータを同期し、更新
+    public static void Sync(User local, User server)
+    {
+        // ID, StartDateはIDの作成時に同期している
+        // Nameは同期されていない可能性あり？-- オフラインでの名前変更を許す？
+        server.Name = local.Name;
+        // Coin, PurchasedCoin, Type, PublishedStagesは変更時に同期している
+        // Login()はオフラインでも出来たほうが良いので、LastDateはここで同期する
+        server.LastDate = local.LastDate;
+        // カウンタ系はここで同期する
+        local.ClearCount = server.ClearCount;
+        local.ChallengedCount = server.ChallengedCount;
+        local.PosEvaCount = server.PosEvaCount;
+        local.FavoredCount = server.FavoredCount;
     }
 }
 
@@ -71,10 +111,30 @@ public class UserLocal
     [SerializeField]
     public List<IDType> NegEvaIDs;
 
+    // お気に入りしたユーザー
+    [SerializeField]
+    public List<IDType> FavorUserIDs;
+
     public UserLocal()
     {
         ClearedIDs = new List<IDType>();
         PosEvaIDs = new List<IDType>();
         NegEvaIDs = new List<IDType>();
+        FavorUserIDs = new List<IDType>();
     }
+}
+
+// アカウントのプラン
+[Serializable]
+public enum UserType
+{
+    None,           // 無課金
+    AdBlock,        // 広告非表示
+}
+
+// Userクラスのもつパラメータ
+public enum UserParams
+{
+    ID, Name, Coin, PurchasedCoin, Type, StartDate, LastDate, ClearCount, ChallengedCount,
+    PosEvaCount, FavoredCount, PublishedStages
 }

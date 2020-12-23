@@ -15,6 +15,8 @@ public class NowLoading : MonoBehaviour
     private string message;
     private static GameObject instance = null;
 
+    private static int PiledCount = 0;      // 同時に開いているNowLoadingの個数
+
     public static bool Visible { get; private set; }
 
     // Start is called before the first frame update
@@ -32,6 +34,11 @@ public class NowLoading : MonoBehaviour
 
     public static void Show(Transform parent, string msg)
     {
+        if (++PiledCount > 1) return;
+        //if (Visible)
+        //{
+        //    throw new GameException(GameExceptionEnum.DoubleLoading);
+        //}
         Visible = true;
         instance = Instantiate(Prefabs.NowLoadingPrefab, parent, false);
         instance.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
@@ -42,7 +49,11 @@ public class NowLoading : MonoBehaviour
 
     public static void Close(Action after = null)
     {
-        after = after ?? (() => { });
+        if (--PiledCount > 0)
+        {
+            after?.Invoke();
+            return;
+        }
         Visible = false;
         var script = instance.GetComponent<NowLoading>();
         script.popup.Close();
@@ -52,7 +63,7 @@ public class NowLoading : MonoBehaviour
     private IEnumerator WaitClose(Action after)
     {
         while (popup.IsClosing) yield return new WaitForSeconds(0.1f);
-        after();
+        after?.Invoke();
         Destroy(instance);
     }
 }

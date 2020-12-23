@@ -33,9 +33,11 @@ public class Prefabs : MonoBehaviour
     public static GameObject InputBoxPrefab;        // InputBoxのプレハブ
     public static GameObject MessageBoxPrefab;      // MessageBoxのプレハブ
     public static GameObject StageItemPrefab;       // StageItemのプレハブ
+    public static GameObject StagePanelPrefab;      // StagePanelのプレハブ
+    public static GameObject StageViewPrefab;       // StageViewのプレハブ
     public static GameObject NowLoadingPrefab;      // NowLoadingのプレハブ
     public static GameObject PausePanelPrefab;      // PausePanelのプレハブ
-    public static GameObject ProfilePanelPrefab;    // ProfilePanelのプレハブ
+    public static GameObject UserPanelPrefab;       // UserPanelのプレハブ
 
     public GameObject ArrowPrefabObj;
     public GameObject XZCubePrefabObj;
@@ -64,21 +66,20 @@ public class Prefabs : MonoBehaviour
     public GameObject InputBoxPrefabObj;
     public GameObject MessageBoxPrefabObj;
     public GameObject StageItemPrefabObj;
+    public GameObject StagePanelPrefabObj;
+    public GameObject StageViewPrefabObj;
     public GameObject NowLoadingPrefabObj;
     public GameObject PausePanelPrefabObj;
-    public GameObject ProfilePanelPrefabObj;
+    public GameObject UserPanelPrefabObj;
 
     // ポップアップウィンドウ表示時のLocalScaleの曲線
     public static AnimationCurve OpenCurve;
     public static AnimationCurve CloseCurve;
-    // StageItem.ShowDetail時のHeightの曲線
-    public static AnimationCurve ShowDetailCurve;
     // StructureIndexerの選択切り替え時のWidthの曲線
     public static AnimationCurve StructureIndexerSelectCurve;
 
     public AnimationCurve OpenCurveObj;
     public AnimationCurve CloseCurveObj;
-    public AnimationCurve ShowDetailCurveObj;
     public AnimationCurve StructureIndexerSelectCurveObj;
 
     public void SetPrefabs()
@@ -110,13 +111,14 @@ public class Prefabs : MonoBehaviour
         InputBoxPrefab = InputBoxPrefabObj;
         MessageBoxPrefab = MessageBoxPrefabObj;
         StageItemPrefab = StageItemPrefabObj;
+        StagePanelPrefab = StagePanelPrefabObj;
+        StageViewPrefab = StageViewPrefabObj;
         NowLoadingPrefab = NowLoadingPrefabObj;
         PausePanelPrefab = PausePanelPrefabObj;
-        ProfilePanelPrefab = ProfilePanelPrefabObj;
+        UserPanelPrefab = UserPanelPrefabObj;
 
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;
-        ShowDetailCurve = ShowDetailCurveObj;
         StructureIndexerSelectCurve = StructureIndexerSelectCurveObj;
     }
 
