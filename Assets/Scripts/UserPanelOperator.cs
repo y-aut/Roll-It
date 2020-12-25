@@ -76,7 +76,11 @@ public class UserPanelOperator : MonoBehaviour
         StageCache[0] = new List<Stage>();
         int imax = Math.Min(User.PublishedStages.Count, StageViewContentOperator.STAGE_LIMIT);
         for (int i = 0; i < imax; ++i)
-            StageCache[0].Add(await FirebaseIO.GetStage(User.PublishedStages[i]));
+        {
+            var stage = await Cache.GetStage(User.PublishedStages[i]);
+            if (!stage.IsNotFound)
+                StageCache[0].Add(stage);
+        }
 
         PublishedContent.SetStages(StageCache[0], true, false, false, User.PublishedStages.LastOrDefault(IDType.Empty));
     }
@@ -90,7 +94,11 @@ public class UserPanelOperator : MonoBehaviour
             int imin = PublishedContent.Page * StageViewContentOperator.STAGE_LIMIT;
             int imax = Math.Min(User.PublishedStages.Count, imin + StageViewContentOperator.STAGE_LIMIT);
             for (int i = imin; i < imax; ++i)
-                StageCache[PublishedContent.Page].Add(await FirebaseIO.GetStage(User.PublishedStages[i]));
+            {
+                var stage = await Cache.GetStage(User.PublishedStages[i]);
+                if (!stage.IsNotFound)
+                    StageCache[PublishedContent.Page].Add(stage);
+            }
         }
 
         PublishedContent.PageUpdate(StageCache[PublishedContent.Page], User.PublishedStages.LastOrDefault(IDType.Empty));
@@ -108,15 +116,29 @@ public class UserPanelOperator : MonoBehaviour
         NowLoading.Show(parent, "Connecting...");
         if (!GameData.User.LocalData.FavorUserIDs.Contains(User.ID))
         {
-            await FirebaseIO.IncrementFavoredCount(User);
-            ImgStar.SetActive(true);
-            ImgStarAbsent.SetActive(false);
+            try
+            {
+                await FirebaseIO.IncrementFavoredCount(User).WaitWithTimeOut();
+                ImgStar.SetActive(true);
+                ImgStarAbsent.SetActive(false);
+            }
+            catch (Exception e)
+            {
+                e.Show(parent);
+            }
         }
         else
         {
-            await FirebaseIO.DecrementFavoredCount(User);
-            ImgStar.SetActive(false);
-            ImgStarAbsent.SetActive(true);
+            try
+            {
+                await FirebaseIO.DecrementFavoredCount(User).WaitWithTimeOut();
+                ImgStar.SetActive(false);
+                ImgStarAbsent.SetActive(true);
+            }
+            catch (Exception e)
+            {
+                e.Show(parent);
+            }
         }
         NowLoading.Close();
     }

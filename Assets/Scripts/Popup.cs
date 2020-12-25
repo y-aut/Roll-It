@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -82,7 +83,12 @@ public class Popup : MonoBehaviour
     public void Close()
     {
         if (!pnlBlackVisible) PnlBlack.SetActive(false);
-        PnlBlack.transform.SetSiblingIndex(pnlBlackIndex);
+        // PnlBlackがこのウィンドウよりも上にあるとき、上から別のウィンドウが開いているのでそのままにしておく
+        if (PnlBlack.transform.GetSiblingIndex() <= transform.GetSiblingIndex())
+        {
+            // 後ろのpopupウィンドウが先に閉じられているときは、pnlBlackが最前面になってしまうので、上から2番目に設定する
+            PnlBlack.transform.SetSiblingIndex(Math.Min(pnlBlackIndex, transform.GetSiblingIndex() - 2));
+        }
         generation_time = 0f;
         State = StateEnum.Closing;
     }

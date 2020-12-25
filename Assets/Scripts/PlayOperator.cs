@@ -31,26 +31,26 @@ public class PlayOperator : MonoBehaviour
     public static bool IsMyStage { get; set; } = true;
 
     // 視点
-    private RotationEnum _angle = RotationEnum.Y270;   // デフォルトはZ+方向
-    public RotationEnum Angle
+    private Quaternion _angle = Quaternion.identity;   // デフォルトはZ+方向
+    public Quaternion Angle
     {
         get => _angle;
         set
         {
-            if (Angle == value) return;
-            // 速度を0に
-            var rb = Ball.GetComponent<Rigidbody>();
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            //if (Angle == value) return;
+            //// 速度を0に
+            //var rb = Ball.GetComponent<Rigidbody>();
+            //rb.velocity = Vector3.zero;
+            //rb.angularVelocity = Vector3.zero;
             
-            // X+を0°とした回転前のカメラの回転量
-            int first = (int)Angle * 90;
-            // 回転後のカメラの回転量
-            int last = (int)value * 90;
-            // 回転量(°/f)
-            int delta = (last - first + 360) % 360 == 270 ? -GameConst.ROTATE_VIEWPOINT_DEGREE : GameConst.ROTATE_VIEWPOINT_DEGREE;
+            //// X+を0°とした回転前のカメラの回転量
+            //int first = (int)Angle * 90;
+            //// 回転後のカメラの回転量
+            //int last = (int)value * 90;
+            //// 回転量(°/f)
+            //int delta = (last - first + 360) % 360 == 270 ? -GameConst.ROTATE_VIEWPOINT_DEGREE : GameConst.ROTATE_VIEWPOINT_DEGREE;
 
-            StartCoroutine(RotateAngleCoroutine(first, last, delta));
+            //StartCoroutine(RotateAngleCoroutine(first, last, delta));
 
             _angle = value;
         }
@@ -79,11 +79,6 @@ public class PlayOperator : MonoBehaviour
     void Start()
     {
         NowLoading.Show(canvas.transform, "Loading the stage...");
-
-        if (!IsMyStage)
-        {
-            _ = FirebaseIO.IncrementChallengeCount(Stage);
-        }
 
         effect = new EffectManager();
         Cleared = false;
@@ -141,7 +136,7 @@ public class PlayOperator : MonoBehaviour
             if (str.Type == StructureType.Angle)
             {
                 // 視点回転
-                Angle = str.RotationInt;
+                //Angle = str.RotationInt;
             }
             else if (str.Type == StructureType.Jump)
             {

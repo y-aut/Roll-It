@@ -148,7 +148,7 @@ GameObject:
   - component: {fileID: 65940291356588572}
   - component: {fileID: 8492522877033684329}
   - component: {fileID: 1114246857894719990}
-  - component: {fileID: 3709532854373861947}
+  - component: {fileID: 5236094694719781588}
   m_Layer: 5
   m_Name: StageItem
   m_TagString: Untagged
@@ -258,8 +258,7 @@ MonoBehaviour:
   TxtChallengeCountFooter: {fileID: 14160291893635954}
   ImgPreview: {fileID: 283916776091558682}
   parent: {fileID: 0}
-  ParentView: {fileID: 0}
---- !u!114 &3709532854373861947
+--- !u!114 &5236094694719781588
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -277,7 +276,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}

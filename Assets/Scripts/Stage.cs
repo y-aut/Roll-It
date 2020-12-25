@@ -21,10 +21,6 @@ public class Stage
     // 作者ID
     public IDType AuthorID;
 
-    // 作者情報（一度取得したら保持しておく。Stageとして保存はしない）
-    public User Author { get; set; }
-    public async Task GetAuthor() => Author = await FirebaseIO.GetUser(AuthorID);
-
     // 公開日時(UTC)
     public DateTime PublishedDate;
 
@@ -62,17 +58,34 @@ public class Stage
     public Structure Goal => Structs[1];
     public Structure Ball => Structs.Find(i => i.Type == StructureType.Ball);
 
+    public bool IsNotFound { get; private set; } = false;
+    public static Stage NotFound(IDType id) => new Stage() { ID = id, Name = "Not Found", IsNotFound = true };
+
     // 新規作成
     public Stage()
     {
         LocalData = new StageLocal();
-        LocalData.Initialize();
         Structs = new SerializableList<Structure>()
         {
             new Structure(StructureType.Start, new Vector3Int(0,0,0), new Vector3Int(4,1,4), this),
             new Structure(StructureType.Goal, new Vector3Int(0,0,20), new Vector3Int(4,1,4), this),
         };
         AuthorID = GameData.User.ID;
+    }
+
+    public Stage(Stage src)
+    {
+        ID = src.ID;
+        Name = src.Name;
+        AuthorID = src.AuthorID;
+        PublishedDate = src.PublishedDate;
+        ClearCount = src.ClearCount;
+        ChallengeCount = src.ChallengeCount;
+        PosEvaCount = src.PosEvaCount;
+        NegEvaCount = src.NegEvaCount;
+        Structs = new List<Structure>(src.Structs);
+        if (src.LocalData != null)
+            LocalData = new StageLocal(src.LocalData);
     }
 
     // StageZipから解凍するときに用いる
@@ -117,6 +130,18 @@ public class Stage
     public void Delete(Structure item)
     {
         Structs.Remove(item);
+    }
+
+    // 各種カウンタをリセット
+    public void ResetCount()
+    {
+        ClearCount = ChallengeCount = PosEvaCount = NegEvaCount = 0;
+    }
+
+    // 0でないカウンタが存在するか
+    public bool CountNonZero()
+    {
+        return ClearCount != 0 || ChallengeCount != 0 || PosEvaCount != 0 || NegEvaCount != 0;
     }
 
     // クリックされたStructureを返す
@@ -168,8 +193,12 @@ public class StageLocal
     [SerializeField]
     public bool IsClearChecked = false;
 
-    public void Initialize()
+    public StageLocal() { }
+
+    public StageLocal(StageLocal src)
     {
+        IsPublished = src.IsPublished;
+        IsClearChecked = src.IsClearChecked;
     }
 }
 

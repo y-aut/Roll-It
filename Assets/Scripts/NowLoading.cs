@@ -35,10 +35,6 @@ public class NowLoading : MonoBehaviour
     public static void Show(Transform parent, string msg)
     {
         if (++PiledCount > 1) return;
-        //if (Visible)
-        //{
-        //    throw new GameException(GameExceptionEnum.DoubleLoading);
-        //}
         Visible = true;
         instance = Instantiate(Prefabs.NowLoadingPrefab, parent, false);
         instance.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
@@ -62,7 +58,7 @@ public class NowLoading : MonoBehaviour
 
     private IEnumerator WaitClose(Action after)
     {
-        while (popup.IsClosing) yield return new WaitForSeconds(0.1f);
+        while (popup.IsClosing) yield return new WaitForEndOfFrame();
         after?.Invoke();
         Destroy(instance);
     }

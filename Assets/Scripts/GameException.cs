@@ -26,9 +26,11 @@ public class GameException : Exception
     public GameException() { }
     public GameException(GameExceptionEnum err) : base(ErrorMessages[(int)err]) { }
 
-    public void Show(Transform parent, Action action = null)
+    // ネットワークに接続されていなければ例外をスロー
+    public static void CheckNetwork()
     {
-        MessageBox.ShowDialog(parent, Message, MessageBoxType.OKOnly, action);
+        if (Application.internetReachability == NetworkReachability.NotReachable)
+            throw Offline;
     }
 
 }
@@ -45,29 +47,34 @@ public static partial class AddMethod
     public const int TIMEOUT_SECONDS = 10;
 
     // 一定時間が経過するとタイムアウトし、例外をスローする
-    public static async Task<T> AwaitUntil<T>(this Task<T> task)
+    public static async Task<T> WaitWithTimeOut<T>(this Task<T> task)
     {
         var timeout = TimeSpan.FromSeconds(TIMEOUT_SECONDS);
         if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
+        {
+            await task;     // 例外がスローされていればここで再スローする
             return task.Result;
+        }
         else
             throw GameException.TimeOut;
     }
 
-    public static async Task WaitUntil(this Task task)
+    public static async Task WaitWithTimeOut(this Task task)
     {
         var timeout = TimeSpan.FromSeconds(TIMEOUT_SECONDS);
         if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
+        {
+            await task;     // 例外がスローされていればここで再スローする
             return;
+        }
         else
             throw GameException.TimeOut;
     }
 
-    // ネットワークに接続されていなければ例外をスロー
-    public static void CheckNetwork()
+    public static void Show(this Exception e, Transform parent, Action action = null)
     {
-        if (Application.internetReachability == NetworkReachability.NotReachable)
-            throw GameException.Offline;
+        if (e.InnerException != null) e.InnerException.Show(parent, action);
+        else MessageBox.ShowDialog(parent, e.Message, MessageBoxType.OKOnly, action);
     }
 
 }

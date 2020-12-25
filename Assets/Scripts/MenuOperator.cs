@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Firebase;
-using Firebase.Database;
 using System.Threading.Tasks;
+using System;
 
 public class MenuOperator : MonoBehaviour
 {
@@ -112,7 +112,7 @@ public class MenuOperator : MonoBehaviour
                 break;
             case MenuPage.Result:
                 {
-                    resultPanel.SetStage(resultStage);
+                    await resultPanel.SetStage(resultStage);
                     resultPanel.SetActive(true);
                 }
                 break;
@@ -130,16 +130,8 @@ public class MenuOperator : MonoBehaviour
             await FirstAwake();
         }
 
-        if (GameData.User.ID != IDType.Empty)
-        {
-            NowLoading.Show(canvas.transform, "Updating the data...");
-            // ローカルのUserを更新
-            await FirebaseIO.SyncUser();
-            header.UpdateValue();
-            // ローカルのStagesを更新
-            await FirebaseIO.UpdateMyStages();
-            NowLoading.Close();
-        }
+        await UpdateUserInfo();
+        header.UpdateValue();
 
         if (openResult)
         {
@@ -153,10 +145,27 @@ public class MenuOperator : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
+    // 最後にユーザー情報を更新した時間
+    private static DateTime LastUserInfoUpdatedTime = DateTime.MinValue;
+
+    // ユーザー情報を更新する必要があれば更新
+    private async Task UpdateUserInfo()
     {
-        
+        if (GameData.User.ID != IDType.Empty && DateTime.Now - LastUserInfoUpdatedTime > TimeSpan.FromMinutes(5))
+        {
+            NowLoading.Show(canvas.transform, "Updating the data...");
+            try
+            {
+                // ローカルのUserを更新
+                await FirebaseIO.SyncUser().WaitWithTimeOut();
+                LastUserInfoUpdatedTime = DateTime.Now;
+            }
+            catch (System.Exception e)
+            {
+                Debug.Log(e.Message);
+            }
+            NowLoading.Close();
+        }
     }
 
     // FirstAwake()で処理を行ったかどうかのフラグ
@@ -207,12 +216,11 @@ public class MenuOperator : MonoBehaviour
         // ユーザー名とIDを決める
         if (GameData.User.Name == "")
         {
-            InputBox.ShowDialog(canvas.transform, "Enter your nickname", async result =>
+            InputBox.ShowDialog(canvas.transform, "Enter your nickname", result =>
             {
                 GameData.User.Name = result;
-                await FirebaseIO.RegisterUser(GameData.User);
-                GameData.Save();
                 header.UpdateValue();
+                _ = FirstAwake();
             }, allowCancel: false);
             return;
         }
@@ -220,16 +228,20 @@ public class MenuOperator : MonoBehaviour
         if (!flgIDCheck)
         {
             flgIDCheck = true;
-            // IDの取得を試みる
             if (GameData.User.ID == IDType.Empty)
             {
+                // IDの取得を試みる
                 try
                 {
-                    AddMethod.CheckNetwork();
-                    await FirebaseIO.RegisterUser(GameData.User).WaitUntil();
+                    await FirebaseIO.RegisterUser(GameData.User).WaitWithTimeOut();
+                    // 作ったコースがあればすべてAuthorIDを変更
+                    foreach (var stage in GameData.Stages)
+                    {
+                        if (stage.ID == IDType.Empty) stage.ID = GameData.User.ID;
+                    }
                     GameData.Save();
                 }
-                catch (GameException e)
+                catch (System.Exception e)
                 {
                     e.Show(canvas.transform, () => _ = FirstAwake());
                     return;
@@ -259,16 +271,30 @@ public class MenuOperator : MonoBehaviour
     {
         if (stageView.Content.IsMyStages)
         {
-            await FirebaseIO.UpdateMyStages();
-            stageView.Content.UpdateStages();
+            try
+            {
+                await FirebaseIO.UpdateMyStages();
+                stageView.Content.UpdateStages();
+            }
+            catch (System.Exception e)
+            {
+                e.Show(canvas.transform);
+            }
         }
         else
         {
-            StageCache[stageView.SelectedTab][0]
-                = await FirebaseIO.GetStagesAtFirstPage(stageView.SelectedTab.ToSortKey());
-            LastStageCacheID[stageView.SelectedTab] = await FirebaseIO.GetLastStageID(stageView.SelectedTab.ToSortKey());
-            stageView.Content.SetStages(StageCache[stageView.SelectedTab][0], true, false, true,
-                LastStageCacheID[stageView.SelectedTab]);
+            try
+            {
+                StageCache[stageView.SelectedTab][0]
+                    = await FirebaseIO.GetStagesAtFirstPage(stageView.SelectedTab.ToSortKey()).WaitWithTimeOut();
+                LastStageCacheID[stageView.SelectedTab] = await FirebaseIO.GetLastStageID(stageView.SelectedTab.ToSortKey()).WaitWithTimeOut();
+                stageView.Content.SetStages(StageCache[stageView.SelectedTab][0], true, false, true,
+                    LastStageCacheID[stageView.SelectedTab]);
+            }
+            catch (System.Exception e)
+            {
+                e.Show(canvas.transform);
+            }
         }
     }
     
@@ -278,9 +304,18 @@ public class MenuOperator : MonoBehaviour
         if (StageCache[stageView.SelectedTab][0] == null)
         {
             NowLoading.Show(canvas.transform, "Loading stages...");
-            StageCache[stageView.SelectedTab][0]
-                = await FirebaseIO.GetStagesAtFirstPage(stageView.SelectedTab.ToSortKey());
-            LastStageCacheID[stageView.SelectedTab] = await FirebaseIO.GetLastStageID(stageView.SelectedTab.ToSortKey());
+            try
+            {
+                StageCache[stageView.SelectedTab][0]
+                    = await FirebaseIO.GetStagesAtFirstPage(stageView.SelectedTab.ToSortKey()).WaitWithTimeOut();
+                LastStageCacheID[stageView.SelectedTab] = await FirebaseIO.GetLastStageID(stageView.SelectedTab.ToSortKey()).WaitWithTimeOut();
+            }
+            catch (System.Exception e)
+            {
+                e.Show(canvas.transform);
+                if (StageCache[stageView.SelectedTab][0] == null)
+                    StageCache[stageView.SelectedTab][0] = new List<Stage>();
+            }
             NowLoading.Close();
         }
         stageView.Content.SetStages(StageCache[stageView.SelectedTab][0], true, false, true,
@@ -294,8 +329,17 @@ public class MenuOperator : MonoBehaviour
         {
             // 次のページを取得
             NowLoading.Show(canvas.transform, "Loading stages...");
-            StageCache[stageView.SelectedTab][stageView.Content.Page]
-                = await FirebaseIO.GetStagesAtNextPage(stageView.SelectedTab.ToSortKey());
+            try
+            {
+                StageCache[stageView.SelectedTab][stageView.Content.Page]
+                    = await FirebaseIO.GetStagesAtNextPage(stageView.SelectedTab.ToSortKey()).WaitWithTimeOut();
+            }
+            catch (System.Exception e)
+            {
+                e.Show(canvas.transform);
+                if (StageCache[stageView.SelectedTab][stageView.Content.Page] == null)
+                    StageCache[stageView.SelectedTab][stageView.Content.Page] = new List<Stage>();
+            }
             // LastStageは取得済みのはず
             NowLoading.Close();
         }

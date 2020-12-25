@@ -2425,7 +2425,7 @@ PrefabInstance:
     - target: {fileID: 4467342299648007455, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
         type: 3}
       propertyPath: m_Size
-      value: 0.6049999
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4467342299723290016, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
         type: 3}
@@ -2470,7 +2470,7 @@ PrefabInstance:
     - target: {fileID: 4467342299723290018, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 1.7254944
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4467342300151498752, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
         type: 3}
@@ -2621,6 +2621,41 @@ PrefabInstance:
         type: 3}
       propertyPath: StageItemWidth
       value: 185
+      objectReference: {fileID: 0}
+    - target: {fileID: 4732031993811314416, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
+        type: 3}
+      propertyPath: PageChanged.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4732031993811314416, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
+        type: 3}
+      propertyPath: PageChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4732031993811314416, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
+        type: 3}
+      propertyPath: PageChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 6775523631653756406}
+    - target: {fileID: 4732031993811314416, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
+        type: 3}
+      propertyPath: PageChanged.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4732031993811314416, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
+        type: 3}
+      propertyPath: PageChanged.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PageChanged
+      objectReference: {fileID: 0}
+    - target: {fileID: 4732031993811314416, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
+        type: 3}
+      propertyPath: PageChanged.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UserPanelOperator, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 4732031993811314416, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
+        type: 3}
+      propertyPath: PageChanged.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 7481376259407065084, guid: 2448f2fcfd3b34549b9e118d3b71a0a8,
         type: 3}

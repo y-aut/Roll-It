@@ -87,6 +87,17 @@ public class StagePanelOperator : MonoBehaviour
             Destroy(BtnAuthorName);
             TxtAuthorName.fontStyle = FontStyles.Normal;    // 下線を削除
         }
+        if (IsMyStage)
+        {
+            // ダウンロードしたステージ、またはユーザーIDを未取得ならば公開させない
+            BtnPublish.GetComponent<Button>().interactable
+                = Stage.AuthorID == GameData.User.ID && GameData.User.ID != IDType.Empty;
+        }
+        else
+        {
+            // 自分のステージはダウンロードさせない
+            BtnDownload.GetComponent<Button>().interactable = Stage.AuthorID != GameData.User.ID;
+        }
     }
 
     // StageをもとにAuthor以外の値を更新
@@ -95,7 +106,8 @@ public class StagePanelOperator : MonoBehaviour
         TxtName.text = Stage.Name;
         if (IsMyStage)
         {
-            BtnPublish.GetComponentInChildren<TextMeshProUGUI>().text = Stage.LocalData.IsPublished ? "Unpublish" : "Publish";
+            BtnPublish.GetComponentInChildren<TextMeshProUGUI>().text
+                = Stage.LocalData.IsPublished ? "Make Private" : "Make Public";
             ImgCheck.SetActive(Stage.LocalData.IsClearChecked);
         }
         else
@@ -114,9 +126,9 @@ public class StagePanelOperator : MonoBehaviour
     // Authorを更新
     private async void UpdateAuthor()
     {
-        if (Stage.Author == null) await Stage.GetAuthor();
-        TxtAuthorName.text = Stage.Author.Name;
-        if (Stage.Author.ID == User.NotFound.ID && AuthorAccessible)
+        var author = await Cache.GetUser(Stage.AuthorID);
+        TxtAuthorName.text = author.Name;
+        if (author.IsNotFound && AuthorAccessible)
         {
             Destroy(BtnAuthorName);
             TxtAuthorName.fontStyle = FontStyles.Normal;    // 下線を削除
@@ -151,8 +163,20 @@ public class StagePanelOperator : MonoBehaviour
         }, defaultString: Stage.Name);
     }
 
-    public void BtnPlayClicked()
+    public async void BtnPlayClicked()
     {
+        if (!IsMyStage)
+        {
+            try
+            {
+                await FirebaseIO.IncrementChallengeCount(Stage).WaitWithTimeOut();
+            }
+            catch (System.Exception e)
+            {
+                e.Show(parent);
+            }
+        }
+
         StageItem.ParentView.menuOp.SaveHistory();
         PlayOperator.Ready(Stage, false, IsMyStage, false);
         Scenes.LoadScene(SceneType.Play);
@@ -186,10 +210,16 @@ public class StagePanelOperator : MonoBehaviour
             // Unpublish
             NowLoading.Show(parent, "Unpublishing the stage...");
 
-            await FirebaseIO.UnpublishStage(Stage);
-
-            GameData.Save();
-            UpdateControls();
+            try
+            {
+                await FirebaseIO.UnpublishStage(Stage).WaitWithTimeOut();
+                GameData.Save();
+                UpdateControls();
+            }
+            catch (System.Exception e)
+            {
+                e.Show(parent);
+            }
 
             NowLoading.Close();
         }
@@ -211,10 +241,16 @@ public class StagePanelOperator : MonoBehaviour
                 // Publish
                 NowLoading.Show(parent, "Publishing the stage...");
 
-                await FirebaseIO.PublishStage(Stage);
-
-                GameData.Save();
-                UpdateControls();
+                try
+                {
+                    await FirebaseIO.PublishStage(Stage).WaitWithTimeOut();
+                    GameData.Save();
+                    UpdateControls();
+                }
+                catch (System.Exception e)
+                {
+                    e.Show(parent);
+                }
 
                 NowLoading.Close();
             }
@@ -223,12 +259,17 @@ public class StagePanelOperator : MonoBehaviour
 
     public void BtnDownloadClicked()
     {
-
+        var stage = new Stage(Stage)
+        {
+            LocalData = new StageLocal()
+        };
+        GameData.Stages.Add(stage);
+        MessageBox.ShowDialog(parent, "Downloaded the stage.", MessageBoxType.OKOnly, () => { });
     }
 
-    public void BtnAuthorClicked()
+    public async void BtnAuthorClicked()
     {
-        UserPanelOperator.ShowDialog(parent, Stage.Author, menuOp);
+        UserPanelOperator.ShowDialog(parent, await Cache.GetUser(Stage.AuthorID), menuOp);
     }
 
     public void BtnCloseClicked()

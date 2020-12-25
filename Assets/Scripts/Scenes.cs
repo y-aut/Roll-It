@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public enum SceneType
 {
-    Menu, Play, Create,
+    Title, Menu, Play, Create,
 }
 
 public static class Scenes
@@ -15,6 +15,8 @@ public static class Scenes
     {
         switch (SceneManager.GetActiveScene().name)
         {
+            case "Title Scene":
+                return SceneType.Title;
             case "Menu Scene":
                 return SceneType.Menu;
             case "Play Scene":

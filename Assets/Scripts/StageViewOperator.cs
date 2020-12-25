@@ -84,9 +84,7 @@ public class StageViewOperator : MonoBehaviour
 
     public void BtnNewClicked()
     {
-        var stage = new Stage();
-        GameData.Stages.Add(stage);
-        CreateOperator.Ready(stage, true);
+        CreateOperator.Ready(new Stage(), true);
         Scenes.LoadScene(SceneType.Create);
     }
 

@@ -117,6 +117,11 @@ public class StructureZipCollection
         v = src;
     }
 
+    public StructureZipCollection(List<Structure> src)
+    {
+        v = src.Select(i => new StructureZip(i)).ToList();
+    }
+
     public StructureZipCollection(List<long> rawList)
     {
         v = new List<StructureZip>();

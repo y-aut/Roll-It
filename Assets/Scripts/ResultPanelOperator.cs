@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,13 +30,20 @@ public class ResultPanelOperator : MonoBehaviour
         gameObject.SetActive(value);
     }
 
-    public void SetStage(Stage stage)
+    public async Task SetStage(Stage stage)
     {
         Stage = stage;
         // 既に評価したステージは評価できなくする
         SetEvaluationInteractable(!(GameData.User.LocalData.PosEvaIDs.Contains(stage.ID)
             || GameData.User.LocalData.NegEvaIDs.Contains(stage.ID)));
-        _ = FirebaseIO.IncrementClearCount(Stage);
+        try
+        {
+            await FirebaseIO.IncrementClearCount(Stage).WaitWithTimeOut(); ;
+        }
+        catch (System.Exception e)
+        {
+            e.Show(parent);
+        }
         // ClearCountをインクリメントしたあとでコントロールを更新
         UpdateControls();
         UpdateAuthor();
@@ -57,9 +65,9 @@ public class ResultPanelOperator : MonoBehaviour
     // Authorを更新
     private async void UpdateAuthor()
     {
-        if (Stage.Author == null) await Stage.GetAuthor();
-        TxtAuthorName.text = Stage.Author.Name;
-        if (Stage.Author.ID == User.NotFound.ID)
+        var author = await Cache.GetUser(Stage.AuthorID);
+        TxtAuthorName.text = author.Name;
+        if (author.IsNotFound)
         {
             BtnAuthorName.interactable = false;
             TxtAuthorName.fontStyle = FontStyles.Normal;    // 下線を削除
@@ -75,25 +83,39 @@ public class ResultPanelOperator : MonoBehaviour
     public async void BtnPosEvaClicked()
     {
         NowLoading.Show(parent, "Connecting...");
-        await FirebaseIO.IncrementPosEvaCount(Stage);
+        try
+        {
+            await FirebaseIO.IncrementPosEvaCount(Stage).WaitWithTimeOut();
+            UpdateControls();
+            SetEvaluationInteractable(false);
+        }
+        catch (System.Exception e)
+        {
+            e.Show(parent);
+        }
         NowLoading.Close();
-        UpdateControls();
-        SetEvaluationInteractable(false);
     }
 
     public async void BtnNegEvaClicked()
     {
         NowLoading.Show(parent, "Connecting...");
-        await FirebaseIO.IncrementNegEvaCount(Stage);
+        try
+        {
+            await FirebaseIO.IncrementNegEvaCount(Stage).WaitWithTimeOut();
+            UpdateControls();
+            SetEvaluationInteractable(false);
+        }
+        catch (System.Exception e)
+        {
+            e.Show(parent);
+        }
         NowLoading.Close();
-        UpdateControls();
-        SetEvaluationInteractable(false);
     }
 
     public async void BtnAuthorClicked()
     {
         NowLoading.Show(parent, "Connecting...");
-        var user = await FirebaseIO.GetUser(Stage.AuthorID);
+        var user = await Cache.GetUser(Stage.AuthorID);
         NowLoading.Close();
         UserPanelOperator.ShowDialog(parent, user, menuOp);
     }

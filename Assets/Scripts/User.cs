@@ -45,12 +45,12 @@ public class User
     // ローカルデータ
     public UserLocal LocalData;
 
-    // 見つからなかったユーザー
-    public static User NotFound = new User() { ID = IDType.Empty, Name = "Not Found" };
+    public bool IsNotFound { get; private set; } = false;
+    public static User NotFound(IDType id) => new User() { ID = id, Name = "Not Found", IsNotFound = true };
 
     public User()
     {
-        StartDate = DateTime.Now.ToUniversalTime();
+        StartDate = DateTime.Now;
         PublishedStages = new List<IDType>();
         LocalData = new UserLocal();
     }
@@ -75,7 +75,7 @@ public class User
 
     public void Login()
     {
-        LastDate = DateTime.Now.ToUniversalTime();
+        LastDate = DateTime.Now;
     }
 
     // ローカルデータとサーバーデータを同期し、更新

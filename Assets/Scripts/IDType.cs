@@ -9,6 +9,7 @@ using UnityEngine;
 public struct IDType
 {
     public static IDType Empty => new IDType();
+    public static IDType NotFound => new IDType("ZZZZZZ");
 
     [SerializeField]
     uint p;      // 31bit にすると 36^6 でおさえられる

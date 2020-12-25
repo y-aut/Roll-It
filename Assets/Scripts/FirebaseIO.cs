@@ -30,6 +30,7 @@ public static class FirebaseIO
     public static async Task RegisterUser(User user)
     {
         if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
 
         IDType id;
         DocumentReference entry;
@@ -49,6 +50,7 @@ public static class FirebaseIO
     public static async Task ChangeUserName(string newName)
     {
         if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
 
         await Me.UpdateAsync(new Dictionary<string, object>()
             { { UserZip.GetKey(UserParams.Name), newName } });
@@ -60,6 +62,7 @@ public static class FirebaseIO
     public static async Task PublishStage(Stage stage)
     {
         if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
 
         IDType id;
         DocumentReference entry;
@@ -72,7 +75,7 @@ public static class FirebaseIO
         } while (val.Exists);
 
         stage.ID = id;
-        stage.PublishedDate = DateTime.Now.ToUniversalTime();
+        stage.PublishedDate = DateTime.Now;
         await entry.SetAsync(new StageZip(stage));
         stage.LocalData.IsPublished = true;
 
@@ -90,6 +93,7 @@ public static class FirebaseIO
     public static async Task UnpublishStage(Stage stage)
     {
         if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
 
         await Stages.Document(stage.ID.ToString()).DeleteAsync();
         stage.LocalData.IsPublished = false;
@@ -111,7 +115,8 @@ public static class FirebaseIO
     public static async Task<List<Stage>> GetStagesAtFirstPage(string key)
     {
         if (!Available) throw GameException.FirebaseUnavailable;
-        
+        GameException.CheckNetwork();
+
         var stages = new List<StageZip>();
         var values = await Stages.OrderByDescending(key).Limit(StageViewContentOperator.STAGE_LIMIT).GetSnapshotAsync();
         if (values.Count != 0) LastSnapShot = values.Last();
@@ -128,7 +133,8 @@ public static class FirebaseIO
     public static async Task<List<Stage>> GetStagesAtNextPage(string key)
     {
         if (!Available) throw GameException.FirebaseUnavailable;
-        
+        GameException.CheckNetwork();
+
         var stages = new List<StageZip>();
         var values = await Stages.OrderByDescending(key).StartAfter(LastSnapShot)
             .Limit(StageViewContentOperator.STAGE_LIMIT).GetSnapshotAsync();
@@ -147,7 +153,8 @@ public static class FirebaseIO
     public static async Task<IDType> GetLastStageID(string key)
     {
         if (!Available) throw GameException.FirebaseUnavailable;
-        
+        GameException.CheckNetwork();
+
         var value = await Stages.OrderBy(key).Limit(1).GetSnapshotAsync();
 
         if (value.Count == 0) return IDType.Empty;
@@ -158,6 +165,7 @@ public static class FirebaseIO
     public static async Task UpdateMyStages()
     {
         if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
 
         // 公開中のステージを全て取得
         var published = GameData.Stages.Where(i => i.LocalData.IsPublished);
@@ -181,6 +189,7 @@ public static class FirebaseIO
     public static async Task SyncUser()
     {
         if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
 
         var user = (await Me.GetSnapshotAsync()).ConvertTo<UserZip>().ToUser();
         User.Sync(GameData.User, user);
@@ -190,15 +199,22 @@ public static class FirebaseIO
     // ステージのIDからステージを取得
     public static async Task<Stage> GetStage(IDType stageID)
     {
+        if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
+
         var res = await Stages.Document(stageID.ToString()).GetSnapshotAsync();
+        if (!res.Exists) return Stage.NotFound(stageID);
         return res.ConvertTo<StageZip>().ToStage();
     }
 
     // ユーザーIDからユーザーを取得
     public static async Task<User> GetUser(IDType userID)
     {
+        if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
+
         var res = await Users.Document(userID.ToString()).GetSnapshotAsync();
-        if (!res.Exists) return User.NotFound;
+        if (!res.Exists) return User.NotFound(userID);
         return res.ConvertTo<UserZip>().ToUser();
     }
 
@@ -223,10 +239,12 @@ public static class FirebaseIO
     // ステージのクリア回数を+1する
     public static async Task IncrementClearCount(Stage stage)
     {
-        ++stage.ClearCount;
+        if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
+
         if (GameData.User.LocalData.ClearedIDs.Contains(stage.ID))
         {
-            await IncrementCount(stage.ID, StageParams.ClearCount);
+            await IncrementCount(stage.ID, StageParams.ClearCount).WaitWithTimeOut();
         }
         else
         {
@@ -234,6 +252,7 @@ public static class FirebaseIO
                 IncrementUserCount(GameData.User.ID, UserParams.ClearCount));
             GameData.User.LocalData.ClearedIDs.Add(stage.ID);
         }
+        ++stage.ClearCount;
 
         GameData.Save();
     }
@@ -241,17 +260,23 @@ public static class FirebaseIO
     // ステージのチャレンジ回数を+1する
     public static async Task IncrementChallengeCount(Stage stage)
     {
-        ++stage.ChallengeCount;
+        if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
+
         await Task.WhenAll(IncrementCount(stage.ID, StageParams.ChallengeCount),
             IncrementUserCount(stage.AuthorID, UserParams.ChallengedCount));
+        ++stage.ChallengeCount;
     }
 
     // ステージの高評価数を+1する
     public static async Task IncrementPosEvaCount(Stage stage)
     {
-        ++stage.PosEvaCount;
+        if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
+
         await Task.WhenAll(IncrementCount(stage.ID, StageParams.PosEvaCount),
             IncrementUserCount(stage.AuthorID, UserParams.PosEvaCount));
+        ++stage.PosEvaCount;
         
         GameData.User.LocalData.PosEvaIDs.Add(stage.ID);
         GameData.Save();
@@ -260,8 +285,11 @@ public static class FirebaseIO
     // ステージの低評価数を+1する
     public static async Task IncrementNegEvaCount(Stage stage)
     {
-        ++stage.NegEvaCount;
+        if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
+
         await IncrementCount(stage.ID, StageParams.NegEvaCount);
+        ++stage.NegEvaCount;
 
         GameData.User.LocalData.NegEvaIDs.Add(stage.ID);
         GameData.Save();
@@ -270,8 +298,11 @@ public static class FirebaseIO
     // ユーザーをお気に入りに登録する
     public static async Task IncrementFavoredCount(User user)
     {
-        ++user.FavoredCount;
+        if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
+
         await IncrementUserCount(user.ID, UserParams.FavoredCount);
+        ++user.FavoredCount;
 
         GameData.User.LocalData.FavorUserIDs.Add(user.ID);
         GameData.Save();
@@ -280,8 +311,11 @@ public static class FirebaseIO
     // ユーザーをお気に入りから解除する
     public static async Task DecrementFavoredCount(User user)
     {
-        --user.FavoredCount;
+        if (!Available) throw GameException.FirebaseUnavailable;
+        GameException.CheckNetwork();
+
         await DecrementUserCount(user.ID, UserParams.FavoredCount);
+        --user.FavoredCount;
 
         GameData.User.LocalData.FavorUserIDs.Remove(user.ID);
         GameData.Save();

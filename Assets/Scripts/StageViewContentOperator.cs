@@ -78,6 +78,8 @@ public class StageViewContentOperator : MonoBehaviour
             isLastPage = true;
         else if (lastStageID != null)
             isLastPage = lastStageID == Stages.Last().ID;
+        else
+            isLastPage = true;
 
         InitializeControls();
         UpdateControls();

@@ -21,21 +21,27 @@ public class CreateOperator : MonoBehaviour
     private Structure focused;      // フォーカスされているオブジェクト
     private TransformTools tools;   // 移動用矢印
 
-    private static bool AskName;    // 終了時に名前をつけてもらうか
+    private static bool newStage;   // 新しく作ったステージか
+    private bool IsConfirming = false;  // クリアチェックの確認ダイアログを表示しているか
+    private bool IsEditted = false; // 一度でも編集したか
+
+    private StructureZipCollection before;  // 編集する前のステージ
 
     const int CAM_RADIUS = 10;      // カメラの回転時、中心となる点のカメラからの距離
     const int CAM_RADIUS_MAX = 20;  // Focus中のオブジェクトからこれ以上離れていたらCAM_RADIUSを半径とする
 
     // ロード前に設定すべき変数
-    public static void Ready(Stage stage, bool askName)
+    public static void Ready(Stage stage, bool isNewStage)
     {
         Stage = stage;
-        AskName = askName;
+        newStage = isNewStage;
     }
 
     // Start is called before the first frame update
     void Start()
     {
+        if (!newStage)
+            before = new StructureZipCollection(Stage.Structs);
         Stage.Create();
     }
 
@@ -47,19 +53,22 @@ public class CreateOperator : MonoBehaviour
         if (clicked != null)
         {
             // 確認
-            if (Stage.LocalData.IsClearChecked && clicked.IsSaved)
+            if (Stage.LocalData.IsClearChecked && Stage.AuthorID == GameData.User.ID
+                && clicked.IsSaved && !IsEditted)
             {
                 if (IsConfirming) return;   // Modal表示中
 
                 ConfirmIfClearChecked(() =>
                 {
-                    Stage.LocalData.IsClearChecked = false;
+                    IsEditted = true;
                 }, () =>
                 {
                     clicked.Clicked = false;
                 });
                 return;
             }
+            else if (!IsEditted)
+                IsEditted = true;
 
             clicked.Clicked = false;
             focused = clicked;
@@ -276,13 +285,14 @@ public class CreateOperator : MonoBehaviour
     {
         if (dragged != null)
         {
-            if (Stage.LocalData.IsClearChecked && dragged.IsSaved)
+            if (Stage.LocalData.IsClearChecked && Stage.AuthorID == GameData.User.ID
+                && dragged.IsSaved && !IsEditted)
             {
                 if (IsConfirming) return;
 
                 ConfirmIfClearChecked(() =>
                 {
-                    Stage.LocalData.IsClearChecked = false;
+                    IsEditted = true;
                     ItemReleased();
                 }, () =>
                 {
@@ -297,6 +307,7 @@ public class CreateOperator : MonoBehaviour
             {
                 // 置ける場所なら置く
                 dragged = null;
+                if (!IsEditted) IsEditted = true;
             }
             else
             {
@@ -340,21 +351,44 @@ public class CreateOperator : MonoBehaviour
         }
     }
 
+    // Back
+    public void BtnBackClicked()
+    {
+        if (IsEditted)
+        {
+            MessageBox.ShowDialog(canvas.transform, "Are you sure you want to discard the current changes?",
+                MessageBoxType.YesNo, () =>
+                {
+                    if (!newStage)
+                        Stage.Structs = before.ToStructures(Stage);
+                    Scenes.LoadScene(SceneType.Menu);
+                });
+        }
+        else
+            Scenes.LoadScene(SceneType.Menu);
+    }
+
     // Finish
     public void BtnFinishClicked()
     {
-        if (AskName)
+        if (newStage)
         {
             // 名前を尋ねる
             InputBox.ShowDialog(canvas.transform, "Name the new stage.", result =>
             {
                 Stage.Name = result;
+                GameData.Stages.Add(Stage);
                 GameData.Save();
                 Scenes.LoadScene(SceneType.Menu);
-            }, allowCancel: false);
+            });
         }
         else
         {
+            if (IsEditted)
+            {
+                Stage.LocalData.IsClearChecked = false;
+                Stage.ResetCount();
+            }
             GameData.Save();
             Scenes.LoadScene(SceneType.Menu);
         }
@@ -373,15 +407,14 @@ public class CreateOperator : MonoBehaviour
     {
         IsConfirming = true;
         MessageBox.ShowDialog(canvas.transform,
+            Stage.CountNonZero() ?
+            "If you edit this stage, the statistics will be reset and a clear check needs to be done again. Are you sure you want to edit?" :
             "If you edit this stage, a clear check needs to be done again. Are you sure you want to edit?",
             MessageBoxType.YesNo,
             () => { okClicked(); IsConfirming = false; },
             () => { cancelClicked(); IsConfirming = false; });
     }
 
-    // クリアチェックの確認ダイアログを表示しているか
-    private bool IsConfirming = false;
-
-    // 画面のスケールを取得う
+    // 画面のスケールを取得
     private float GetPixelScale() => panel.transform.lossyScale.x;
 }
