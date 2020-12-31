@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -20,6 +22,7 @@ public class CreateOperator : MonoBehaviour
     private Structure dragged;      // ドラッグ中のオブジェクト（半透明）
     private Structure focused;      // フォーカスされているオブジェクト
     private TransformTools tools;   // 移動用矢印
+    public AuxiFaces auxiFaces;     // 補助面
 
     private static bool newStage;   // 新しく作ったステージか
     private bool IsConfirming = false;  // クリアチェックの確認ダイアログを表示しているか
@@ -29,6 +32,11 @@ public class CreateOperator : MonoBehaviour
 
     const int CAM_RADIUS = 10;      // カメラの回転時、中心となる点のカメラからの距離
     const int CAM_RADIUS_MAX = 20;  // Focus中のオブジェクトからこれ以上離れていたらCAM_RADIUSを半径とする
+
+    const float DRAGGED_ANGLE_MINCOS = 0.95f;  // draggedのpointer rayからの最大角(cosの最小値)
+    const float DRAGGED_DEPTH_MIN = 3f;     // draggedのpointerからの最小距離
+    const float DRAGGED_DEPTH_MAX = 15f;    // draggedのpointerからの最大距離
+    const float DRAGGED_DEPTH_PREFERRED = 15f;
 
     // ロード前に設定すべき変数
     public static void Ready(Stage stage, bool isNewStage)
@@ -76,10 +84,7 @@ public class CreateOperator : MonoBehaviour
 
             // 矢印、サイズ変更用キューブを表示
             if (tools != null) tools.Destroy();
-            tools = new TransformTools
-            {
-                Focused = focused
-            };
+            tools = new TransformTools(this, focused);
             tools.Create();
         }
 
@@ -177,7 +182,7 @@ public class CreateOperator : MonoBehaviour
 
                     // 2つのベクトルのなす角θがcosθ<0なら拡大縮小
                     if (d1 == Vector2.zero || d2 == Vector2.zero
-                        || (Vector2.Dot(d1, d2) / (d1.magnitude * d2.magnitude)) < 0f)
+                        || (d1.CosWith(d2)) < 0f)
                     {
                         // 2点の距離の増加量をもとに拡大
                         var scroll = ((t2.position - t1.position).magnitude - (old2 - old1).magnitude) / (GetPixelScale() * 20);
@@ -200,8 +205,8 @@ public class CreateOperator : MonoBehaviour
             }
 
             // カメラが範囲外に出ていたら戻す
-            cam.transform.position = AddMethod.Fix(Structure.ToPositionF(new Vector3Int(-GameConst.STAGE_LIMIT, -GameConst.STAGE_LIMIT, -GameConst.STAGE_LIMIT)),
-                cam.transform.position, Structure.ToPositionF(new Vector3Int(GameConst.STAGE_LIMIT - 1, GameConst.STAGE_LIMIT - 1, GameConst.STAGE_LIMIT - 1)));
+            cam.transform.position = cam.transform.position.Clamp(Structure.ToPositionF(new Vector3Int(-GameConst.STAGE_LIMIT, -GameConst.STAGE_LIMIT, -GameConst.STAGE_LIMIT)),
+                Structure.ToPositionF(new Vector3Int(GameConst.STAGE_LIMIT - 1, GameConst.STAGE_LIMIT - 1, GameConst.STAGE_LIMIT - 1)));
         }
 
     }
@@ -214,7 +219,7 @@ public class CreateOperator : MonoBehaviour
     // アイテムをドラッグ
     public void ItemDragged(GameObject sender)
     {
-        // 二本指ならピンチアウト時なのでスルー
+        // 二本指ならピンチイン時なのでスルー
         if (Input.touchCount >= 2) return;
 
         // フィールド上にあるか
@@ -228,8 +233,7 @@ public class CreateOperator : MonoBehaviour
             return;
         }
 
-        // 場所を決定する
-        var pos = Structure.ToPositionInt(cam.ScreenToWorldPoint(Input.mousePosition.NewZ(6f)));
+        var pos = Vector3Int.zero;
 
         if (dragged == null)
         {
@@ -271,9 +275,16 @@ public class CreateOperator : MonoBehaviour
                 default:
                     return;
             }
+
             dragged.Create();
             Stage.Add(dragged);
+            auxiFaces = new AuxiFaces(Stage, dragged, CubeFace.NB, false);
         }
+
+        // 場所を決定する
+        pos = dragged.PositionInt = GetBestPos(dragged.LocalScaleInt);
+
+        auxiFaces.Update();
 
         if (dragged.PositionInt != pos)
             dragged.PositionInt = pos;
@@ -303,6 +314,8 @@ public class CreateOperator : MonoBehaviour
                 });
                 return;
             }
+            auxiFaces.Destroy();
+            auxiFaces = null;
             if (Stage.CheckSpace(dragged.PositionInt, dragged.LocalScaleInt))
             {
                 // 置ける場所なら置く
@@ -317,6 +330,79 @@ public class CreateOperator : MonoBehaviour
                 dragged = null;
             }
         }
+    }
+
+    // draggedを設置するのに最適な場所
+    private Vector3Int GetBestPos(Vector3Int scale)
+    {
+        var ray = cam.ScreenPointToRay(Input.mousePosition);
+        // 範囲内にある点(cosの値も保持しておく)
+        var points = new List<(Vector3Int vec, float dist, float cos)>();
+        // camを中心とする一辺 2*DRAGGED_DEPTH_MAX の立方体
+        var pmin = Structure.ToPositionInt(ray.origin - Vector3.one * DRAGGED_DEPTH_MAX);
+        var pmax = Structure.ToPositionInt(ray.origin + Vector3.one * DRAGGED_DEPTH_MAX);
+
+        // 外接直方体
+        var trueMin = Vector3Int.one * int.MaxValue;
+        var trueMax = Vector3Int.one * int.MinValue;
+        for (int x = pmin.x; x <= pmax.x; ++x)
+            for (int y = pmin.y; y <= pmax.y; ++y)
+                for (int z = pmin.z; z <= pmax.z; ++z)
+                {
+                    // camからの距離がDRAGGED_DEPTH_MIN~DRAGGED_DEPTH_MAX
+                    // ray.dirとのなす角のcosがDRAGGED_ANGLE_MINCOS以上
+                    var pInt = new Vector3Int(x, y, z);
+                    var p = Structure.ToPositionF(pInt);
+                    var dist = (p - ray.origin).magnitude;
+                    if (DRAGGED_DEPTH_MIN <= dist && dist <= DRAGGED_DEPTH_MAX)
+                    {
+                        var cos = (p - ray.origin).CosWith(ray.direction);
+                        if (cos >= DRAGGED_ANGLE_MINCOS)
+                        {
+                            points.Add((pInt, dist, cos));
+                            trueMin = trueMin.Select(pInt, (i, j) => Math.Min(i, j));
+                            trueMax = trueMax.Select(pInt, (i, j) => Math.Max(i, j));
+                        }
+                    }
+                }
+
+        // 外接直方体と接するStructを列挙しておく
+        var structs = Stage.Structs.Where(i =>
+            trueMin.All(trueMax, i.PositionInt - i.LocalScaleInt, i.PositionInt + i.LocalScaleInt,
+                (tmin, tmax, smin, smax) => tmin <= smax && smin <= tmax));
+
+        // pと辺や面を共有するStructがあれば加点, pとcamとの角度差に応じて減点
+        var best = points[0].vec; float max = float.MinValue;
+        foreach (var (vec, dist, cos) in points)
+        {
+            float val = cos * 1000 - Math.Abs(dist - DRAGGED_DEPTH_PREFERRED);
+            foreach (var str in structs)
+            {
+                if (((vec - scale) - (str.PositionInt + str.LocalScaleInt)).IsAllMoreThan(0)
+                    || ((str.PositionInt - str.LocalScaleInt) - (vec + scale)).IsAllMoreThan(0))
+                    continue;
+                // 重なりがあれば減点
+                if (vec.All(scale, str.PositionInt, str.LocalScaleInt,
+                    (r, sca, strPos, strSca) => r - sca < strPos + strSca && strPos - strSca < r + sca))
+                {
+                    val -= 100f;
+                }
+                // 面の共有
+                foreach (var xyz in new XYZEnum[] { XYZEnum.X, XYZEnum.Y, XYZEnum.Z })
+                    foreach (var sign1 in new int[] { -1, 1 })
+                        foreach (var sign2 in new int[] { -1, 1 })
+                        {
+                            if (vec.XYZ(xyz) + sign1 * scale.XYZ(xyz) == str.PositionInt.XYZ(xyz) + sign2 * str.LocalScaleInt.XYZ(xyz))
+                                val += 1f;
+                        }
+            }
+            if (val > max)
+            {
+                max = val;
+                best = vec;
+            }
+        }
+        return best;
     }
 
     // ポインタがpanelの上にあるか
@@ -397,6 +483,11 @@ public class CreateOperator : MonoBehaviour
     // Test
     public void BtnTestClicked()
     {
+        if (IsEditted)
+        {
+            Stage.LocalData.IsClearChecked = false;
+            Stage.ResetCount();
+        }
         GameData.Save();
         PlayOperator.Ready(Stage, true, true, false);
         Scenes.LoadScene(SceneType.Play);

@@ -14,6 +14,7 @@ public class StagePanelOperator : MonoBehaviour
     public GameObject BtnDelete;
     public GameObject BtnPublish;
     public GameObject BtnRename;
+    public GameObject ImgRename;
     public GameObject BtnDownload;
     public GameObject ImgCheck;
     public TextMeshProUGUI TxtAuthorName;
@@ -98,12 +99,15 @@ public class StagePanelOperator : MonoBehaviour
             // 自分のステージはダウンロードさせない
             BtnDownload.GetComponent<Button>().interactable = Stage.AuthorID != GameData.User.ID;
         }
+        ImgRename.SetActive(IsMyStage);
     }
 
     // StageをもとにAuthor以外の値を更新
     private void UpdateControls()
     {
         TxtName.text = Stage.Name;
+        ImgRename.GetComponent<RectTransform>().anchoredPosition = new Vector3(
+            Mathf.Min(TxtName.preferredWidth, TxtName.gameObject.GetComponent<RectTransform>().rect.width - 4) + 10, 0, 0);
         if (IsMyStage)
         {
             BtnPublish.GetComponentInChildren<TextMeshProUGUI>().text
@@ -140,7 +144,7 @@ public class StagePanelOperator : MonoBehaviour
     {
         if (Stage.LocalData.IsPublished)
         {
-            MessageBox.ShowDialog(parent, "Stages in public cannot be edited. You need to unpublish this stage first.", MessageBoxType.OKOnly, () => { });
+            MessageBox.ShowDialog(parent, "Stages in public cannot be edited. You need to make this stage private first.", MessageBoxType.OKOnly, () => { });
             return;
         }
         StageItem.ParentView.menuOp.SaveHistory();
@@ -152,31 +156,20 @@ public class StagePanelOperator : MonoBehaviour
     {
         if (Stage.LocalData.IsPublished)
         {
-            MessageBox.ShowDialog(parent, "Stages in public cannot be renamed. You need to unpublish this stage first.", MessageBoxType.OKOnly, () => { });
+            MessageBox.ShowDialog(parent, "Stages in public cannot be renamed. You need to make this stage private first.", MessageBoxType.OKOnly, () => { });
             return;
         }
         InputBox.ShowDialog(parent, "New name", result =>
         {
             Stage.Name = result;
-            TxtName.text = result;
+            UpdateControls();
+            StageItem.UpdateValue();
             GameData.Save();
         }, defaultString: Stage.Name);
     }
 
     public async void BtnPlayClicked()
     {
-        if (!IsMyStage)
-        {
-            try
-            {
-                await FirebaseIO.IncrementChallengeCount(Stage).WaitWithTimeOut();
-            }
-            catch (System.Exception e)
-            {
-                e.Show(parent);
-            }
-        }
-
         StageItem.ParentView.menuOp.SaveHistory();
         PlayOperator.Ready(Stage, false, IsMyStage, false);
         Scenes.LoadScene(SceneType.Play);
@@ -186,7 +179,7 @@ public class StagePanelOperator : MonoBehaviour
     {
         if (Stage.LocalData.IsPublished)
         {
-            MessageBox.ShowDialog(parent, "Stages in public cannot be deleted. You need to unpublish this stage first.", MessageBoxType.OKOnly, () => { });
+            MessageBox.ShowDialog(parent, "Stages in public cannot be deleted. You need to make this stage private first.", MessageBoxType.OKOnly, () => { });
             return;
         }
 
@@ -228,7 +221,7 @@ public class StagePanelOperator : MonoBehaviour
             // クリアチェック
             if (!Stage.LocalData.IsClearChecked)
             {
-                MessageBox.ShowDialog(parent, "A clear check needs to be done to publish this stage. Do you want to try it?",
+                MessageBox.ShowDialog(parent, "A clear check needs to be done to publish this stage. Do you try it now?",
                     MessageBoxType.YesNo, () =>
                     {
                         StageItem.ParentView.menuOp.SaveHistory();
@@ -265,6 +258,7 @@ public class StagePanelOperator : MonoBehaviour
         };
         GameData.Stages.Add(stage);
         MessageBox.ShowDialog(parent, "Downloaded the stage.", MessageBoxType.OKOnly, () => { });
+        BtnDownload.GetComponent<Button>().interactable = false;
     }
 
     public async void BtnAuthorClicked()

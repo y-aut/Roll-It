@@ -83,7 +83,7 @@ public class Stage
         ChallengeCount = src.ChallengeCount;
         PosEvaCount = src.PosEvaCount;
         NegEvaCount = src.NegEvaCount;
-        Structs = new List<Structure>(src.Structs);
+        Structs = src.Structs.Select(i => new Structure(i, this)).ToList();
         if (src.LocalData != null)
             LocalData = new StageLocal(src.LocalData);
     }

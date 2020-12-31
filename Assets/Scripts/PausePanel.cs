@@ -7,14 +7,16 @@ public class PausePanel : MonoBehaviour
 {
     public Popup popup;
     private PlayOperator playOperator;
+    private Action afterClosed;
 
     // ポーズ画面を表示
-    public static void ShowDialog(PlayOperator playOp, Transform parent)
+    public static void ShowDialog(PlayOperator playOp, Transform parent, Action after)
     {
         var pause = Instantiate(Prefabs.PausePanelPrefab, parent, false);
         pause.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
         var script = pause.GetComponent<PausePanel>();
         script.playOperator = playOp;
+        script.afterClosed = after;
         script.popup.Open();
     }
 
@@ -25,6 +27,11 @@ public class PausePanel : MonoBehaviour
         {
             BtnClose_Click();
         }
+    }
+
+    public void BtnSetOrigin_Click()
+    {
+        StickListener.SetOrigin();
     }
 
     public void BtnRestart_Click()
@@ -42,12 +49,12 @@ public class PausePanel : MonoBehaviour
     public void BtnClose_Click()
     {
         popup.Close();
-        StartCoroutine(WaitClose(() => { }));
+        StartCoroutine(WaitClose(afterClosed));
     }
 
     private IEnumerator WaitClose(Action after)
     {
-        while (popup.IsClosing) yield return new WaitForSeconds(0.1f);
+        while (popup.IsClosing) yield return new WaitForEndOfFrame();
         after();
         Destroy(popup.gameObject);
     }

@@ -221,19 +221,19 @@ public static class FirebaseIO
     // ステージのキーに対応する数字を+1する
     private static async Task IncrementCount(IDType stageID, StageParams par)
     {
-        await Stages.Document(stageID.ToString()).UpdateAsync(StageZip.GetKey(par), FieldValue.Increment(1));
+        await Stages.Document(stageID.ToString()).UpdateAsync(StageZip.GetKey(par), FieldValue.Increment(StageZip.GetIncrementValue(1, par)));
     }
 
     // Userのパラメータに対応する数字を+1する
     private static async Task IncrementUserCount(IDType userID, UserParams par)
     {
-        await Users.Document(userID.ToString()).UpdateAsync(UserZip.GetKey(par), FieldValue.Increment(1));
+        await Users.Document(userID.ToString()).UpdateAsync(UserZip.GetKey(par), FieldValue.Increment(UserZip.GetIncrementValue(1, par)));
     }
 
     // Userのパラメータに対応する数字を-1する
     private static async Task DecrementUserCount(IDType userID, UserParams par)
     {
-        await Users.Document(userID.ToString()).UpdateAsync(UserZip.GetKey(par), FieldValue.Increment(-1));
+        await Users.Document(userID.ToString()).UpdateAsync(UserZip.GetKey(par), FieldValue.Increment(UserZip.GetIncrementValue(-1, par)));
     }
 
     // ステージのクリア回数を+1する

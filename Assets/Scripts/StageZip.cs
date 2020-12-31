@@ -93,36 +93,18 @@ public class StageZip
             challenge_clear.GetLower(), challenge_clear.GetUpper(), poseva_negeva.GetUpper(), poseva_negeva.GetLower(), structs);
     }
 
-    // 指定したパラメータをインクリメントした値を返す
-    public static long GetIncremented(long v, StageParams par)
+    // 指定したパラメータをvだけ増やすのに足すべき値
+    public static long GetIncrementValue(long v, StageParams par)
     {
         switch (par)
         {
             // 上位32bit
             case StageParams.ChallengeCount:
             case StageParams.PosEvaCount:
-                return v.GetUpperIncremented();
+                return v << 32;
             // 下位32bit
             default:
-                return v + 1;
-        }
-    }
-
-    // AuthorIDの値を返す
-    public static IDType GetAuthorID(long v) => new IDType((uint)v.GetLower());
-
-    // 指定したカウントパラメータの値を返す
-    public static int GetCountValue(long v, StageParams par)
-    {
-        switch (par)
-        {
-            // 上位32bit
-            case StageParams.ChallengeCount:
-            case StageParams.PosEvaCount:
-                return v.GetUpper();
-            // 下位32bit
-            default:
-                return v.GetLower();
+                return v;
         }
     }
 

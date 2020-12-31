@@ -12,7 +12,8 @@ public class TransformTools
     const int XZCUBE_COUNT = 8;
     const int YCUBE_COUNT = 8;
 
-    public Structure Focused { get; set; }
+    private CreateOperator createOp;
+    public Structure Focused { get; private set; }
     private List<Vector3> arrowRoots, XZpos, Ypos;
 
     private GameObject frameCube, frameCubeIllegal;
@@ -72,6 +73,12 @@ public class TransformTools
     private Vector3Int dragStartObjPos2;
     // ドラッグ開始時のオブジェクトのサイズ
     private Vector3Int dragStartObjScale;
+
+    public TransformTools(CreateOperator _createOp, Structure focused)
+    {
+        createOp = _createOp;
+        Focused = focused;
+    }
 
     // ドラッグ開始時のポインタのRayと移動対象のオブジェクトの座標、サイズを設定
     public void SetPointerRay(Ray ray)
@@ -297,6 +304,8 @@ public class TransformTools
             ZInverseArrow.transform.position = Focused.GetZInverseArrowPos();
             ZInverseArrow.transform.rotation = Quaternion.Euler(-90, 90, 0);
         }
+
+        if (createOp.auxiFaces != null) createOp.auxiFaces.Update();
     }
 
     public void Destroy()
@@ -319,15 +328,17 @@ public class TransformTools
     // Down/Upイベントを追加
     private void SetDownUpEvent()
     {
-        foreach (var arrow in Arrows)
+        for (int i = 0; i < Arrows.Count; ++i)
         {
+            var arrow = Arrows[i];
             var trigger = arrow.AddComponent<EventTrigger>();
             trigger.triggers = new List<EventTrigger.Entry>();
             var entry = new EventTrigger.Entry
             {
                 eventID = EventTriggerType.PointerDown,
             };
-            entry.callback.AddListener(x => PointerDown(arrow, TransformToolType.Arrow));
+            var face = Structure.GetArrowFace(i);
+            entry.callback.AddListener(x => PointerDown(arrow, TransformToolType.Arrow, face));
             trigger.triggers.Add(entry);
             entry = new EventTrigger.Entry
             {
@@ -339,15 +350,17 @@ public class TransformTools
 
         if (Focused.HasPosition2)
         {
-            foreach (var arrow in Arrows2)
+            for (int i = 0; i < Arrows2.Count; ++i)
             {
+                var arrow = Arrows2[i];
                 var trigger = arrow.AddComponent<EventTrigger>();
                 trigger.triggers = new List<EventTrigger.Entry>();
                 var entry = new EventTrigger.Entry
                 {
                     eventID = EventTriggerType.PointerDown,
                 };
-                entry.callback.AddListener(x => PointerDown(arrow, TransformToolType.Arrow2));
+                var face = Structure.GetArrowFace(i);
+                entry.callback.AddListener(x => PointerDown(arrow, TransformToolType.Arrow2, face, true));
                 trigger.triggers.Add(entry);
                 entry = new EventTrigger.Entry
                 {
@@ -360,15 +373,17 @@ public class TransformTools
 
         if (Focused.IsResizable)
         {
-            foreach (var cube in XZCubes)
+            for (int i = 0; i < XZCubes.Count; ++i)
             {
+                var cube = XZCubes[i];
                 var trigger = cube.AddComponent<EventTrigger>();
                 trigger.triggers = new List<EventTrigger.Entry>();
                 var entry = new EventTrigger.Entry
                 {
                     eventID = EventTriggerType.PointerDown,
                 };
-                entry.callback.AddListener(x => PointerDown(cube, TransformToolType.XZCube));
+                var face = Structure.GetXZResizeFace(i);
+                entry.callback.AddListener(x => PointerDown(cube, TransformToolType.XZCube, face));
                 trigger.triggers.Add(entry);
                 entry = new EventTrigger.Entry
                 {
@@ -380,15 +395,17 @@ public class TransformTools
 
             if (Focused.IsYResizable)
             {
-                foreach (var cube in YCubes)
+                for (int i = 0; i < YCubes.Count; ++i)
                 {
+                    var cube = YCubes[i];
                     var trigger = cube.AddComponent<EventTrigger>();
                     trigger.triggers = new List<EventTrigger.Entry>();
                     var entry = new EventTrigger.Entry
                     {
                         eventID = EventTriggerType.PointerDown,
                     };
-                    entry.callback.AddListener(x => PointerDown(cube, TransformToolType.YCube));
+                    var face = Structure.GetYResizeFace(i);
+                    entry.callback.AddListener(x => PointerDown(cube, TransformToolType.YCube, face));
                     trigger.triggers.Add(entry);
                     entry = new EventTrigger.Entry
                     {
@@ -457,7 +474,7 @@ public class TransformTools
 
     }
 
-    private void PointerDown(GameObject obj, TransformToolType type)
+    private void PointerDown(GameObject obj, TransformToolType type, CubeFace face, bool isPos2 = false)
     {
         // 二本指ならスルー
         if (Input.touchCount >= 2) return;
@@ -465,6 +482,10 @@ public class TransformTools
         Dragged = obj;
         BeganDragged = true;
         DraggedType = type;
+
+        // 補助面を表示
+        createOp.auxiFaces = new AuxiFaces(CreateOperator.Stage, Focused, face, isPos2);
+        createOp.auxiFaces.Update();
     }
 
     private void PointerUp()
@@ -473,6 +494,10 @@ public class TransformTools
         {
             Dragged = null;
             FinishDragged = true;
+
+            // 補助面を削除
+            createOp.auxiFaces.Destroy();
+            createOp.auxiFaces = null;
         }
     }
 
@@ -481,4 +506,9 @@ public class TransformTools
 public enum TransformToolType
 {
     Arrow, Arrow2, XZCube, YCube,
+}
+
+public enum CubeFace
+{
+    XP, YP, ZP, XN, YN, ZN, NB,
 }

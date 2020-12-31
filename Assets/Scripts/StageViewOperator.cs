@@ -30,30 +30,7 @@ public class StageViewOperator : MonoBehaviour
     }
 
     // 選択されているタブ
-    public StageViewTabs SelectedTab
-    {
-        get
-        {
-            if (TabTrending.isOn) return StageViewTabs.Trending;
-            else if (TabLatest.isOn) return StageViewTabs.Latest;
-            else return StageViewTabs.Popular;
-        }
-        set
-        {
-            switch (value)
-            {
-                case StageViewTabs.Trending:
-                    TabTrending.isOn = true;
-                    break;
-                case StageViewTabs.Latest:
-                    TabLatest.isOn = true;
-                    break;
-                case StageViewTabs.Popular:
-                    TabPopular.isOn = true;
-                    break;
-            }
-        }
-    }
+    public StageViewTabs SelectedTab { get; private set; }
 
     // タブの初期値を設定
     public void SetSelectedTabWithoutNotify(StageViewTabs value)
@@ -75,6 +52,11 @@ public class StageViewOperator : MonoBehaviour
     private void Awake()
     {
         TabTrending.SetIsOnWithoutNotify(true);
+        SelectedTab = StageViewTabs.Trending;
+        // Tab切り替えイベント
+        TabTrending.onValueChanged.AddListener(i => TabChanged(i, StageViewTabs.Trending));
+        TabLatest.onValueChanged.AddListener(i => TabChanged(i, StageViewTabs.Latest));
+        TabPopular.onValueChanged.AddListener(i => TabChanged(i, StageViewTabs.Popular));
     }
 
     public void SetActive(bool value)
@@ -84,6 +66,7 @@ public class StageViewOperator : MonoBehaviour
 
     public void BtnNewClicked()
     {
+        menuOp.SaveHistory();
         CreateOperator.Ready(new Stage(), true);
         Scenes.LoadScene(SceneType.Create);
     }
@@ -96,9 +79,10 @@ public class StageViewOperator : MonoBehaviour
         Content.refresh.EndRefreshing();
     }
 
-    public async void TabChanged(bool val)
+    public async void TabChanged(bool val, StageViewTabs tab)
     {
-        if (!val) return;   // Onになったときにのみ更新
+        if (!val || tab == SelectedTab) return;   // Onになったときにのみ更新
+        SelectedTab = tab;
         Content.SetPageWithoutNotify(0);    // 0ページに戻す
         await menuOp.StageViewTabChanged();
     }

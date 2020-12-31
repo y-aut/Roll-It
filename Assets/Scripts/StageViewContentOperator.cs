@@ -70,7 +70,7 @@ public class StageViewContentOperator : MonoBehaviour
             }
         }
 
-        Stages = stages;
+        Stages = new List<Stage>(stages);
         UsePages = usePages;
         IsMyStages = isMyStages;
         Refreshable = refreshable;

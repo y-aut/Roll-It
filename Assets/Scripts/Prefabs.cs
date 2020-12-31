@@ -12,6 +12,7 @@ public class Prefabs : MonoBehaviour
     public static GameObject InverseArrowPrefab;   // 反転用矢印
     public static GameObject FrameCubePrefab;      // 外枠のキューブのプレハブ
     public static GameObject FrameCubeIllegalPrefab;      // 設置不可能な場所での外枠のキューブのプレハブ
+    public static GameObject AuxiFacePrefab;        // 補助面のプレハブ
 
     // Structures
     public static GameObject BallPrefab;            // Ballのプレハブ
@@ -46,6 +47,7 @@ public class Prefabs : MonoBehaviour
     public GameObject InverseArrowPrefabObj;
     public GameObject FrameCubePrefabObj;
     public GameObject FrameCubeIllegalPrefabObj;
+    public GameObject AuxiFacePrefabObj;
 
     public GameObject BallPrefabObj;
     public GameObject FloorPrefabObj;
@@ -77,10 +79,13 @@ public class Prefabs : MonoBehaviour
     public static AnimationCurve CloseCurve;
     // StructureIndexerの選択切り替え時のWidthの曲線
     public static AnimationCurve StructureIndexerSelectCurve;
+    // デバイスを傾けた角度に対する視点回転の割合
+    public static AnimationCurve AttitudeToRotationCurve;
 
     public AnimationCurve OpenCurveObj;
     public AnimationCurve CloseCurveObj;
     public AnimationCurve StructureIndexerSelectCurveObj;
+    public AnimationCurve AttitudeToRotationCurveObj;
 
     public void SetPrefabs()
     {
@@ -92,6 +97,7 @@ public class Prefabs : MonoBehaviour
         InverseArrowPrefab = InverseArrowPrefabObj;
         FrameCubePrefab = FrameCubePrefabObj;
         FrameCubeIllegalPrefab = FrameCubeIllegalPrefabObj;
+        AuxiFacePrefab = AuxiFacePrefabObj;
 
         FloorPrefab = FloorPrefabObj;
         StartPrefab = StartPrefabObj;
@@ -120,6 +126,7 @@ public class Prefabs : MonoBehaviour
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;
         StructureIndexerSelectCurve = StructureIndexerSelectCurveObj;
+        AttitudeToRotationCurve = AttitudeToRotationCurveObj;
     }
 
 

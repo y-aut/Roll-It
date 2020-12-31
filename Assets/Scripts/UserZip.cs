@@ -121,8 +121,8 @@ public class UserZip
             clear_challenged.GetUpper(), clear_challenged.GetLower(), poseva_favored.GetUpper(), poseva_favored.GetLower(), published);
     }
 
-    // 指定したパラメータをインクリメントした値を返す
-    public static long GetIncremented(long v, UserParams par)
+    // 指定したパラメータをvだけ増やすのに足すべき値
+    public static long GetIncrementValue(long v, UserParams par)
     {
         switch (par)
         {
@@ -130,26 +130,10 @@ public class UserZip
             case UserParams.PurchasedCoin:
             case UserParams.ClearCount:
             case UserParams.PosEvaCount:
-                return v.GetUpperIncremented();
+                return v << 32;
             // 下位32bit
             default:
-                return v + 1;
-        }
-    }
-
-    // 指定したパラメータをデクリメントした値を返す
-    public static long GetDecremented(long v, UserParams par)
-    {
-        switch (par)
-        {
-            // 上位32bit
-            case UserParams.PurchasedCoin:
-            case UserParams.ClearCount:
-            case UserParams.PosEvaCount:
-                return v.GetUpperDecremented();
-            // 下位32bit
-            default:
-                return v - 1;
+                return v;
         }
     }
 

@@ -160,7 +160,7 @@ public class MenuOperator : MonoBehaviour
                 await FirebaseIO.SyncUser().WaitWithTimeOut();
                 LastUserInfoUpdatedTime = DateTime.Now;
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Debug.Log(e.Message);
             }
@@ -241,7 +241,7 @@ public class MenuOperator : MonoBehaviour
                     }
                     GameData.Save();
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     e.Show(canvas.transform, () => _ = FirstAwake());
                     return;
@@ -276,7 +276,7 @@ public class MenuOperator : MonoBehaviour
                 await FirebaseIO.UpdateMyStages();
                 stageView.Content.UpdateStages();
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 e.Show(canvas.transform);
             }
@@ -291,7 +291,7 @@ public class MenuOperator : MonoBehaviour
                 stageView.Content.SetStages(StageCache[stageView.SelectedTab][0], true, false, true,
                     LastStageCacheID[stageView.SelectedTab]);
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 e.Show(canvas.transform);
             }
@@ -310,7 +310,7 @@ public class MenuOperator : MonoBehaviour
                     = await FirebaseIO.GetStagesAtFirstPage(stageView.SelectedTab.ToSortKey()).WaitWithTimeOut();
                 LastStageCacheID[stageView.SelectedTab] = await FirebaseIO.GetLastStageID(stageView.SelectedTab.ToSortKey()).WaitWithTimeOut();
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 e.Show(canvas.transform);
                 if (StageCache[stageView.SelectedTab][0] == null)
@@ -334,7 +334,7 @@ public class MenuOperator : MonoBehaviour
                 StageCache[stageView.SelectedTab][stageView.Content.Page]
                     = await FirebaseIO.GetStagesAtNextPage(stageView.SelectedTab.ToSortKey()).WaitWithTimeOut();
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 e.Show(canvas.transform);
                 if (StageCache[stageView.SelectedTab][stageView.Content.Page] == null)

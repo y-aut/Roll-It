@@ -23,60 +23,61 @@ public class PlayOperator : MonoBehaviour
 
     private EffectManager effect;
     private bool Cleared;   // クリアしたか（演出中）
-
-    // Updateの処理をストップ
-    public bool StopUpdate { get; set; } = false;
+    private bool IsPausing; // ポーズ中か
 
     // 自分のステージか
     public static bool IsMyStage { get; set; } = true;
 
-    // 視点
-    private Quaternion _angle = Quaternion.identity;   // デフォルトはZ+方向
-    public Quaternion Angle
+    // カメラのアングル(XZ平面内での回転のみ)
+    public Quaternion CamAngle = Quaternion.identity;
+
+    public void SetCamAngle(Quaternion after)
     {
-        get => _angle;
-        set
-        {
-            //if (Angle == value) return;
-            //// 速度を0に
-            //var rb = Ball.GetComponent<Rigidbody>();
-            //rb.velocity = Vector3.zero;
-            //rb.angularVelocity = Vector3.zero;
-            
-            //// X+を0°とした回転前のカメラの回転量
-            //int first = (int)Angle * 90;
-            //// 回転後のカメラの回転量
-            //int last = (int)value * 90;
-            //// 回転量(°/f)
-            //int delta = (last - first + 360) % 360 == 270 ? -GameConst.ROTATE_VIEWPOINT_DEGREE : GameConst.ROTATE_VIEWPOINT_DEGREE;
+        // 現在の角度との差が60°以内の場合は回転しない
+        var bef = (CamAngle * Vector3.forward).XZCast();
+        var aft = (after * Vector3.forward).XZCast();
+        if (bef.CosWith(aft) > 0.5f) return;
 
-            //StartCoroutine(RotateAngleCoroutine(first, last, delta));
+        // 速度を0に
+        var rb = Ball.GetComponent<Rigidbody>();
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
 
-            _angle = value;
-        }
+        var befY = CamAngle.eulerAngles.y;
+        var aftY = after.eulerAngles.y;
+        // 回転量(°/f)
+        int deltaY = (aftY - befY + 360) % 360 <= 180 ? GameConst.ROTATE_VIEWPOINT_DEGREE : -GameConst.ROTATE_VIEWPOINT_DEGREE;
+
+        StartCoroutine(RotateAngleCoroutine(befY, aftY, deltaY));
+
+        CamAngle = after;
     }
 
     // 視点回転を行うコルーチン
-    private IEnumerator RotateAngleCoroutine(int first, int last, int delta)
+    private IEnumerator RotateAngleCoroutine(float befY, float aftY, float deltaY)
     {
-        StopUpdate = true;
         Time.timeScale = 0f;
-        for (int i = first; (i - last) % 360 != 0; i += delta)
+        var dif = Mathf.Abs(aftY - befY);
+        var cnt = Mathf.FloorToInt(Mathf.Min(dif, 360 - dif) / Mathf.Abs(deltaY));
+        for (int i = 0; i <= cnt; ++i)
         {
+            if (i == cnt) befY = aftY;
+            else befY += deltaY;
             var buf = Ball.transform.position;
-            buf += Quaternion.Euler(0, i, 0) * new Vector3(-GameConst.PLAY_CAMDIST_HOR, GameConst.PLAY_CAMDIST_VER, 0);
+            buf += Quaternion.Euler(0, befY, 0) * new Vector3(0, GameConst.PLAY_CAMDIST_VER, -GameConst.PLAY_CAMDIST_HOR);
             cam.transform.position = buf;
             cam.transform.forward = Ball.transform.position - cam.transform.position;
             Canvas.ForceUpdateCanvases();
-            yield return new WaitForSecondsRealtime(GameConst.ROTATE_VIEWPOINT_MS / 1000f);
+            do
+            {
+                yield return new WaitForSecondsRealtime(GameConst.ROTATE_VIEWPOINT_MS / 1000f);
+            } while (IsPausing);    // 回転中にポーズされるとこのメソッドを抜けてからtimeScaleが0になってしまう
         }
         Time.timeScale = 1f;
-        StopUpdate = false;
     }
 
-
     // Start is called before the first frame update
-    void Start()
+    async void Start()
     {
         NowLoading.Show(canvas.transform, "Loading the stage...");
 
@@ -96,13 +97,25 @@ public class PlayOperator : MonoBehaviour
         else
             Ball.transform.position = Stage.Start.Position + new Vector3(0, Ball.transform.localScale.y / 2, 0);
 
+        if (!IsMyStage)
+        {
+            try
+            {
+                await FirebaseIO.IncrementChallengeCount(Stage).WaitWithTimeOut();
+            }
+            catch (System.Exception e)
+            {
+                e.Show(canvas.transform);
+            }
+        }
+
         NowLoading.Close();
     }
 
     // Update is called once per frame
     void FixedUpdate()
     {
-        if (StopUpdate) return;
+        if (Time.timeScale == 0f) return;
         if (Cleared) return;
 
         Stage.IncrementGeneration();
@@ -136,7 +149,7 @@ public class PlayOperator : MonoBehaviour
             if (str.Type == StructureType.Angle)
             {
                 // 視点回転
-                //Angle = str.RotationInt;
+                SetCamAngle(str.Rotation);
             }
             else if (str.Type == StructureType.Jump)
             {
@@ -181,7 +194,8 @@ public class PlayOperator : MonoBehaviour
 
     public void Pause()
     {
-        PausePanel.ShowDialog(this, canvas.transform);
+        IsPausing = true;
+        PausePanel.ShowDialog(this, canvas.transform, () => IsPausing = false);
     }
 
     public void Restart()

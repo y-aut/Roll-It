@@ -345,6 +345,11 @@ public class Structure
         UpdateObjects();
     }
 
+    public Structure(Structure src, Stage parent)
+        : this(src.Type, src._texture, src._positionInt, src._localScaleInt, src._moveDirInt,
+              src._rotationInt, src._xInversed, src._yInversed, src._zInversed, src._tag, parent)
+    { }
+
     // StructureZipから解凍するときに用いる
     public Structure(StructureType type, int texture, Vector3Int pos, Vector3Int scale,
         Vector3Int moveDir, RotationEnum rot, bool xInv, bool yInv, bool zInv, int tag, Stage parent)
@@ -624,6 +629,8 @@ public class Structure
             Position - new Vector3(0, 0, LocalScale.z / 2),
         };
     }
+    // 補助面を表示する面
+    public static CubeFace GetArrowFace(int index) => (CubeFace)index;
 
     // オブジェクト選択時、XZ平面上でのサイズ変更を表す辺上の印を表示する点((X+,Z+,X-,Z-)*(Y+,Y-))
     public void GetXZResizeEdges(out List<Vector3> points)
@@ -639,21 +646,35 @@ public class Structure
             Position + new Vector3(0, -LocalScale.y / 2, -LocalScale.z / 2),
         };
     }
+    // 補助面を表示する面
+    public static CubeFace GetXZResizeFace(int index)
+    {
+        switch (index % 4)
+        {
+            case 0: return CubeFace.XP;
+            case 1: return CubeFace.ZP;
+            case 2: return CubeFace.XN;
+            default: return CubeFace.ZN;
+        }
+    }
 
     // オブジェクト選択時、Y方向のサイズ変更を表す辺上の印を表示する点((X+Z+,X-Z+,X-Z-,X+Z-)*(Y+,Y-))
     public void GetYResizeVertexes(out List<Vector3> points)
     {
+        var scaleHalf = LocalScale / 2;
         points = new List<Vector3>() {
-            Position + new Vector3(LocalScale.x / 2, LocalScale.y / 2, LocalScale.z / 2),
-            Position + new Vector3(-LocalScale.x / 2, LocalScale.y / 2, LocalScale.z / 2),
-            Position + new Vector3(-LocalScale.x / 2, LocalScale.y / 2, -LocalScale.z / 2),
-            Position + new Vector3(LocalScale.x / 2, LocalScale.y / 2, -LocalScale.z / 2),
-            Position + new Vector3(LocalScale.x / 2, -LocalScale.y / 2, LocalScale.z / 2),
-            Position + new Vector3(-LocalScale.x / 2, -LocalScale.y / 2, LocalScale.z / 2),
-            Position + new Vector3(-LocalScale.x / 2, -LocalScale.y / 2, -LocalScale.z / 2),
-            Position + new Vector3(LocalScale.x / 2, -LocalScale.y / 2, -LocalScale.z / 2),
+            Position + new Vector3(scaleHalf.x, scaleHalf.y, scaleHalf.z),
+            Position + new Vector3(-scaleHalf.x, scaleHalf.y, scaleHalf.z),
+            Position + new Vector3(-scaleHalf.x, scaleHalf.y, -scaleHalf.z),
+            Position + new Vector3(scaleHalf.x, scaleHalf.y, -scaleHalf.z),
+            Position + new Vector3(scaleHalf.x, -scaleHalf.y, scaleHalf.z),
+            Position + new Vector3(-scaleHalf.x, -scaleHalf.y, scaleHalf.z),
+            Position + new Vector3(-scaleHalf.x, -scaleHalf.y, -scaleHalf.z),
+            Position + new Vector3(scaleHalf.x, -scaleHalf.y, -scaleHalf.z),
         };
     }
+    // 補助面を表示する面
+    public static CubeFace GetYResizeFace(int index) => index < 4 ? CubeFace.YP : CubeFace.YN;
 
     // オブジェクト選択時、回転を表す矢印を表示する点
     public Vector3 GetRotateArrowPos()
