@@ -10,6 +10,8 @@ public class MenuOperator : MonoBehaviour
 {
     public Canvas canvas;
     public Camera PrevCam;
+    public Camera StructCam;
+    public RenderTexture StructPrevRT;
 
     public HeaderPanelOperator header;
     public StageViewOperator stageView;
@@ -19,7 +21,8 @@ public class MenuOperator : MonoBehaviour
     private static bool openResult;     // 次回はhistoryではなくResultを開く
     private static Stage resultStage;   // 次回ResultPageロード時に読み込むステージ
 
-    private Stage PrevStage;    // Previewで表示しているStage
+    private Stage PrevStage;    // PrevCamで表示しているStage
+    private Structure PrevStruct;   // StructCamで表示しているStructure
 
     // 読み込んだステージを一時保存しておく
     private static StageViewTabCollection<List<Stage>[]> StageCache;
@@ -254,6 +257,9 @@ public class MenuOperator : MonoBehaviour
         for (int i = 0; i < (int)StageViewTabs.NB; ++i)
             StageCache[(StageViewTabs)i] = new List<Stage>[StageViewContentOperator.PAGE_LIMIT];
         LastStageCacheID = new StageViewTabCollection<IDType>();
+
+        // StructurePreviewを取得
+        StartCoroutine(GetStructPreviews());
     }
 
     public void BtnFindClicked()
@@ -354,7 +360,44 @@ public class MenuOperator : MonoBehaviour
         PrevStage = stage;
         stage.Create();
         PrevCam.transform.position = stage.Start.Position
-            + new Vector3(0, GameConst.PLAY_CAMDIST_VER + Prefabs.BallPrefab.transform.localScale.y, -GameConst.PLAY_CAMDIST_HOR);
+            + new Vector3(0, GameConst.PLAY_CAMDIST_VER + GameConst.BALL_SCALE, -GameConst.PLAY_CAMDIST_HOR);
+    }
+
+    public void DestroyPreview()
+    {
+        if (PrevStage != null) PrevStage.Destroy();
+    }
+
+    // 順番にStructureのPreviewを取得していく
+    IEnumerator GetStructPreviews()
+    {
+        NowLoading.Show(canvas.transform, "Loading assets...");
+
+        for (StructureType type = StructureType.Zero; type < StructureType.NB; ++type)
+            for (int texture = 0, cnt = Prefabs.GetTextureCount(type); texture < cnt; ++texture)
+            {
+                CreateStructPreview(new Structure(type, texture));
+                yield return new WaitForEndOfFrame();
+
+                var copy = new RenderTexture(StructPrevRT);
+                Graphics.CopyTexture(StructPrevRT, copy);
+                Cache.StructPreviews[type].Add(copy);
+            }
+
+        //CreateStructPreview(new Structure(StructureType.Chopsticks, 0));
+
+        NowLoading.Close();
+    }
+
+    // オブジェクトを配置してStructCamで表示する
+    public void CreateStructPreview(Structure str)
+    {
+        if (PrevStruct != null) PrevStruct.Destroy();
+        PrevStruct = str;
+        var (pos, rot) = str.SetForPreview();
+        str.CreateForPreview();
+        StructCam.transform.position = pos;
+        StructCam.transform.rotation = rot;
     }
 
 }

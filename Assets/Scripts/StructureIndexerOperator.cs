@@ -13,8 +13,7 @@ public class StructureIndexerOperator : MonoBehaviour
 
     float generation_time = 0f;     // Select処理を開始してから経過した秒数
 
-    // ImgStructureを子にもつコントロール
-    public GameObject ImgContents;
+    public GameObject StructurePanel;
     // 初めに選択されているボタン
     public GameObject FirstSelected;
 
@@ -46,11 +45,10 @@ public class StructureIndexerOperator : MonoBehaviour
     // 選択されているカテゴリーのみを表示
     private void SetActive()
     {
-        var cate = BtnSelected.name.GetCategoryFromButtonName();
-        var imgs = new List<Image>(ImgContents.GetComponentsInChildren<Image>(true));
-        foreach (var i in imgs)
+        var cate = BtnSelected.GetComponent<StructureIndexerButtonOperator>().Category;
+        foreach (var item in StructurePanel.GetComponentsInChildren<StructureItemOperator>(true))
         {
-            i.gameObject.SetActive(i.gameObject.name.GetStructureTypeFromImageName().GetCategory() == cate);
+            item.gameObject.SetActive(item.Type.GetCategory() == cate);
         }
     }
 

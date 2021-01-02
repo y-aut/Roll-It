@@ -34,21 +34,21 @@ public class StructureZip
     public StructureZip(Structure src)
     {
         p = (long)src.Type; p <<= 4;
-        p += src.Texture; p <<= 11;
-        p += PackSignedInt(src.PositionInt.x, 11); p <<= 11;
-        p += PackSignedInt(src.PositionInt.y, 11); p <<= 11;
-        p += PackSignedInt(src.PositionInt.z, 11); p <<= 10;
-        p += src.LocalScaleInt.x; p <<= 10;
-        p += src.LocalScaleInt.y;
+        p |= (uint)src.Texture; p <<= 11;
+        p |= PackSignedInt(src.PositionInt.x, 11); p <<= 11;
+        p |= PackSignedInt(src.PositionInt.y, 11); p <<= 11;
+        p |= PackSignedInt(src.PositionInt.z, 11); p <<= 10;
+        p |= (uint)src.LocalScaleInt.x; p <<= 10;
+        p |= (uint)src.LocalScaleInt.y;
         q = src.LocalScaleInt.z; q <<= 10;
-        q += PackSignedInt(src.MoveDirInt.x, 10); q <<= 10;
-        q += PackSignedInt(src.MoveDirInt.y, 10); q <<= 10;
-        q += PackSignedInt(src.MoveDirInt.z, 10); q <<= 8;
-        q += (long)src.RotationInt; q <<= 1;
-        q += Convert.ToInt32(src.XInversed); q <<= 1;
-        q += Convert.ToInt32(src.YInversed); q <<= 1;
-        q += Convert.ToInt32(src.ZInversed); q <<= 13;
-        q += src.Tag;
+        q |= PackSignedInt(src.MoveDirInt.x, 10); q <<= 10;
+        q |= PackSignedInt(src.MoveDirInt.y, 10); q <<= 10;
+        q |= PackSignedInt(src.MoveDirInt.z, 10); q <<= 8;
+        q |= (long)src.RotationInt; q <<= 1;
+        q |= Convert.ToUInt32(src.XInversed); q <<= 1;
+        q |= Convert.ToUInt32(src.YInversed); q <<= 1;
+        q |= Convert.ToUInt32(src.ZInversed); q <<= 13;
+        q |= (uint)src.Tag;
     }
 
     // Unpack

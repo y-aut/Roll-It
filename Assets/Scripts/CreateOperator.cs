@@ -10,10 +10,12 @@ using UnityEngine.UI;
 public class CreateOperator : MonoBehaviour
 {
     public Camera cam;
+
     public static Stage Stage { get; set; }
-    public GameObject panel;
+    public GameObject StructurePanel;
     public Canvas canvas;
     public Button BtnDelete;
+    public TextureListOperator TextureList;
 
     private Vector2? leftDowned;
     private Vector2? rightDowned;
@@ -33,10 +35,9 @@ public class CreateOperator : MonoBehaviour
     const int CAM_RADIUS = 10;      // カメラの回転時、中心となる点のカメラからの距離
     const int CAM_RADIUS_MAX = 20;  // Focus中のオブジェクトからこれ以上離れていたらCAM_RADIUSを半径とする
 
-    const float DRAGGED_ANGLE_MINCOS = 0.95f;  // draggedのpointer rayからの最大角(cosの最小値)
     const float DRAGGED_DEPTH_MIN = 3f;     // draggedのpointerからの最小距離
     const float DRAGGED_DEPTH_MAX = 15f;    // draggedのpointerからの最大距離
-    const float DRAGGED_DEPTH_PREFERRED = 15f;
+    const float DRAGGED_DEPTH_PREFERRED = 6f;
 
     // ロード前に設定すべき変数
     public static void Ready(Stage stage, bool isNewStage)
@@ -51,6 +52,8 @@ public class CreateOperator : MonoBehaviour
         if (!newStage)
             before = new StructureZipCollection(Stage.Structs);
         Stage.Create();
+        foreach (var item in StructurePanel.GetComponentsInChildren<StructureItemOperator>(true))
+            item.Initialize(this, item.Type, 0, true);
     }
 
     // Update is called once per frame
@@ -217,7 +220,7 @@ public class CreateOperator : MonoBehaviour
     }
 
     // アイテムをドラッグ
-    public void ItemDragged(GameObject sender)
+    public void ItemDragged(StructureItemOperator item)
     {
         // 二本指ならピンチイン時なのでスルー
         if (Input.touchCount >= 2) return;
@@ -237,40 +240,40 @@ public class CreateOperator : MonoBehaviour
 
         if (dragged == null)
         {
-            switch (sender.name.GetStructureTypeFromImageName())
+            switch (item.Type)
             {
                 case StructureType.Floor:
-                    dragged = new Structure(StructureType.Floor, pos, new Vector3Int(4, 1, 4), Stage);
+                    dragged = new Structure(StructureType.Floor, pos, new Vector3Int(4, 1, 4), Stage, item.Texture);
                     break;
                 case StructureType.Board:
-                    dragged = new Structure(StructureType.Board, pos, new Vector3Int(4, 4, 4), Stage);
+                    dragged = new Structure(StructureType.Board, pos, new Vector3Int(4, 4, 4), Stage, item.Texture);
                     break;
                 case StructureType.Plate:
-                    dragged = new Structure(StructureType.Plate, pos, new Vector3Int(4, 1, 4), Stage);
+                    dragged = new Structure(StructureType.Plate, pos, new Vector3Int(4, 1, 4), Stage, item.Texture);
                     break;
                 case StructureType.Slope:
-                    dragged = new Structure(StructureType.Slope, pos, new Vector3Int(4, 4, 4), Stage);
+                    dragged = new Structure(StructureType.Slope, pos, new Vector3Int(4, 4, 4), Stage, item.Texture);
                     break;
                 case StructureType.Arc:
-                    dragged = new Structure(StructureType.Arc, pos, new Vector3Int(4, 4, 4), Stage);
+                    dragged = new Structure(StructureType.Arc, pos, new Vector3Int(4, 4, 4), Stage, item.Texture);
                     break;
                 case StructureType.Angle:
-                    dragged = new Structure(StructureType.Angle, pos, new Vector3Int(1, 1, 1), Stage);
+                    dragged = new Structure(StructureType.Angle, pos, new Vector3Int(1, 1, 1), Stage, item.Texture);
                     break;
                 case StructureType.Lift:
-                    dragged = new Structure(StructureType.Lift, pos, new Vector3Int(0, 4, 0), new Vector3Int(4, 1, 4), Stage);
+                    dragged = new Structure(StructureType.Lift, pos, new Vector3Int(0, 4, 0), new Vector3Int(4, 1, 4), Stage, item.Texture);
                     break;
                 case StructureType.Ball:
-                    dragged = new Structure(StructureType.Ball, pos, new Vector3Int(1, 1, 1), Stage);
+                    dragged = new Structure(StructureType.Ball, pos, new Vector3Int(1, 1, 1), Stage, item.Texture);
                     break;
                 case StructureType.Chopsticks:
-                    dragged = new Structure(StructureType.Chopsticks, pos, new Vector3Int(4, 4, 4), Stage);
+                    dragged = new Structure(StructureType.Chopsticks, pos, new Vector3Int(4, 4, 4), Stage, item.Texture);
                     break;
                 case StructureType.Jump:
-                    dragged = new Structure(StructureType.Jump, pos, new Vector3Int(4, 1, 4), Stage);
+                    dragged = new Structure(StructureType.Jump, pos, new Vector3Int(4, 1, 4), Stage, item.Texture);
                     break;
                 case StructureType.Box:
-                    dragged = new Structure(StructureType.Box, pos, new Vector3Int(1, 1, 1), Stage);
+                    dragged = new Structure(StructureType.Box, pos, new Vector3Int(1, 1, 1), Stage, item.Texture);
                     break;
                 default:
                     return;
@@ -336,53 +339,43 @@ public class CreateOperator : MonoBehaviour
     private Vector3Int GetBestPos(Vector3Int scale)
     {
         var ray = cam.ScreenPointToRay(Input.mousePosition);
-        // 範囲内にある点(cosの値も保持しておく)
-        var points = new List<(Vector3Int vec, float dist, float cos)>();
-        // camを中心とする一辺 2*DRAGGED_DEPTH_MAX の立方体
-        var pmin = Structure.ToPositionInt(ray.origin - Vector3.one * DRAGGED_DEPTH_MAX);
-        var pmax = Structure.ToPositionInt(ray.origin + Vector3.one * DRAGGED_DEPTH_MAX);
 
+        // 一定間隔ごとにサンプリング
+        var points = new List<Vector3Int>();
         // 外接直方体
         var trueMin = Vector3Int.one * int.MaxValue;
         var trueMax = Vector3Int.one * int.MinValue;
-        for (int x = pmin.x; x <= pmax.x; ++x)
-            for (int y = pmin.y; y <= pmax.y; ++y)
-                for (int z = pmin.z; z <= pmax.z; ++z)
-                {
-                    // camからの距離がDRAGGED_DEPTH_MIN~DRAGGED_DEPTH_MAX
-                    // ray.dirとのなす角のcosがDRAGGED_ANGLE_MINCOS以上
-                    var pInt = new Vector3Int(x, y, z);
-                    var p = Structure.ToPositionF(pInt);
-                    var dist = (p - ray.origin).magnitude;
-                    if (DRAGGED_DEPTH_MIN <= dist && dist <= DRAGGED_DEPTH_MAX)
-                    {
-                        var cos = (p - ray.origin).CosWith(ray.direction);
-                        if (cos >= DRAGGED_ANGLE_MINCOS)
-                        {
-                            points.Add((pInt, dist, cos));
-                            trueMin = trueMin.Select(pInt, (i, j) => Math.Min(i, j));
-                            trueMax = trueMax.Select(pInt, (i, j) => Math.Max(i, j));
-                        }
-                    }
-                }
 
-        // 外接直方体と接するStructを列挙しておく
+        for (float d = DRAGGED_DEPTH_MIN; d < DRAGGED_DEPTH_MAX; d += 1f / GameConst.POSITION_SCALE)
+        {
+            var p = Structure.ToPositionInt(ray.GetPoint(d));
+            if (!points.Contains(p))
+            {
+                points.Add(p);
+                trueMin = trueMin.Select(p, (i, j) => Math.Min(i, j));
+                trueMax = trueMax.Select(p, (i, j) => Math.Max(i, j));
+            }
+        }
+        trueMin -= scale;
+        trueMax += scale;
+
+        // 外接直方体と接するStructのみを列挙しておく
         var structs = Stage.Structs.Where(i =>
-            trueMin.All(trueMax, i.PositionInt - i.LocalScaleInt, i.PositionInt + i.LocalScaleInt,
+            i != dragged && trueMin.All(trueMax, i.PositionInt - i.LocalScaleInt, i.PositionInt + i.LocalScaleInt,
                 (tmin, tmax, smin, smax) => tmin <= smax && smin <= tmax));
 
-        // pと辺や面を共有するStructがあれば加点, pとcamとの角度差に応じて減点
-        var best = points[0].vec; float max = float.MinValue;
-        foreach (var (vec, dist, cos) in points)
+        // pと辺や面を共有するStructがあれば加点, pとcamとの距離に応じて減点
+        var best = points[0]; float max = float.MinValue;
+        foreach (var p in points)
         {
-            float val = cos * 1000 - Math.Abs(dist - DRAGGED_DEPTH_PREFERRED);
+            float val = -Mathf.Abs((Structure.ToPositionF(p) - ray.origin).magnitude - DRAGGED_DEPTH_PREFERRED);
             foreach (var str in structs)
             {
-                if (((vec - scale) - (str.PositionInt + str.LocalScaleInt)).IsAllMoreThan(0)
-                    || ((str.PositionInt - str.LocalScaleInt) - (vec + scale)).IsAllMoreThan(0))
+                if (((p - scale) - (str.PositionInt + str.LocalScaleInt)).IsAllMoreThan(0)
+                    || ((str.PositionInt - str.LocalScaleInt) - (p + scale)).IsAllMoreThan(0))
                     continue;
                 // 重なりがあれば減点
-                if (vec.All(scale, str.PositionInt, str.LocalScaleInt,
+                if (p.All(scale, str.PositionInt, str.LocalScaleInt,
                     (r, sca, strPos, strSca) => r - sca < strPos + strSca && strPos - strSca < r + sca))
                 {
                     val -= 100f;
@@ -392,14 +385,19 @@ public class CreateOperator : MonoBehaviour
                     foreach (var sign1 in new int[] { -1, 1 })
                         foreach (var sign2 in new int[] { -1, 1 })
                         {
-                            if (vec.XYZ(xyz) + sign1 * scale.XYZ(xyz) == str.PositionInt.XYZ(xyz) + sign2 * str.LocalScaleInt.XYZ(xyz))
-                                val += 1f;
+                            if (p.XYZ(xyz) + sign1 * scale.XYZ(xyz) == str.PositionInt.XYZ(xyz) + sign2 * str.LocalScaleInt.XYZ(xyz))
+                            {
+                                if (dragged.ShouldBeOnStructure && xyz == XYZEnum.Y && sign1 == -1 && sign2 == 1)
+                                    val += 100f;
+                                else
+                                    val += 5f;
+                            }
                         }
             }
             if (val > max)
             {
                 max = val;
-                best = vec;
+                best = p;
             }
         }
         return best;
@@ -408,9 +406,9 @@ public class CreateOperator : MonoBehaviour
     // ポインタがpanelの上にあるか
     private bool PointerOnPanel()
     {
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(panel.GetComponent<RectTransform>(),
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(StructurePanel.GetComponent<RectTransform>(),
             Input.mousePosition, null, out var localPoint);
-        return panel.GetComponent<RectTransform>().rect.Contains(localPoint);
+        return StructurePanel.GetComponent<RectTransform>().rect.Contains(localPoint);
     }
 
     // 視点回転時の中心座標を取得
@@ -494,7 +492,7 @@ public class CreateOperator : MonoBehaviour
     }
 
     // クリアチェックしている場合の確認
-    private void ConfirmIfClearChecked(System.Action okClicked, System.Action cancelClicked)
+    private void ConfirmIfClearChecked(Action okClicked, Action cancelClicked)
     {
         IsConfirming = true;
         MessageBox.ShowDialog(canvas.transform,
@@ -507,5 +505,7 @@ public class CreateOperator : MonoBehaviour
     }
 
     // 画面のスケールを取得
-    private float GetPixelScale() => panel.transform.lossyScale.x;
+    private float GetPixelScale() => StructurePanel.transform.lossyScale.x;
+
+
 }

@@ -85,7 +85,7 @@ public class PlayOperator : MonoBehaviour
         Cleared = false;
 
         Stage.Create();
-        Ball = Instantiate(Prefabs.BallPrefab);
+        Ball = Instantiate(Prefabs.BallPrefab[GameData.User.ActiveBallTexture]);
         Ball.name = Structure.BALL_NAME;
         Ball.GetComponent<SphereCollider>().material = ballMat;
         var rig = Ball.AddComponent<Rigidbody>();

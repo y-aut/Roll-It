@@ -24,4 +24,7 @@ public static class GameConst
     // ステージの限界座標
     public const int STAGE_LIMIT = 1024;
 
+    // BallのLocalScale
+    public const float BALL_SCALE = 0.7f;
+
 }

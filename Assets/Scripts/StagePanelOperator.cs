@@ -168,7 +168,7 @@ public class StagePanelOperator : MonoBehaviour
         }, defaultString: Stage.Name);
     }
 
-    public async void BtnPlayClicked()
+    public void BtnPlayClicked()
     {
         StageItem.ParentView.menuOp.SaveHistory();
         PlayOperator.Ready(Stage, false, IsMyStage, false);

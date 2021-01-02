@@ -25,13 +25,13 @@ public class AuxiFaces
     public void Destroy()
     {
         faces.ForEach(i => Object.Destroy(i));
+        faces.Clear();
     }
 
     // 補助面を更新
     public void Update()
     {
-        faces.ForEach(i => Object.Destroy(i));
-        faces.Clear();
+        Destroy();
         foreach (var xyz in AuxiFaceFace == CubeFace.NB ?
             new XYZEnum[] { XYZEnum.X, XYZEnum.Y, XYZEnum.Z } : new XYZEnum[] { (XYZEnum)((int)AuxiFaceFace % 3) })
         {

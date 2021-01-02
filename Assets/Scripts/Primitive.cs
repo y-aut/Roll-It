@@ -59,6 +59,14 @@ public class Primitive
         NonKinematic = nonKinematic;
     }
 
+    public Primitive(GameObject prefab, Structure parent, bool createOnly = false, bool nonKinematic = false)
+    {
+        Prefab = prefab;
+        Parent = parent;
+        CreateOnly = createOnly;
+        NonKinematic = nonKinematic;
+    }
+
     // ワールドに生成
     public void Create()
     {

@@ -160,6 +160,7 @@ public class StageViewContentOperator : MonoBehaviour
             yield return new WaitForEndOfFrame();
             StageItems[i].SetPreview();
         }
+        menuOp.DestroyPreview();
     }
 
     // ステージの変更を反映

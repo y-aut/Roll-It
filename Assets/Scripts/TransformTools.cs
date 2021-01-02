@@ -186,11 +186,7 @@ public class TransformTools
     public void Create()
     {
         frameCube = UnityEngine.Object.Instantiate(Prefabs.FrameCubePrefab);
-        frameCube.transform.position = Focused.Position;
-        frameCube.transform.localScale = Focused.LocalScale;
         frameCubeIllegal = UnityEngine.Object.Instantiate(Prefabs.FrameCubeIllegalPrefab);
-        frameCubeIllegal.transform.position = Focused.Position;
-        frameCubeIllegal.transform.localScale = Focused.LocalScale;
 
         Arrows = new List<GameObject>();
         for (int i = 0; i < ARROW_COUNT; ++i)
@@ -229,10 +225,10 @@ public class TransformTools
 
     public void UpdateObjects()
     {
-        frameCube.transform.position = Focused.Position;
-        frameCube.transform.localScale = Focused.LocalScale;
-        frameCubeIllegal.transform.position = Focused.Position;
-        frameCubeIllegal.transform.localScale = Focused.LocalScale;
+        frameCube.transform.position = Focused.PositionShifted;
+        frameCube.transform.localScale = Focused.LocalScale + Vector3.one * Structure.Z_FIGHTING_GAP;
+        frameCubeIllegal.transform.position = Focused.PositionShifted;
+        frameCubeIllegal.transform.localScale = frameCube.transform.localScale;
 
         Focused.GetArrowRoots(out var roots);
         arrowRoots = roots;

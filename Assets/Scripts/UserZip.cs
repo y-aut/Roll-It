@@ -100,6 +100,16 @@ public class UserZip
         set => published = new IDTypeCollection(value);
     }
 
+    // 使用中のボール
+    [SerializeField]
+    public int activeBallTexture = 0;
+    [FirestoreProperty("b")]
+    private int ActiveBallTexture
+    {
+        get => activeBallTexture;
+        set => activeBallTexture = value;
+    }
+
     public UserZip() { }
 
     public UserZip(User src)
@@ -118,7 +128,8 @@ public class UserZip
     public User ToUser()
     {
         return new User(id, name, money.GetLower(), money.GetUpper(), userType, startDate, lastDate,
-            clear_challenged.GetUpper(), clear_challenged.GetLower(), poseva_favored.GetUpper(), poseva_favored.GetLower(), published);
+            clear_challenged.GetUpper(), clear_challenged.GetLower(), poseva_favored.GetUpper(), poseva_favored.GetLower(),
+            published, activeBallTexture);
     }
 
     // 指定したパラメータをvだけ増やすのに足すべき値
@@ -163,6 +174,8 @@ public class UserZip
                 return "f";
             case UserParams.PublishedStages:
                 return "p";
+            case UserParams.ActiveBallTexture:
+                return "b";
             default:
                 throw GameException.Unreachable;
         }

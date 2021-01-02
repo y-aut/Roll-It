@@ -24,6 +24,9 @@ public enum StructureType
     Chopsticks, // 箸
     Jump,       // ジャンプ台
     Box,        // 軽い箱
+
+    NB,
+    Zero = 0,
 }
 
 // Structureの種類
@@ -57,17 +60,6 @@ public static partial class AddMethod
 
     public static Category GetCategory(this StructureType type) => StructureTypeToCategory[(int)type];
 
-    // ImgのnameからStructureTypeへの変換
-    public static StructureType GetStructureTypeFromImageName(this string imgName)
-    {
-        return (StructureType)Enum.Parse(typeof(StructureType), imgName.Substring(3));
-    }
-
-    // BtnのnameからCategoryへの変換
-    public static Category GetCategoryFromButtonName(this string btnName)
-    {
-        return (Category)Enum.Parse(typeof(Category), btnName.Substring(3));
-    }
 }
 
 [Serializable]
@@ -77,11 +69,9 @@ public enum RotationEnum
 }
 
 // 複数のPrimitiveを一つにまとめた構造体
-// 抽象クラスにするとSerializeできないので非抽象クラス
-[Serializable]
 public class Structure
 {
-    const float Z_FIGHTING_GAP = 0.001f;    // Z-fightingを防ぐためにズラす
+    public const float Z_FIGHTING_GAP = 0.001f;    // Z-fightingを防ぐためにズラす
 
     const float BOARD_THICKNESS = 0.2f;     // Boardの厚み
     const int LIFT_PERIOD = 300;            // Liftの周期(f)
@@ -94,6 +84,9 @@ public class Structure
     public const int LOCALSCALE_LIMIT = 1024;
     // MoveDirの最大サイズ
     public const int MOVEDIR_LIMIT = 512;
+
+    // Previewの撮影位置
+    static readonly Vector3 PREVIEW_POS = Vector3.one * GameConst.STAGE_LIMIT * GameConst.POSITION_SCALE * 2;
 
     // 回転可能なStructureType
     public static List<StructureType> RotatableList
@@ -156,26 +149,28 @@ public class Structure
 
     // ステージの情報に保存しないStructureType
     public static List<StructureType> UnsavedList
-    => new List<StructureType>() {
+        => new List<StructureType>() {
             StructureType.Ball,
-    };
+        };
+
+    // 他のStructureの上に置くのが推奨されるStructureType
+    public static List<StructureType> ShouldBeOnStructureList
+        => new List<StructureType>() {
+            StructureType.Angle,
+            StructureType.Box,
+        };
 
     public StructureType Type { get; private set; }
 
     // テクスチャ
-    private int _texture = 0;
-    public int Texture { get => _texture; private set => _texture = value; }
+    public int Texture { get; private set; } = 0;
 
-    [NonSerialized]
     private List<Primitive> objs;
 
-    [NonSerialized]
-    private Stage _parent;
-    public Stage Parent { get => _parent; set => _parent = value; }
+    public Stage Parent { get; set; }
 
     // Transform
     // 矢印などの移動やサイズ変更に関するオブジェクトはこの直方体を基準にして設置する
-    [SerializeField]
     private Vector3Int _positionInt;
     public Vector3Int PositionInt
     {
@@ -188,7 +183,6 @@ public class Structure
     }
 
     // Liftで、移動方向を表す
-    [SerializeField]
     private Vector3Int _moveDirInt;
     public Vector3Int MoveDirInt
     {
@@ -208,7 +202,6 @@ public class Structure
         set => MoveDirInt = value - PositionInt;
     }
 
-    [SerializeField]
     private Vector3Int _localScaleInt;
     public Vector3Int LocalScaleInt
     {
@@ -220,7 +213,6 @@ public class Structure
         }
     }
 
-    [SerializeField]
     private RotationEnum _rotationInt = RotationEnum.IDENTITY;
     public RotationEnum RotationInt
     {
@@ -258,7 +250,6 @@ public class Structure
     }
 
     // X軸方向の反転
-    [SerializeField]
     private bool _xInversed = false;
     public bool XInversed
     {
@@ -271,7 +262,6 @@ public class Structure
     }
 
     // Y軸方向の反転
-    [SerializeField]
     private bool _yInversed = false;
     public bool YInversed
     {
@@ -284,7 +274,6 @@ public class Structure
     }
 
     // Z軸方向の反転
-    [SerializeField]
     private bool _zInversed = false;
     public bool ZInversed
     {
@@ -296,9 +285,7 @@ public class Structure
         }
     }
 
-    // 付加データ
-    private int _tag = 0;
-    public int Tag { get => _tag; private set => _tag = value; }
+    public int Tag { get; private set; } = 0;
 
     public Quaternion Rotation => RotationInt.ToQuaternion();
 
@@ -322,40 +309,51 @@ public class Structure
     public static Vector3 ToLocalScaleF(Vector3Int scale) => (Vector3)scale / GameConst.LOCALSCALE_SCALE;
 
     // コンストラクタ
-    public Structure(StructureType type, Vector3Int pos, Vector3Int scale, Stage parent)
+    public Structure(StructureType type, Vector3Int pos, Vector3Int scale, Stage parent, int texture = 0)
     {
         Type = type;
         _positionInt = pos;
         _localScaleInt = scale;
         Parent = parent;
+        Texture = texture;
 
         SetObjs();
         UpdateObjects();
     }
 
-    public Structure(StructureType type, Vector3Int pos, Vector3Int moveDir, Vector3Int scale, Stage parent)
+    public Structure(StructureType type, Vector3Int pos, Vector3Int moveDir, Vector3Int scale, Stage parent, int texture = 0)
     {
         Type = type;
         _positionInt = pos;
         _moveDirInt = moveDir;
         _localScaleInt = scale;
         Parent = parent;
+        Texture = texture;
 
         SetObjs();
         UpdateObjects();
     }
 
     public Structure(Structure src, Stage parent)
-        : this(src.Type, src._texture, src._positionInt, src._localScaleInt, src._moveDirInt,
-              src._rotationInt, src._xInversed, src._yInversed, src._zInversed, src._tag, parent)
+        : this(src.Type, src.Texture, src._positionInt, src._localScaleInt, src._moveDirInt,
+              src._rotationInt, src._xInversed, src._yInversed, src._zInversed, src.Tag, parent)
     { }
+
+    // TypeとTextureからプレビューをキャプチャする用に初期化する
+    public Structure(StructureType type, int texture)
+    {
+        Type = type;
+        Texture = texture;
+
+        SetObjs();
+    }
 
     // StructureZipから解凍するときに用いる
     public Structure(StructureType type, int texture, Vector3Int pos, Vector3Int scale,
         Vector3Int moveDir, RotationEnum rot, bool xInv, bool yInv, bool zInv, int tag, Stage parent)
     {
         Type = type;
-        _texture = texture;
+        Texture = texture;
         _positionInt = pos;
         _localScaleInt = scale;
         _moveDirInt = moveDir;
@@ -363,7 +361,7 @@ public class Structure
         _xInversed = xInv;
         _yInversed = yInv;
         _zInversed = zInv;
-        _tag = tag;
+        Tag = tag;
         Parent = parent;
 
         SetObjs();
@@ -371,57 +369,53 @@ public class Structure
     }
 
     // objsにPrimitiveをセットする。位置等はUpdateObjects()で設定するのでしなくて良い
-    private void SetObjs() => SetObjs(Type);
-
-    // こちらは直接呼ばない
-    private void SetObjs(StructureType type)
+    private void SetObjs()
     {
-        switch (type)
+        switch (Type)
         {
             case StructureType.Floor:
-                objs = new List<Primitive>() { new Primitive(Prefabs.FloorPrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.FloorPrefab[Texture]) };
                 break;
             case StructureType.Start:
-                objs = new List<Primitive>() { new Primitive(Prefabs.StartPrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.StartPrefab[Texture]) };
                 break;
             case StructureType.Goal:
-                objs = new List<Primitive>() { new Primitive(Prefabs.GoalPrefab), new Primitive(Prefabs.GoalFlagPrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.GoalPrefab[Texture]), new Primitive(Prefabs.GoalFlagPrefab[Texture]) };
                 break;
             case StructureType.Board:
-                objs = new List<Primitive>() { new Primitive(Prefabs.BoardPrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.BoardPrefab[Texture]) };
                 break;
             case StructureType.Plate:
-                objs = new List<Primitive>() { new Primitive(Prefabs.PlatePrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.PlatePrefab[Texture]) };
                 break;
             case StructureType.Slope:
-                objs = new List<Primitive>() { new Primitive(Prefabs.SlopePrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.SlopePrefab[Texture]) };
                 break;
             case StructureType.Arc:
-                objs = new List<Primitive>() { new Primitive(Prefabs.ArcPrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.ArcPrefab[Texture]) };
                 break;
             case StructureType.Angle:
-                objs = new List<Primitive>() { new Primitive(Prefabs.AngleArrowPrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.AngleArrowPrefab[Texture]) };
                 break;
             case StructureType.Lift:
-                objs = new List<Primitive>() { new Primitive(Prefabs.LiftPrefab), new Primitive(Prefabs.LiftGoalPrefab, true) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.LiftPrefab[Texture]), new Primitive(Prefabs.LiftGoalPrefab[Texture], true) };
                 break;
             case StructureType.Ball:
-                objs = new List<Primitive>() { new Primitive(Prefabs.BallPrefab, true) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.BallPrefab[Texture], true) };
                 break;
             case StructureType.Chopsticks:
-                objs = new List<Primitive>() { new Primitive(Prefabs.ChopstickPrefab), new Primitive(Prefabs.ChopstickPrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.ChopstickPrefab[Texture]), new Primitive(Prefabs.ChopstickPrefab[Texture]) };
                 break;
             case StructureType.Jump:
-                objs = new List<Primitive>() { new Primitive(Prefabs.JumpPrefab) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.JumpPrefab[Texture]) };
                 break;
             case StructureType.Box:
-                objs = new List<Primitive>() { new Primitive(Prefabs.BoxPrefab, nonKinematic: true) };
+                objs = new List<Primitive>() { new Primitive(Prefabs.BoxPrefab[Texture], nonKinematic: true) };
                 break;
         }
 
         // Parentをこのオブジェクトに設定
         objs.ForEach(i => i.Parent = this);
-
     }
 
     // 位置、サイズに合わせてオブジェクトを更新
@@ -521,7 +515,7 @@ public class Structure
                 break;
             case StructureType.Ball:
                 objs[0].Position = PositionShifted;
-                objs[0].LocalScale = Prefabs.BallPrefab.transform.localScale;
+                objs[0].LocalScale = Vector3.one * GameConst.BALL_SCALE;
                 break;
             case StructureType.Chopsticks:
                 {
@@ -580,6 +574,103 @@ public class Structure
         }
     }
 
+    // Preview用に位置やサイズを設定し、撮影位置を返す
+    // 撮影直前に呼び出す
+    public (Vector3 pos, Quaternion rot) SetForPreview() => SetForPreview(Type);
+
+    // こちらは直接呼ばない
+    public (Vector3 pos, Quaternion rot) SetForPreview(StructureType type)
+    {
+        Vector3 camPos; Quaternion camRot;
+        switch (type)
+        {
+            case StructureType.Floor:
+                objs[0].Position = PREVIEW_POS;
+                objs[0].LocalScale = new Vector3(4, 0.5f, 4);
+                camPos = PREVIEW_POS + new Vector3(-5.12f, 3.01f, -6.82f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Start:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Goal:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Board:
+                Position = PREVIEW_POS;
+                LocalScale = new Vector3(2, 2, 2);
+                RotationInt = RotationEnum.Y270;
+                UpdateObjects();
+                camPos = PREVIEW_POS + new Vector3(-3.66f, 1.99f, -3.41f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Plate:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Slope:
+                Position = PREVIEW_POS;
+                LocalScale = new Vector3(1, 1, 1);
+                RotationInt = RotationEnum.Y270;
+                UpdateObjects();
+                camPos = PREVIEW_POS + new Vector3(-1.16f, 0.03f, -1.98f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Arc:
+                Position = PREVIEW_POS;
+                LocalScale = new Vector3(1, 1, 1);
+                RotationInt = RotationEnum.Y270;
+                UpdateObjects();
+                camPos = PREVIEW_POS + new Vector3(-1.18f, 0.27f, -1.92f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Angle:
+                objs.Add(new Primitive(Prefabs.FloorPrefab[0], this));
+                objs[0].Position = PREVIEW_POS;
+                objs[0].LocalScale = new Vector3(1, 1, 1);
+                objs[1].Position = PREVIEW_POS + new Vector3(0, -0.25f, 0);
+                objs[1].LocalScale = new Vector3(1.5f, 0.5f, 1.5f);
+                camPos = PREVIEW_POS + new Vector3(-1.33f, 2.77f, -1.14f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Lift:
+                objs.RemoveAt(objs.Count - 1);
+                objs[0].Position = PREVIEW_POS;
+                objs[0].LocalScale = new Vector3(2, 0.5f, 2);
+                camPos = PREVIEW_POS + new Vector3(-3.69f, 1.45f, -2.51f);
+                camRot = new Quaternion(0.135986447f, 0.48212409f, -0.0760462657f, 0.862137556f);
+                break;
+            case StructureType.Ball:
+                objs[0].Position = PREVIEW_POS;
+                objs[0].LocalScale = Vector3.one * 0.7f;
+                camPos = PREVIEW_POS + new Vector3(-0.852f, 0.588f, -0.864f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Chopsticks:
+                Position = PREVIEW_POS;
+                LocalScale = new Vector3(2, 2, 2);
+                UpdateObjects();
+                camPos = PREVIEW_POS + new Vector3(0.85f, 0.19f, 4.18f);
+                camRot = new Quaternion(0.00350445928f, -0.996310771f, 0.0502598435f, 0.069473289f);
+                break;
+            case StructureType.Jump:
+                objs[0].Position = PREVIEW_POS;
+                objs[0].LocalScale = new Vector3(2, 0.5f, 1);
+                camPos = PREVIEW_POS + new Vector3(-2.12f, 1.48f, -2.18f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Box:
+                objs[0].Position = PREVIEW_POS;
+                objs[0].LocalScale = new Vector3(1, 1, 1);
+                camPos = PREVIEW_POS + new Vector3(-1.45f, 1.53f, -1.77f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            default:
+                throw GameException.Unreachable;
+        }
+
+        return (camPos, camRot);
+    }
+
     // Generationに合わせてオブジェクトを更新
     public void GenerationIncremented() => GenerationIncremented(Type);
 
@@ -612,6 +703,12 @@ public class Structure
 
         range.ForEach(i => i.Create());
         if (DetectsCollision) range.ForEach(i => i.SetCollisionEvent());
+    }
+
+    public void CreateForPreview()
+    {
+        Collided = false;
+        objs.ForEach(i => i.Create());
     }
 
     // ワールドから削除
@@ -718,6 +815,9 @@ public class Structure
     // ステージの情報に保存するか
     public bool IsSaved => !UnsavedList.Contains(Type);
 
+    // 他のStructureの上に置くのが推奨されるか
+    public bool ShouldBeOnStructure => ShouldBeOnStructureList.Contains(Type);
+
     // ステージから削除できるか
     public bool IsDeletable => !(Type == StructureType.Start || Type == StructureType.Goal);
 
@@ -726,12 +826,5 @@ public class Structure
 
     // ボールと衝突した時にtrueになる
     public bool Collided { get; set; }
-
-    // Stageから呼ばれる
-    public void OnAfterDeserialize()
-    {
-        SetObjs();
-        //UpdateObjects();
-    }
 
 }

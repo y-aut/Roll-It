@@ -9,6 +9,8 @@ public static class Cache
     private static List<User> Users = new List<User>();
     // 取得したステージ情報
     private static List<Stage> Stages = new List<Stage>();
+    // StructureのPreview画像
+    public static EnumCollection<StructureType, List<RenderTexture>> StructPreviews = new EnumCollection<StructureType, List<RenderTexture>>(_ => new List<RenderTexture>());
 
     // キャッシュがあればキャッシュから取得
     public static async Task<User> GetUser(IDType userID)

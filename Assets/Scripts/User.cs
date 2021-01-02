@@ -42,6 +42,9 @@ public class User
     // 公開したステージ
     public List<IDType> PublishedStages;
 
+    // 使用中のボール
+    public int ActiveBallTexture = 0;
+
     // ローカルデータ
     public UserLocal LocalData;
 
@@ -57,7 +60,7 @@ public class User
 
     // UserZipからの解凍時に用いる
     public User(IDType id, string name, int coin, int purchased, UserType type, DateTime start, DateTime last,
-        int clear, int challenged, int posEva, int favored, IDTypeCollection published)
+        int clear, int challenged, int posEva, int favored, IDTypeCollection published, int ballTexture)
     {
         ID = id;
         Name = name;
@@ -71,6 +74,7 @@ public class User
         PosEvaCount = posEva;
         FavoredCount = favored;
         PublishedStages = published.ToList();
+        ActiveBallTexture = ballTexture;
     }
 
     public void Login()
@@ -136,5 +140,5 @@ public enum UserType
 public enum UserParams
 {
     ID, Name, Coin, PurchasedCoin, Type, StartDate, LastDate, ClearCount, ChallengedCount,
-    PosEvaCount, FavoredCount, PublishedStages
+    PosEvaCount, FavoredCount, PublishedStages, ActiveBallTexture
 }
