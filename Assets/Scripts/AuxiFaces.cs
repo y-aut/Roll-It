@@ -32,20 +32,28 @@ public class AuxiFaces
     public void Update()
     {
         Destroy();
-        foreach (var xyz in AuxiFaceFace == CubeFace.NB ?
-            new XYZEnum[] { XYZEnum.X, XYZEnum.Y, XYZEnum.Z } : new XYZEnum[] { (XYZEnum)((int)AuxiFaceFace % 3) })
+
+        var xyzRange = new List<XYZEnum>();
+        if ((AuxiFaceFace & CubeFace.X) != 0) xyzRange.Add(XYZEnum.X);
+        if ((AuxiFaceFace & CubeFace.Y) != 0) xyzRange.Add(XYZEnum.Y);
+        if ((AuxiFaceFace & CubeFace.Z) != 0) xyzRange.Add(XYZEnum.Z);
+        foreach (var xyz in xyzRange)
         {
             var cri = new int[] {
             (IsPosition2 ? Target.PositionInt2.XYZ(xyz) : Target.PositionInt.XYZ(xyz)) + Target.LocalScaleInt.XYZ(xyz),
             (IsPosition2 ? Target.PositionInt2.XYZ(xyz) : Target.PositionInt.XYZ(xyz)) - Target.LocalScaleInt.XYZ(xyz) };
             var quads = new bool[] { false, false };
+            var iRange = new List<int>();
+            if ((AuxiFaceFace & xyz.ToCubeFace() & CubeFace.P) != 0) iRange.Add(0);
+            if ((AuxiFaceFace & xyz.ToCubeFace() & CubeFace.N) != 0) iRange.Add(1);
+
             foreach (var str in Stage.Structs)
             {
                 if (Target == str) continue; // TODO: 自身のPosition2との比較も行う
                 var tar = new int[] {
                 str.PositionInt.XYZ(xyz) + str.LocalScaleInt.XYZ(xyz),
                 str.PositionInt.XYZ(xyz) - str.LocalScaleInt.XYZ(xyz) };
-                for (int i = 0; i < 2; ++i) foreach (var j in tar)
+                foreach (var i in iRange) foreach (var j in tar)
                     {
                         if (cri[i] == j)
                         {
@@ -56,12 +64,12 @@ public class AuxiFaces
                             faces.Add(face);
                         }
                     }
-                if (str.HasPosition2)
+                if (str.Type.HasPosition2())
                 {
                     // TODO: LocalScale2が違うときも対応する
                 }
             }
-            for (int i = 0; i < 2; ++i)
+            foreach (var i in iRange)
             {
                 if (quads[i])
                 {

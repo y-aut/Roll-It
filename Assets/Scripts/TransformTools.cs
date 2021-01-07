@@ -177,7 +177,7 @@ public class TransformTools
     public void ReturnToFormer()
     {
         Focused.PositionInt = dragStartObjPos;
-        if (Focused.HasPosition2) Focused.PositionInt2 = dragStartObjPos2;
+        if (Focused.Type.HasPosition2()) Focused.PositionInt2 = dragStartObjPos2;
         Focused.LocalScaleInt = dragStartObjScale;
         IsLegal = true;
         UpdateObjects();
@@ -191,31 +191,31 @@ public class TransformTools
         Arrows = new List<GameObject>();
         for (int i = 0; i < ARROW_COUNT; ++i)
             Arrows.Add(UnityEngine.Object.Instantiate(Prefabs.ArrowPrefab));
-        if (Focused.HasPosition2)
+        if (Focused.Type.HasPosition2())
         {
             Arrows2 = new List<GameObject>();
             for (int i = 0; i < ARROW_COUNT; ++i)
                 Arrows2.Add(UnityEngine.Object.Instantiate(Prefabs.ArrowPrefab));
         }
-        if (Focused.IsResizable)
+        if (Focused.Type.IsResizable())
         {
             XZCubes = new List<GameObject>();
             for (int i = 0; i < XZCUBE_COUNT; ++i)
                 XZCubes.Add(UnityEngine.Object.Instantiate(Prefabs.XZCubePrefab));
-            if (Focused.IsYResizable)
+            if (Focused.Type.IsYResizable())
             {
                 YCubes = new List<GameObject>();
                 for (int i = 0; i < YCUBE_COUNT; ++i)
                     YCubes.Add(UnityEngine.Object.Instantiate(Prefabs.YCubePrefab));
             }
         }
-        if (Focused.IsRotatable)
+        if (Focused.Type.IsRotatable())
             RotateArrow = UnityEngine.Object.Instantiate(Prefabs.RotateArrowPrefab);
-        if (Focused.IsXInversable)
+        if (Focused.Type.IsXInversable())
             XInverseArrow = UnityEngine.Object.Instantiate(Prefabs.InverseArrowPrefab);
-        if (Focused.IsYInversable)
+        if (Focused.Type.IsYInversable())
             YInverseArrow = UnityEngine.Object.Instantiate(Prefabs.InverseArrowPrefab);
-        if (Focused.IsZInversable)
+        if (Focused.Type.IsZInversable())
             ZInverseArrow = UnityEngine.Object.Instantiate(Prefabs.InverseArrowPrefab);
 
         IsLegal = true;
@@ -232,11 +232,11 @@ public class TransformTools
 
         Focused.GetArrowRoots(out var roots);
         arrowRoots = roots;
-        if (Focused.IsResizable)
+        if (Focused.Type.IsResizable())
         {
             Focused.GetXZResizeEdges(out var xzpos);
             XZpos = xzpos;
-            if (Focused.IsYResizable)
+            if (Focused.Type.IsYResizable())
             {
                 Focused.GetYResizeVertexes(out var ypos);
                 Ypos = ypos;
@@ -257,7 +257,7 @@ public class TransformTools
             Arrows[i].transform.position = arrowRoots[i];
             Arrows[i].transform.Translate(0, 0, -ARROW_LOCALSCALE / 3);
         }
-        if (Focused.HasPosition2)
+        if (Focused.Type.HasPosition2())
         {
             for (int i = 0; i < ARROW_COUNT; ++i)
             {
@@ -268,34 +268,34 @@ public class TransformTools
             }
         }
 
-        if (Focused.IsResizable)
+        if (Focused.Type.IsResizable())
         {
             for (int i = 0; i < XZCUBE_COUNT; ++i)
                 XZCubes[i].transform.position = XZpos[i];
             for (int i = 0; i < XZCUBE_COUNT; i += 2)
                 XZCubes[i].transform.rotation = Quaternion.Euler(0, 90, 0);
 
-            if (Focused.IsYResizable)
+            if (Focused.Type.IsYResizable())
             {
                 for (int i = 0; i < YCUBE_COUNT; ++i)
                     YCubes[i].transform.position = Ypos[i];
             }
         }
 
-        if (Focused.IsRotatable)
+        if (Focused.Type.IsRotatable())
             RotateArrow.transform.position = Focused.GetRotateArrowPos();
 
         // 反転矢印はデフォルトではX軸方向(Z+向き)
-        if (Focused.IsXInversable)
+        if (Focused.Type.IsXInversable())
         {
             XInverseArrow.transform.position = Focused.GetXInverseArrowPos();
         }
-        if (Focused.IsYInversable)
+        if (Focused.Type.IsYInversable())
         {
             YInverseArrow.transform.position = Focused.GetYInverseArrowPos();
             YInverseArrow.transform.rotation = Quaternion.Euler(0, -90, 90);
         }
-        if (Focused.IsZInversable)
+        if (Focused.Type.IsZInversable())
         {
             ZInverseArrow.transform.position = Focused.GetZInverseArrowPos();
             ZInverseArrow.transform.rotation = Quaternion.Euler(-90, 90, 0);
@@ -309,16 +309,16 @@ public class TransformTools
         UnityEngine.Object.Destroy(frameCube);
         UnityEngine.Object.Destroy(frameCubeIllegal);
         Arrows.ForEach(i => UnityEngine.Object.Destroy(i));
-        if (Focused.HasPosition2) Arrows2.ForEach(i => UnityEngine.Object.Destroy(i));
-        if (Focused.IsResizable)
+        if (Focused.Type.HasPosition2()) Arrows2.ForEach(i => UnityEngine.Object.Destroy(i));
+        if (Focused.Type.IsResizable())
         {
             XZCubes.ForEach(i => UnityEngine.Object.Destroy(i));
-            if (Focused.IsYResizable) YCubes.ForEach(i => UnityEngine.Object.Destroy(i));
+            if (Focused.Type.IsYResizable()) YCubes.ForEach(i => UnityEngine.Object.Destroy(i));
         }
-        if (Focused.IsRotatable) UnityEngine.Object.Destroy(RotateArrow);
-        if (Focused.IsXInversable) UnityEngine.Object.Destroy(XInverseArrow);
-        if (Focused.IsYInversable) UnityEngine.Object.Destroy(YInverseArrow);
-        if (Focused.IsZInversable) UnityEngine.Object.Destroy(ZInverseArrow);
+        if (Focused.Type.IsRotatable()) UnityEngine.Object.Destroy(RotateArrow);
+        if (Focused.Type.IsXInversable()) UnityEngine.Object.Destroy(XInverseArrow);
+        if (Focused.Type.IsYInversable()) UnityEngine.Object.Destroy(YInverseArrow);
+        if (Focused.Type.IsZInversable()) UnityEngine.Object.Destroy(ZInverseArrow);
     }
 
     // Down/Upイベントを追加
@@ -344,7 +344,7 @@ public class TransformTools
             trigger.triggers.Add(entry);
         }
 
-        if (Focused.HasPosition2)
+        if (Focused.Type.HasPosition2())
         {
             for (int i = 0; i < Arrows2.Count; ++i)
             {
@@ -367,7 +367,7 @@ public class TransformTools
             }
         }
 
-        if (Focused.IsResizable)
+        if (Focused.Type.IsResizable())
         {
             for (int i = 0; i < XZCubes.Count; ++i)
             {
@@ -389,7 +389,7 @@ public class TransformTools
                 trigger.triggers.Add(entry);
             }
 
-            if (Focused.IsYResizable)
+            if (Focused.Type.IsYResizable())
             {
                 for (int i = 0; i < YCubes.Count; ++i)
                 {
@@ -413,7 +413,7 @@ public class TransformTools
             }
         }
 
-        if (Focused.IsRotatable) {
+        if (Focused.Type.IsRotatable()) {
             var trigger = RotateArrow.AddComponent<EventTrigger>();
             trigger.triggers = new List<EventTrigger.Entry>();
             var entry = new EventTrigger.Entry
@@ -426,7 +426,7 @@ public class TransformTools
             trigger.triggers.Add(entry);
         }
 
-        if (Focused.IsXInversable)
+        if (Focused.Type.IsXInversable())
         {
             var trigger = XInverseArrow.AddComponent<EventTrigger>();
             trigger.triggers = new List<EventTrigger.Entry>();
@@ -440,7 +440,7 @@ public class TransformTools
             trigger.triggers.Add(entry);
         }
 
-        if (Focused.IsYInversable)
+        if (Focused.Type.IsYInversable())
         {
             var trigger = YInverseArrow.AddComponent<EventTrigger>();
             trigger.triggers = new List<EventTrigger.Entry>();
@@ -454,7 +454,7 @@ public class TransformTools
             trigger.triggers.Add(entry);
         }
 
-        if (Focused.IsZInversable)
+        if (Focused.Type.IsZInversable())
         {
             var trigger = ZInverseArrow.AddComponent<EventTrigger>();
             trigger.triggers = new List<EventTrigger.Entry>();
@@ -504,7 +504,26 @@ public enum TransformToolType
     Arrow, Arrow2, XZCube, YCube,
 }
 
+[Flags]
 public enum CubeFace
 {
-    XP, YP, ZP, XN, YN, ZN, NB,
+    XP = 0b1,
+    YP = 0b10,
+    ZP = 0b100,
+    XN = 0b1000,
+    YN = 0b10000,
+    ZN = 0b100000,
+
+    X = XP | XN,
+    Y = YP | YN,
+    Z = ZP | ZN,
+    P = XP | YP | ZP,
+    N = XN | YN | ZN,
+    ALL = P | N,
+}
+
+public static partial class AddMethod
+{
+    public static CubeFace ToCubeFace(this XYZEnum xyz)
+        => xyz == XYZEnum.X ? CubeFace.X : (xyz == XYZEnum.Y ? CubeFace.Y : CubeFace.Z);
 }

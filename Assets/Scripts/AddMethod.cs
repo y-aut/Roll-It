@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public static partial class AddMethod
@@ -152,9 +153,117 @@ public static partial class AddMethod
     // 64bit整数を32bit整数2つに
     public static int GetUpper(this long packed) => (int)(packed >> 32);
     public static int GetLower(this long packed) => (int)(packed & 0xffffffffL);
+
+    // 立っているビットの数を数える
+    public static int PopCount(this int bits)
+    {
+        bits = (bits & 0x55555555) + (bits >> 1 & 0x55555555);
+        bits = (bits & 0x33333333) + (bits >> 2 & 0x33333333);
+        bits = (bits & 0x0f0f0f0f) + (bits >> 4 & 0x0f0f0f0f);
+        bits = (bits & 0x00ff00ff) + (bits >> 8 & 0x00ff00ff);
+        return (bits & 0x0000ffff) + (bits >> 16 & 0x0000ffff);
+    }
+
+    public static int PopCount(this long bits)
+        => PopCount(GetUpper(bits)) + PopCount(GetLower(bits));
+
+    public static List<int> FindAllIndexes<T>(this IEnumerable<T> list, Predicate<T> match)
+    {
+        var ans = new List<int>();
+        for (int i = 0; i < list.Count(); ++i)
+            if (match(list.ElementAt(i))) ans.Add(i);
+        return ans;
+    }
 }
 
 public enum XYZEnum
 {
     X, Y, Z,
+}
+
+// https://qiita.com/nkjzm/items/297fb6921d5caca3eca9
+public static class RectTransformExtensions
+{
+    /// <summary>
+    /// 座標を保ったままPivotを変更する
+    /// </summary>
+    /// <param name="rectTransform">自身の参照</param>
+    /// <param name="targetPivot">変更先のPivot座標</param>
+    public static void SetPivotWithKeepingPosition(this RectTransform rectTransform, Vector2 targetPivot)
+    {
+        var diffPivot = targetPivot - rectTransform.pivot;
+        rectTransform.pivot = targetPivot;
+        var diffPos = new Vector2(rectTransform.sizeDelta.x * diffPivot.x, rectTransform.sizeDelta.y * diffPivot.y);
+        rectTransform.anchoredPosition += diffPos;
+    }
+    /// <summary>
+    /// 座標を保ったままPivotを変更する
+    /// </summary>
+    /// <param name="rectTransform">自身の参照</param>
+    /// <param name="x">変更先のPivotのx座標</param>
+    /// <param name="y">変更先のPivotのy座標</param>
+    public static void SetPivotWithKeepingPosition(this RectTransform rectTransform, float x, float y)
+    {
+        rectTransform.SetPivotWithKeepingPosition(new Vector2(x, y));
+    }
+    /// <summary>
+    /// 座標を保ったままAnchorを変更する
+    /// </summary>
+    /// <param name="rectTransform">自身の参照</param>
+    /// <param name="targetAnchor">変更先のAnchor座標 (min,maxが共通の場合)</param>
+    public static void SetAnchorWithKeepingPosition(this RectTransform rectTransform, Vector2 targetAnchor)
+    {
+        rectTransform.SetAnchorWithKeepingPosition(targetAnchor, targetAnchor);
+    }
+    /// <summary>
+    /// 座標を保ったままAnchorを変更する
+    /// </summary>
+    /// <param name="rectTransform">自身の参照</param>
+    /// <param name="x">変更先のAnchorのx座標 (min,maxが共通の場合)</param>
+    /// <param name="y">変更先のAnchorのy座標 (min,maxが共通の場合)</param>
+    public static void SetAnchorWithKeepingPosition(this RectTransform rectTransform, float x, float y)
+    {
+        rectTransform.SetAnchorWithKeepingPosition(new Vector2(x, y));
+    }
+    /// <summary>
+    /// 座標を保ったままAnchorを変更する
+    /// </summary>
+    /// <param name="rectTransform">自身の参照</param>
+    /// <param name="targetMinAnchor">変更先のAnchorMin座標</param>
+    /// <param name="targetMaxAnchor">変更先のAnchorMax座標</param>
+    public static void SetAnchorWithKeepingPosition(this RectTransform rectTransform, Vector2 targetMinAnchor, Vector2 targetMaxAnchor)
+    {
+        var parent = rectTransform.parent as RectTransform;
+        if (parent == null) { Debug.LogError("Parent cannot find."); }
+
+        var diffMin = targetMinAnchor - rectTransform.anchorMin;
+        var diffMax = targetMaxAnchor - rectTransform.anchorMax;
+        // anchorの更新
+        rectTransform.anchorMin = targetMinAnchor;
+        rectTransform.anchorMax = targetMaxAnchor;
+        // 上下左右の距離の差分を計算
+        var diffLeft = parent.rect.width * diffMin.x;
+        var diffRight = parent.rect.width * diffMax.x;
+        var diffBottom = parent.rect.height * diffMin.y;
+        var diffTop = parent.rect.height * diffMax.y;
+        // サイズと座標の修正
+        rectTransform.sizeDelta += new Vector2(diffLeft - diffRight, diffBottom - diffTop);
+        var pivot = rectTransform.pivot;
+        rectTransform.anchoredPosition -= new Vector2(
+             (diffLeft * (1 - pivot.x)) + (diffRight * pivot.x),
+             (diffBottom * (1 - pivot.y)) + (diffTop * pivot.y)
+        );
+    }
+    /// <summary>
+    /// 座標を保ったままAnchorを変更する
+    /// </summary>
+    /// <param name="rectTransform">自身の参照</param>
+    /// <param name="minX">変更先のAnchorMinのx座標</param>
+    /// <param name="minY">変更先のAnchorMinのy座標</param>
+    /// <param name="maxX">変更先のAnchorMaxのx座標</param>
+    /// <param name="maxY">変更先のAnchorMaxのy座標</param>
+    public static void SetAnchorWithKeepingPosition(this RectTransform rectTransform, float minX, float minY, float maxX, float maxY)
+    {
+        rectTransform.SetAnchorWithKeepingPosition(new Vector2(minX, minY), new Vector2(maxX, maxY));
+    }
 }

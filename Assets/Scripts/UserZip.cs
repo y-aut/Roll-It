@@ -29,14 +29,24 @@ public class UserZip
         set => name = value;
     }
 
-    // 購入したコインの総数 / 所持しているコインの数
+    // Money
     [SerializeField]
-    private long money;
+    private Money money;
     [FirestoreProperty("m")]
-    private long Money
+    private long Money_
     {
-        get => money;
-        set => money = value;
+        get => money.Pack();
+        set => money = Money.Unpack(value);
+    }
+
+    // Purchased Money
+    [SerializeField]
+    private Money purchased;
+    [FirestoreProperty("M")]
+    private long Purchased
+    {
+        get => purchased.Pack();
+        set => purchased = Money.Unpack(value);
     }
 
     // アカウントの状態
@@ -116,7 +126,8 @@ public class UserZip
     {
         id = src.ID;
         name = src.Name;
-        money = AddMethod.Pack(src.PurchasedCoin, src.Coin);
+        money = src.Money;
+        purchased = src.PurchasedMoney;
         userType = src.Type;
         startDate = src.StartDate;
         lastDate = src.LastDate;
@@ -127,7 +138,7 @@ public class UserZip
 
     public User ToUser()
     {
-        return new User(id, name, money.GetLower(), money.GetUpper(), userType, startDate, lastDate,
+        return new User(id, name, money, purchased, userType, startDate, lastDate,
             clear_challenged.GetUpper(), clear_challenged.GetLower(), poseva_favored.GetUpper(), poseva_favored.GetLower(),
             published, activeBallTexture);
     }
@@ -138,7 +149,6 @@ public class UserZip
         switch (par)
         {
             // 上位32bit
-            case UserParams.PurchasedCoin:
             case UserParams.ClearCount:
             case UserParams.PosEvaCount:
                 return v << 32;
@@ -157,9 +167,10 @@ public class UserZip
                 return "i";
             case UserParams.Name:
                 return "n";
-            case UserParams.Coin:
-            case UserParams.PurchasedCoin:
+            case UserParams.Money:
                 return "m";
+            case UserParams.PurchasedMoney:
+                return "M";
             case UserParams.Type:
                 return "t";
             case UserParams.StartDate:
@@ -174,7 +185,7 @@ public class UserZip
                 return "f";
             case UserParams.PublishedStages:
                 return "p";
-            case UserParams.ActiveBallTexture:
+            case UserParams.ActiveBallNo:
                 return "b";
             default:
                 throw GameException.Unreachable;

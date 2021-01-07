@@ -6,19 +6,21 @@ using UnityEngine;
 
 /* Structureを128bitに圧縮したクラス
  * ビット配列は先頭から、
-    Type: 7bit (0 ~ 127)
-    Texture: 4bit (0 ~ 15)
+    Version: 7bit (0 ~ 127) --- 0
+    No: 14bit (0 ~ 16383)
     PositionInt(X,Y,Z): 11bit (-1024 ~ 1023) * 3
-    LocalScaleInt(X,Y,Z): 10bit (0 ~ 1023) * 3      このYまでで64bit
-    MoveDirInt(X,Y,Z): 10bit (-512 ~ 511) * 3
+    LocalScaleInt(X,Y,Z): 10bit (0 ~ 1023) * 3      このXまでで64bit
+    MoveDirInt(X,Y,Z): 7bit (-64 ~ 63) * 3
     RotationInt: 8bit (0 ~ 255)
     X,Y,ZInversed: 1bit * 3
-    Tag: 13bit (0 ~ 8191)
+    Tag: 12bit (0 ~ 4095)
  * 計 128bit
  */
 [Serializable]
 public class StructureZip
 {
+    public const int VERSION = 0;
+
     [SerializeField]
     private long p, q;
 
@@ -33,21 +35,21 @@ public class StructureZip
     // Pack
     public StructureZip(Structure src)
     {
-        p = (long)src.Type; p <<= 4;
-        p |= (uint)src.Texture; p <<= 11;
+        p = VERSION; p <<= 14;
+        p |= (uint)src.No; p <<= 11;
         p |= PackSignedInt(src.PositionInt.x, 11); p <<= 11;
         p |= PackSignedInt(src.PositionInt.y, 11); p <<= 11;
         p |= PackSignedInt(src.PositionInt.z, 11); p <<= 10;
-        p |= (uint)src.LocalScaleInt.x; p <<= 10;
-        p |= (uint)src.LocalScaleInt.y;
-        q = src.LocalScaleInt.z; q <<= 10;
-        q |= PackSignedInt(src.MoveDirInt.x, 10); q <<= 10;
-        q |= PackSignedInt(src.MoveDirInt.y, 10); q <<= 10;
+        p |= (uint)src.LocalScaleInt.x;
+        q = src.LocalScaleInt.y; q <<= 10;
+        q |= (uint)src.LocalScaleInt.z; q <<= 7;
+        q |= PackSignedInt(src.MoveDirInt.x, 10); q <<= 7;
+        q |= PackSignedInt(src.MoveDirInt.y, 10); q <<= 7;
         q |= PackSignedInt(src.MoveDirInt.z, 10); q <<= 8;
         q |= (long)src.RotationInt; q <<= 1;
         q |= Convert.ToUInt32(src.XInversed); q <<= 1;
         q |= Convert.ToUInt32(src.YInversed); q <<= 1;
-        q |= Convert.ToUInt32(src.ZInversed); q <<= 13;
+        q |= Convert.ToUInt32(src.ZInversed); q <<= 12;
         q |= (uint)src.Tag;
     }
 
@@ -56,20 +58,20 @@ public class StructureZip
     {
         long cp = p; long cq = q;
 
-        var Tag = (int)(cq & LowerMask(13)); cq >>= 13;
+        var Tag = (int)(cq & LowerMask(13)); cq >>= 12;
         var ZInversed = Convert.ToBoolean(cq & LowerMask(1)); cq >>= 1;
         var YInversed = Convert.ToBoolean(cq & LowerMask(1)); cq >>= 1;
         var XInversed = Convert.ToBoolean(cq & LowerMask(1)); cq >>= 1;
         var RotationInt = (RotationEnum)(cq & LowerMask(8)); cq >>= 8;
             
         var MoveDirInt = new Vector3Int();
-        MoveDirInt.z = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 10;
-        MoveDirInt.y = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 10;
-        MoveDirInt.x = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 10;
+        MoveDirInt.z = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 7;
+        MoveDirInt.y = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 7;
+        MoveDirInt.x = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 7;
 
         var LocalScaleInt = new Vector3Int();
-        LocalScaleInt.z = (int)cq;
-        LocalScaleInt.y = (int)(cp & LowerMask(10)); cp >>= 10;
+        LocalScaleInt.z = (int)(cq & LowerMask(10)); cq >>= 10;
+        LocalScaleInt.y = (int)cq;
         LocalScaleInt.x = (int)(cp & LowerMask(10)); cp >>= 10;
 
         var PositionInt = new Vector3Int();
@@ -77,10 +79,9 @@ public class StructureZip
         PositionInt.y = UnpackSignedInt(cp & LowerMask(11), 11); cp >>= 11;
         PositionInt.x = UnpackSignedInt(cp & LowerMask(11), 11); cp >>= 11;
 
-        var Texture = (int)(cp & LowerMask(4)); cp >>= 4;
-        var Type = (StructureType)cp;
+        var No = (int)(cp & LowerMask(4)); cp >>= 14;
 
-        return new Structure(Type, Texture, PositionInt, LocalScaleInt, MoveDirInt, RotationInt, XInversed, YInversed, ZInversed, Tag, parent);
+        return new Structure(No, PositionInt, LocalScaleInt, MoveDirInt, RotationInt, XInversed, YInversed, ZInversed, Tag, parent);
     }
 
     // 符号付き整数をbitビットに圧縮する

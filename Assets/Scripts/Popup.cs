@@ -9,7 +9,7 @@ public class Popup : MonoBehaviour
 {
     const float DURATION_TIME = 0.2f;  // Open/Closeにかかる秒数
 
-    private enum StateEnum { Opening, Closing, Other }
+    public bool StopTime = true;
     private StateEnum State { get; set; } = StateEnum.Other;
 
     // PnlBlackがあるCanvasをさす
@@ -42,7 +42,10 @@ public class Popup : MonoBehaviour
             gameObject.transform.localScale = Prefabs.CloseCurve.Evaluate(Mathf.Min(1f, generation_time / DURATION_TIME)) * Vector3.one;
             if (generation_time >= DURATION_TIME)
             {
-                Time.timeScale = timeScaleDef;
+                if (StopTime)
+                {
+                    Time.timeScale = timeScaleDef;
+                }
                 State = StateEnum.Other;
                 if (flgDestroy) Destroy(gameObject);
             }
@@ -52,8 +55,11 @@ public class Popup : MonoBehaviour
     public void Open()
     {
         // 時間を停止し、操作を無効にするためPnlBlackを表示
-        timeScaleDef = Time.timeScale;
-        Time.timeScale = 0f;
+        if (StopTime)
+        {
+            timeScaleDef = Time.timeScale;
+            Time.timeScale = 0f;
+        }
 
         try
         {
@@ -70,11 +76,12 @@ public class Popup : MonoBehaviour
             PnlBlack.transform.SetSiblingIndex(transform.GetSiblingIndex() - 1);  // 上から2番目に設定
             PnlBlack.SetActive(true);
         }
-        catch (System.Exception)
+        catch (Exception)
         {
-            throw new System.Exception("PnlBlack does not exist in the current scene.");
+            throw new Exception("PnlBlack does not exist in the current scene.");
         }
 
+        gameObject.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
         generation_time = 0f;
         State = StateEnum.Opening;
     }
@@ -99,3 +106,5 @@ public class Popup : MonoBehaviour
         Close();
     }
 }
+
+public enum StateEnum { Opening, Closing, Other }

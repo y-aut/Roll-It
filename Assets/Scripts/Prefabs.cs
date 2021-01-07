@@ -15,24 +15,13 @@ public class Prefabs : MonoBehaviour
     public static GameObject AuxiFacePrefab;        // 補助面のプレハブ
 
     // Structures
-    public static List<GameObject> BallPrefab;
-    public static List<GameObject> FloorPrefab;
-    public static List<GameObject> StartPrefab;
-    public static List<GameObject> GoalPrefab;
-    public static List<GameObject> GoalFlagPrefab;
-    public static List<GameObject> BoardPrefab;
-    public static List<GameObject> PlatePrefab;
-    public static List<GameObject> SlopePrefab;
-    public static List<GameObject> ArcPrefab;
-    public static List<GameObject> AngleArrowPrefab;
-    public static List<GameObject> LiftPrefab;
-    public static List<GameObject> LiftGoalPrefab;
-    public static List<GameObject> ChopstickPrefab;
-    public static List<GameObject> JumpPrefab;
-    public static List<GameObject> BoxPrefab;
+    public static List<StructureItem> StructureItemList;
 
     // ImgAdditional
     public static EnumCollection<StructureType, Sprite> AdditionalSprites;
+
+    // 各Typeに対応するビットが1であるBoolList
+    public static EnumCollection<StructureType, BoolList> TypeBoolList;
 
     public static GameObject InputBoxPrefab;
     public static GameObject MessageBoxPrefab;
@@ -43,6 +32,8 @@ public class Prefabs : MonoBehaviour
     public static GameObject PausePanelPrefab;
     public static GameObject UserPanelPrefab;
     public static GameObject StructureItemPrefab;
+    public static GameObject ShopStructureItemPrefab;
+    public static GameObject StructureItemPanelPrefab;
 
     public GameObject ArrowPrefabObj;
     public GameObject XZCubePrefabObj;
@@ -53,21 +44,7 @@ public class Prefabs : MonoBehaviour
     public GameObject FrameCubeIllegalPrefabObj;
     public GameObject AuxiFacePrefabObj;
 
-    public List<GameObject> BallPrefabObj;
-    public List<GameObject> FloorPrefabObj;
-    public List<GameObject> StartPrefabObj;
-    public List<GameObject> GoalPrefabObj;
-    public List<GameObject> GoalFlagPrefabObj;
-    public List<GameObject> BoardPrefabObj;
-    public List<GameObject> PlatePrefabObj;
-    public List<GameObject> SlopePrefabObj;
-    public List<GameObject> ArcPrefabObj;
-    public List<GameObject> AngleArrowPrefabObj;
-    public List<GameObject> LiftPrefabObj;
-    public List<GameObject> LiftGoalPrefabObj;
-    public List<GameObject> ChopstickPrefabObj;
-    public List<GameObject> JumpPrefabObj;
-    public List<GameObject> BoxPrefabObj;
+    public List<StructureItem> StructureItemListObj;
 
     public Sprite LiftAdditionalSpriteObj;
 
@@ -80,6 +57,8 @@ public class Prefabs : MonoBehaviour
     public GameObject PausePanelPrefabObj;
     public GameObject UserPanelPrefabObj;
     public GameObject StructureItemPrefabObj;
+    public GameObject ShopStructureItemPrefabObj;
+    public GameObject StructureItemPanelPrefabObj;
 
     // ポップアップウィンドウ表示時のLocalScaleの曲線
     public static AnimationCurve OpenCurve;
@@ -96,7 +75,6 @@ public class Prefabs : MonoBehaviour
 
     public void SetPrefabs()
     {
-        BallPrefab = BallPrefabObj;
         ArrowPrefab = ArrowPrefabObj;
         XZCubePrefab = XZCubePrefabObj;
         YCubePrefab = YCubePrefabObj;
@@ -106,26 +84,17 @@ public class Prefabs : MonoBehaviour
         FrameCubeIllegalPrefab = FrameCubeIllegalPrefabObj;
         AuxiFacePrefab = AuxiFacePrefabObj;
 
-        FloorPrefab = FloorPrefabObj;
-        StartPrefab = StartPrefabObj;
-        GoalPrefab = GoalPrefabObj;
-        GoalFlagPrefab = GoalFlagPrefabObj;
-        BoardPrefab = BoardPrefabObj;
-        PlatePrefab = PlatePrefabObj;
-        SlopePrefab = SlopePrefabObj;
-        ArcPrefab = ArcPrefabObj;
-        AngleArrowPrefab = AngleArrowPrefabObj;
-        LiftPrefab = LiftPrefabObj;
-        LiftGoalPrefab = LiftGoalPrefabObj;
-        ChopstickPrefab = ChopstickPrefabObj;
-        JumpPrefab = JumpPrefabObj;
-        BoxPrefab = BoxPrefabObj;
+        StructureItemList = StructureItemListObj;
 
         AdditionalSprites = new EnumCollection<StructureType, Sprite>(type =>
         {
             if (type == StructureType.Lift) return LiftAdditionalSpriteObj;
             else return null;
         });
+
+        TypeBoolList = new EnumCollection<StructureType, BoolList>(type => new BoolList(StructureItemList.Count));
+        for (int i = 0; i < StructureItemList.Count; ++i)
+            TypeBoolList[StructureItemList[i].Type][i] = true;
 
         InputBoxPrefab = InputBoxPrefabObj;
         MessageBoxPrefab = MessageBoxPrefabObj;
@@ -136,46 +105,13 @@ public class Prefabs : MonoBehaviour
         PausePanelPrefab = PausePanelPrefabObj;
         UserPanelPrefab = UserPanelPrefabObj;
         StructureItemPrefab = StructureItemPrefabObj;
+        ShopStructureItemPrefab = ShopStructureItemPrefabObj;
+        StructureItemPanelPrefab = StructureItemPanelPrefabObj;
 
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;
         StructureIndexerSelectCurve = StructureIndexerSelectCurveObj;
         AttitudeToRotationCurve = AttitudeToRotationCurveObj;
-    }
-
-    public static int GetTextureCount(StructureType type)
-    {
-        switch (type)
-        {
-            case StructureType.Floor:
-                return FloorPrefab.Count;
-            case StructureType.Start:
-                return StartPrefab.Count;
-            case StructureType.Goal:
-                return GoalPrefab.Count;
-            case StructureType.Board:
-                return BoardPrefab.Count;
-            case StructureType.Plate:
-                return PlatePrefab.Count;
-            case StructureType.Slope:
-                return SlopePrefab.Count;
-            case StructureType.Arc:
-                return ArcPrefab.Count;
-            case StructureType.Angle:
-                return AngleArrowPrefab.Count;
-            case StructureType.Lift:
-                return LiftPrefab.Count;
-            case StructureType.Ball:
-                return BallPrefab.Count;
-            case StructureType.Chopsticks:
-                return ChopstickPrefab.Count;
-            case StructureType.Jump:
-                return JumpPrefab.Count;
-            case StructureType.Box:
-                return BoxPrefab.Count;
-            default:
-                throw GameException.Unreachable;
-        }
     }
 
     private static bool firstTime = true;
@@ -189,4 +125,11 @@ public class Prefabs : MonoBehaviour
         }
     }
 
+}
+
+public static partial class AddMethod
+{
+    private static EnumCollection<StructureType, List<int>> StructureNos
+        = new EnumCollection<StructureType, List<int>>(type => Prefabs.StructureItemList.FindAllIndexes(i => i.Type == type));
+    public static List<int> GetStructureNos(this StructureType type) => StructureNos[type];
 }

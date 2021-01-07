@@ -9,11 +9,14 @@ public static class GameData
     const string STAGELOCALS_STRING = "StageLocals";
     const string USER_STRING = "User";
     const string USERLOCAL_STRING = "UserLocal";
+    const string MYSTRUCTURE_STRING = "MyStructure";
 
     // 作成したステージ
     public static List<Stage> Stages { get; private set; }
     // ユーザー情報
     public static User User { get; private set; }
+    // 所持しているStructure
+    public static BoolList MyStructure { get; private set; }
 
     public static void Save()
     {
@@ -22,9 +25,10 @@ public static class GameData
         PlayerPrefs.SetString(STAGELOCALS_STRING, JsonUtility.ToJson(Stages.Select(i => i.LocalData).ToSerializableList()));
         PlayerPrefs.SetString(USER_STRING, JsonUtility.ToJson(new UserZip(User)));
         PlayerPrefs.SetString(USERLOCAL_STRING, JsonUtility.ToJson(User.LocalData));
+        PlayerPrefs.SetString(MYSTRUCTURE_STRING, JsonUtility.ToJson(MyStructure));
     }
 
-    public static bool Load(Transform parent)
+    public static bool Load()
     {
         bool success = true;
 
@@ -85,9 +89,36 @@ public static class GameData
             User = new User();
         }
 
+        if (PlayerPrefs.HasKey(MYSTRUCTURE_STRING))
+        {
+            try
+            {
+                MyStructure = JsonUtility.FromJson<BoolList>(PlayerPrefs.GetString(MYSTRUCTURE_STRING));
+                // アイテムの数の変化を調整
+                MyStructure.Count = Prefabs.StructureItemList.Count;
+            }
+            catch (System.Exception)
+            {
+                success = false;
+            }
+            finally
+            {
+                if (MyStructure is null) InitializeMyStructure();
+            }
+        }
+        else
+        {
+            InitializeMyStructure();
+        }
+
         User.Login();
 
         return success;
+    }
+
+    private static void InitializeMyStructure()
+    {
+        MyStructure = new BoolList(Prefabs.StructureItemList.Count, i => Prefabs.StructureItemList[i].Price == Money.Default);
     }
 
 }

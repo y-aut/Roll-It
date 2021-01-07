@@ -8,31 +8,37 @@ public class StructureItemOperator : MonoBehaviour
     public RawImage ImgPreview;
     public GameObject ImgTriangle;
     public RawImage ImgAdditional;
-    public StructureType Type;
-    public int Texture { get; private set; }
+    public int StructureNo { get; private set; }
     private bool IsClickable;
     private CreateOperator CreateOp;
 
-    public void Initialize(CreateOperator createOp, StructureType type, int texture, bool isClickable)
+    public StructureItem StructureItem => Prefabs.StructureItemList[StructureNo];
+
+    public void Initialize(CreateOperator createOp, int structureNo, bool isClickable)
     {
         CreateOp = createOp;
-        Type = type;
-        Texture = texture;
-        IsClickable = isClickable && Prefabs.GetTextureCount(type) != 1;
+        StructureNo = structureNo;
+        IsClickable = isClickable;
         ImgTriangle.SetActive(IsClickable);
-        ImgPreview.texture = Cache.StructPreviews[Type][Texture];
-        GetComponentInChildren<TMPro.TextMeshProUGUI>().text = Type.ToString();
+        ImgPreview.texture = StructureItem.Preview;
 
-        var adt = Prefabs.AdditionalSprites[Type] != null;
-        ImgAdditional.gameObject.SetActive(adt);
-        if (adt) ImgAdditional.texture = Prefabs.AdditionalSprites[Type].texture;
+        var adt = Prefabs.AdditionalSprites[Prefabs.StructureItemList[StructureNo].Type];
+        ImgAdditional.gameObject.SetActive(adt != null);
+        if (adt) ImgAdditional.texture = adt.texture;
+    }
+
+    public void InitializeForBall(CreateOperator createOp, int structureNo)
+    {
+        CreateOp = createOp;
+        StructureNo = structureNo;
+        IsClickable = false;
+        ImgPreview.texture = StructureItem.Preview;
     }
 
     public void Clicked()
     {
         if (!IsClickable) return;
-        CreateOp.TextureList.UpdateList(this);
-        CreateOp.TextureList.gameObject.SetActive(true);
+        CreateOp.TextureList.Show(this);
     }
 
     public void Dragged()
@@ -43,15 +49,6 @@ public class StructureItemOperator : MonoBehaviour
     public void Released()
     {
         CreateOp.ItemReleased();
-    }
-
-    // 現在のImgPreviewの画像を保存し、再設定
-    public void SetPreview()
-    {
-        var source = ImgPreview.texture;
-        var copy = new RenderTexture((RenderTexture)source);
-        Graphics.CopyTexture(source, copy);
-        ImgPreview.texture = copy;
     }
 
 }

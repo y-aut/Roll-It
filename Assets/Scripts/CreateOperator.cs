@@ -13,6 +13,7 @@ public class CreateOperator : MonoBehaviour
 
     public static Stage Stage { get; set; }
     public GameObject StructurePanel;
+    public StructureItemOperator ItmBall;
     public Canvas canvas;
     public Button BtnDelete;
     public TextureListOperator TextureList;
@@ -52,8 +53,20 @@ public class CreateOperator : MonoBehaviour
         if (!newStage)
             before = new StructureZipCollection(Stage.Structs);
         Stage.Create();
-        foreach (var item in StructurePanel.GetComponentsInChildren<StructureItemOperator>(true))
-            item.Initialize(this, item.Type, 0, true);
+
+        // StructureIndexerOperator.Start()よりも先に実行
+        for (StructureType i = 0; i < StructureType.NB; ++i)
+        {
+            // 所持しているなら表示
+            var bb = GameData.MyStructure & Prefabs.TypeBoolList[i];
+            if (i.ShowInItemView() && !bb.IsAllFalse)
+            {
+                var item = Instantiate(Prefabs.StructureItemPrefab, StructurePanel.transform, false);
+                var script = item.GetComponent<StructureItemOperator>();
+                script.Initialize(this, bb.GetFirstTrue(), bb.TrueCount() != 1);
+            }
+        }
+        ItmBall.InitializeForBall(this, GameData.User.ActiveBallNo);
     }
 
     // Update is called once per frame
@@ -65,7 +78,7 @@ public class CreateOperator : MonoBehaviour
         {
             // 確認
             if (Stage.LocalData.IsClearChecked && Stage.AuthorID == GameData.User.ID
-                && clicked.IsSaved && !IsEditted)
+                && clicked.Type.IsSaved() && !IsEditted)
             {
                 if (IsConfirming) return;   // Modal表示中
 
@@ -83,7 +96,7 @@ public class CreateOperator : MonoBehaviour
 
             clicked.Clicked = false;
             focused = clicked;
-            BtnDelete.interactable = focused.IsDeletable;
+            BtnDelete.interactable = focused.Type.IsDeletable();
 
             // 矢印、サイズ変更用キューブを表示
             if (tools != null) tools.Destroy();
@@ -106,7 +119,7 @@ public class CreateOperator : MonoBehaviour
                 if ((focused.LocalScaleInt + deltaScale).IsAllBetween(1, Structure.LOCALSCALE_LIMIT))
                 {
                     focused.PositionInt += deltaPos;
-                    if (focused.HasPosition2) focused.PositionInt2 += deltaPos2;
+                    if (focused.Type.HasPosition2()) focused.PositionInt2 += deltaPos2;
                     focused.LocalScaleInt += deltaScale;
 
                     // 変形後のStructureにあわせて更新
@@ -240,40 +253,40 @@ public class CreateOperator : MonoBehaviour
 
         if (dragged == null)
         {
-            switch (item.Type)
+            switch (item.StructureItem.Type)
             {
                 case StructureType.Floor:
-                    dragged = new Structure(StructureType.Floor, pos, new Vector3Int(4, 1, 4), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 1, 4), Stage);
                     break;
                 case StructureType.Board:
-                    dragged = new Structure(StructureType.Board, pos, new Vector3Int(4, 4, 4), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
                 case StructureType.Plate:
-                    dragged = new Structure(StructureType.Plate, pos, new Vector3Int(4, 1, 4), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 1, 4), Stage);
                     break;
                 case StructureType.Slope:
-                    dragged = new Structure(StructureType.Slope, pos, new Vector3Int(4, 4, 4), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
                 case StructureType.Arc:
-                    dragged = new Structure(StructureType.Arc, pos, new Vector3Int(4, 4, 4), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
                 case StructureType.Angle:
-                    dragged = new Structure(StructureType.Angle, pos, new Vector3Int(1, 1, 1), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(1, 1, 1), Stage);
                     break;
                 case StructureType.Lift:
-                    dragged = new Structure(StructureType.Lift, pos, new Vector3Int(0, 4, 0), new Vector3Int(4, 1, 4), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(0, 4, 0), new Vector3Int(4, 1, 4), Stage);
                     break;
                 case StructureType.Ball:
-                    dragged = new Structure(StructureType.Ball, pos, new Vector3Int(1, 1, 1), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(1, 1, 1), Stage);
                     break;
                 case StructureType.Chopsticks:
-                    dragged = new Structure(StructureType.Chopsticks, pos, new Vector3Int(4, 4, 4), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 4, 4), Stage);
                     break;
                 case StructureType.Jump:
-                    dragged = new Structure(StructureType.Jump, pos, new Vector3Int(4, 1, 4), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 1, 4), Stage);
                     break;
                 case StructureType.Box:
-                    dragged = new Structure(StructureType.Box, pos, new Vector3Int(1, 1, 1), Stage, item.Texture);
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(1, 1, 1), Stage);
                     break;
                 default:
                     return;
@@ -281,7 +294,7 @@ public class CreateOperator : MonoBehaviour
 
             dragged.Create();
             Stage.Add(dragged);
-            auxiFaces = new AuxiFaces(Stage, dragged, CubeFace.NB, false);
+            auxiFaces = new AuxiFaces(Stage, dragged, CubeFace.ALL, false);
         }
 
         // 場所を決定する
@@ -300,7 +313,7 @@ public class CreateOperator : MonoBehaviour
         if (dragged != null)
         {
             if (Stage.LocalData.IsClearChecked && Stage.AuthorID == GameData.User.ID
-                && dragged.IsSaved && !IsEditted)
+                && dragged.Type.IsSaved() && !IsEditted)
             {
                 if (IsConfirming) return;
 
@@ -319,7 +332,8 @@ public class CreateOperator : MonoBehaviour
             }
             auxiFaces.Destroy();
             auxiFaces = null;
-            if (Stage.CheckSpace(dragged.PositionInt, dragged.LocalScaleInt))
+            if (dragged.Type == StructureType.Ball
+                || Stage.CheckSpace(dragged.PositionInt, dragged.LocalScaleInt))
             {
                 // 置ける場所なら置く
                 dragged = null;
@@ -387,7 +401,7 @@ public class CreateOperator : MonoBehaviour
                         {
                             if (p.XYZ(xyz) + sign1 * scale.XYZ(xyz) == str.PositionInt.XYZ(xyz) + sign2 * str.LocalScaleInt.XYZ(xyz))
                             {
-                                if (dragged.ShouldBeOnStructure && xyz == XYZEnum.Y && sign1 == -1 && sign2 == 1)
+                                if (dragged.Type.ShouldBeOnStructure() && xyz == XYZEnum.Y && sign1 == -1 && sign2 == 1)
                                     val += 100f;
                                 else
                                     val += 5f;
@@ -425,7 +439,7 @@ public class CreateOperator : MonoBehaviour
     // Delete
     public void BtnDeleteClicked()
     {
-        if (focused != null && focused.IsDeletable)
+        if (focused != null && focused.Type.IsDeletable())
         {
             focused.Destroy();
             Stage.Delete(focused);
@@ -507,5 +521,9 @@ public class CreateOperator : MonoBehaviour
     // 画面のスケールを取得
     private float GetPixelScale() => StructurePanel.transform.lossyScale.x;
 
+    public void PnlTransClicked()
+    {
+        TextureList.Close();
+    }
 
 }

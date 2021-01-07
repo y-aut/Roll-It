@@ -12,11 +12,11 @@ public class User
     // ユーザー名
     public string Name = "";
 
-    // 所持しているコインの数
-    public int Coin = 0;
+    // 所持しているMoney
+    public Money Money = Money.Free;
 
-    // 購入したコインの総数
-    public int PurchasedCoin = 0;
+    // 購入したMoneyの総数
+    public Money PurchasedMoney = Money.Free;
 
     // アカウントの状態
     public UserType Type = UserType.None;
@@ -43,7 +43,7 @@ public class User
     public List<IDType> PublishedStages;
 
     // 使用中のボール
-    public int ActiveBallTexture = 0;
+    public int ActiveBallNo;
 
     // ローカルデータ
     public UserLocal LocalData;
@@ -56,16 +56,17 @@ public class User
         StartDate = DateTime.Now;
         PublishedStages = new List<IDType>();
         LocalData = new UserLocal();
+        ActiveBallNo = StructureType.Ball.GetStructureNos()[0];
     }
 
     // UserZipからの解凍時に用いる
-    public User(IDType id, string name, int coin, int purchased, UserType type, DateTime start, DateTime last,
-        int clear, int challenged, int posEva, int favored, IDTypeCollection published, int ballTexture)
+    public User(IDType id, string name, Money money, Money purchased, UserType type, DateTime start, DateTime last,
+        int clear, int challenged, int posEva, int favored, IDTypeCollection published, int ballNo)
     {
         ID = id;
         Name = name;
-        Coin = coin;
-        PurchasedCoin = purchased;
+        Money = money;
+        PurchasedMoney = purchased;
         Type = type;
         StartDate = start;
         LastDate = last;
@@ -74,7 +75,7 @@ public class User
         PosEvaCount = posEva;
         FavoredCount = favored;
         PublishedStages = published.ToList();
-        ActiveBallTexture = ballTexture;
+        ActiveBallNo = ballNo;
     }
 
     public void Login()
@@ -88,7 +89,10 @@ public class User
         // ID, StartDateはIDの作成時に同期している
         // Nameは同期されていない可能性あり？-- オフラインでの名前変更を許す？
         server.Name = local.Name;
-        // Coin, PurchasedCoin, Type, PublishedStagesは変更時に同期している
+        // PublishedStagesは変更時に同期している
+        server.Money = local.Money;
+        server.PurchasedMoney = local.PurchasedMoney;
+        server.Type = local.Type;
         // Login()はオフラインでも出来たほうが良いので、LastDateはここで同期する
         server.LastDate = local.LastDate;
         // カウンタ系はここで同期する
@@ -139,6 +143,6 @@ public enum UserType
 // Userクラスのもつパラメータ
 public enum UserParams
 {
-    ID, Name, Coin, PurchasedCoin, Type, StartDate, LastDate, ClearCount, ChallengedCount,
-    PosEvaCount, FavoredCount, PublishedStages, ActiveBallTexture
+    ID, Name, Money, PurchasedMoney, Type, StartDate, LastDate, ClearCount, ChallengedCount,
+    PosEvaCount, FavoredCount, PublishedStages, ActiveBallNo
 }

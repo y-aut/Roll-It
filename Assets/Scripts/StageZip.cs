@@ -83,7 +83,7 @@ public class StageZip
 
         var saved = new List<StructureZip>();
         foreach (var str in src.Structs)
-            if (str.IsSaved) saved.Add(new StructureZip(str));
+            if (str.Type.IsSaved()) saved.Add(new StructureZip(str));
         structs = new StructureZipCollection(saved);
     }
 

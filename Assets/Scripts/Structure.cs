@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /* Structureの種類
-    追加するときは、Img, CreateOperator.ItemDragged, StructureTypeToCategory, 各種List, 
-    SetObjs, UpdateObjects, GenerationIncrementedを更新する
+    追加時に更新するもの:
+    Img, CreateOperator.ItemDragged, StructureTypeToCategory, 各種List, 
+    SetObjs, UpdateObjects, GenerationIncremented, GameConst.StructurePrice
 */
 [Serializable]
 public enum StructureType
@@ -26,7 +28,6 @@ public enum StructureType
     Box,        // 軽い箱
 
     NB,
-    Zero = 0,
 }
 
 // Structureの種類
@@ -41,7 +42,7 @@ public enum Category
 public static partial class AddMethod
 {
     // StructureTypeからCategoryへの変換
-    private static List<Category> StructureTypeToCategory = new List<Category>()
+    private static readonly List<Category> StructureTypeToCategory = new List<Category>()
     {
         Category.Basic,     // Floor
         Category.Basic,     // Start
@@ -83,10 +84,11 @@ public class Structure
     // LocalScaleの最大サイズ
     public const int LOCALSCALE_LIMIT = 1024;
     // MoveDirの最大サイズ
-    public const int MOVEDIR_LIMIT = 512;
+    public const int MOVEDIR_LIMIT = 64;
 
     // Previewの撮影位置
     static readonly Vector3 PREVIEW_POS = Vector3.one * GameConst.STAGE_LIMIT * GameConst.POSITION_SCALE * 2;
+    static readonly Vector3Int PREVIEW_POSINT = Structure.ToPositionInt(PREVIEW_POS);
 
     // 回転可能なStructureType
     public static List<StructureType> RotatableList
@@ -153,17 +155,32 @@ public class Structure
             StructureType.Ball,
         };
 
+    // Create画面の下に表示しないStructureType
+    public static List<StructureType> HideInItemView
+        => new List<StructureType>() {
+            StructureType.Start,
+            StructureType.Goal,
+            StructureType.Ball,
+        };
+
     // 他のStructureの上に置くのが推奨されるStructureType
     public static List<StructureType> ShouldBeOnStructureList
         => new List<StructureType>() {
+            StructureType.Ball,
             StructureType.Angle,
             StructureType.Box,
         };
 
-    public StructureType Type { get; private set; }
+    // 削除不可のStructureType
+    public static List<StructureType> UndeletableList
+        => new List<StructureType>() {
+            StructureType.Start,
+            StructureType.Goal,
+        };
 
-    // テクスチャ
-    public int Texture { get; private set; } = 0;
+    public int No { get; private set; }
+    public StructureItem Item => Prefabs.StructureItemList[No];
+    public StructureType Type => Item.Type;
 
     private List<Primitive> objs;
 
@@ -309,51 +326,48 @@ public class Structure
     public static Vector3 ToLocalScaleF(Vector3Int scale) => (Vector3)scale / GameConst.LOCALSCALE_SCALE;
 
     // コンストラクタ
-    public Structure(StructureType type, Vector3Int pos, Vector3Int scale, Stage parent, int texture = 0)
+    public Structure(int no, Vector3Int pos, Vector3Int scale, Stage parent)
     {
-        Type = type;
+        No = no;
         _positionInt = pos;
         _localScaleInt = scale;
         Parent = parent;
-        Texture = texture;
 
         SetObjs();
         UpdateObjects();
     }
 
-    public Structure(StructureType type, Vector3Int pos, Vector3Int moveDir, Vector3Int scale, Stage parent, int texture = 0)
+    public Structure(int no, Vector3Int pos, Vector3Int moveDir, Vector3Int scale, Stage parent)
     {
-        Type = type;
+        No = no;
         _positionInt = pos;
         _moveDirInt = moveDir;
         _localScaleInt = scale;
         Parent = parent;
-        Texture = texture;
 
         SetObjs();
         UpdateObjects();
     }
 
     public Structure(Structure src, Stage parent)
-        : this(src.Type, src.Texture, src._positionInt, src._localScaleInt, src._moveDirInt,
+        : this(src.No, src._positionInt, src._localScaleInt, src._moveDirInt,
               src._rotationInt, src._xInversed, src._yInversed, src._zInversed, src.Tag, parent)
     { }
 
-    // TypeとTextureからプレビューをキャプチャする用に初期化する
-    public Structure(StructureType type, int texture)
+    // プレビューをキャプチャする用に初期化する
+    public Structure(int no)
     {
-        Type = type;
-        Texture = texture;
-
+        No = no;
         SetObjs();
     }
 
     // StructureZipから解凍するときに用いる
-    public Structure(StructureType type, int texture, Vector3Int pos, Vector3Int scale,
-        Vector3Int moveDir, RotationEnum rot, bool xInv, bool yInv, bool zInv, int tag, Stage parent)
+
+    // Ver 0
+    public Structure(int no, Vector3Int pos, Vector3Int scale,
+    Vector3Int moveDir, RotationEnum rot, bool xInv, bool yInv, bool zInv, int tag, Stage parent)
     {
-        Type = type;
-        Texture = texture;
+        No = no;
         _positionInt = pos;
         _localScaleInt = scale;
         _moveDirInt = moveDir;
@@ -371,46 +385,22 @@ public class Structure
     // objsにPrimitiveをセットする。位置等はUpdateObjects()で設定するのでしなくて良い
     private void SetObjs()
     {
+        // PrefabsにあるPrefabを一つずつ生成する
+        objs = Item.Prefabs.Select(i => new Primitive(i)).ToList();
+
         switch (Type)
         {
-            case StructureType.Floor:
-                objs = new List<Primitive>() { new Primitive(Prefabs.FloorPrefab[Texture]) };
-                break;
-            case StructureType.Start:
-                objs = new List<Primitive>() { new Primitive(Prefabs.StartPrefab[Texture]) };
-                break;
-            case StructureType.Goal:
-                objs = new List<Primitive>() { new Primitive(Prefabs.GoalPrefab[Texture]), new Primitive(Prefabs.GoalFlagPrefab[Texture]) };
-                break;
-            case StructureType.Board:
-                objs = new List<Primitive>() { new Primitive(Prefabs.BoardPrefab[Texture]) };
-                break;
-            case StructureType.Plate:
-                objs = new List<Primitive>() { new Primitive(Prefabs.PlatePrefab[Texture]) };
-                break;
-            case StructureType.Slope:
-                objs = new List<Primitive>() { new Primitive(Prefabs.SlopePrefab[Texture]) };
-                break;
-            case StructureType.Arc:
-                objs = new List<Primitive>() { new Primitive(Prefabs.ArcPrefab[Texture]) };
-                break;
-            case StructureType.Angle:
-                objs = new List<Primitive>() { new Primitive(Prefabs.AngleArrowPrefab[Texture]) };
-                break;
             case StructureType.Lift:
-                objs = new List<Primitive>() { new Primitive(Prefabs.LiftPrefab[Texture]), new Primitive(Prefabs.LiftGoalPrefab[Texture], true) };
+                objs[1].CreateOnly = true;  // Lift Goal
                 break;
             case StructureType.Ball:
-                objs = new List<Primitive>() { new Primitive(Prefabs.BallPrefab[Texture], true) };
+                objs[0].CreateOnly = true;  // Ball
                 break;
             case StructureType.Chopsticks:
-                objs = new List<Primitive>() { new Primitive(Prefabs.ChopstickPrefab[Texture]), new Primitive(Prefabs.ChopstickPrefab[Texture]) };
-                break;
-            case StructureType.Jump:
-                objs = new List<Primitive>() { new Primitive(Prefabs.JumpPrefab[Texture]) };
+                objs.Add(new Primitive(Item.Prefabs[0]));   // 複製
                 break;
             case StructureType.Box:
-                objs = new List<Primitive>() { new Primitive(Prefabs.BoxPrefab[Texture], nonKinematic: true) };
+                objs[0].NonKinematic = true;
                 break;
         }
 
@@ -579,7 +569,7 @@ public class Structure
     public (Vector3 pos, Quaternion rot) SetForPreview() => SetForPreview(Type);
 
     // こちらは直接呼ばない
-    public (Vector3 pos, Quaternion rot) SetForPreview(StructureType type)
+    private (Vector3 pos, Quaternion rot) SetForPreview(StructureType type)
     {
         Vector3 camPos; Quaternion camRot;
         switch (type)
@@ -624,7 +614,7 @@ public class Structure
                 camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
                 break;
             case StructureType.Angle:
-                objs.Add(new Primitive(Prefabs.FloorPrefab[0], this));
+                objs.Add(new Primitive(Prefabs.StructureItemList[StructureType.Floor.GetStructureNos()[0]].Prefabs[0], this));
                 objs[0].Position = PREVIEW_POS;
                 objs[0].LocalScale = new Vector3(1, 1, 1);
                 objs[1].Position = PREVIEW_POS + new Vector3(0, -0.25f, 0);
@@ -671,20 +661,93 @@ public class Structure
         return (camPos, camRot);
     }
 
-    // Generationに合わせてオブジェクトを更新
-    public void GenerationIncremented() => GenerationIncremented(Type);
+    // StructureItemPanelのPreview用に位置やサイズを設定し、撮影位置を返す
+    // GenerationIncremented()を呼び出すので、このStructureのPositionInt等も設定する
+    public (Vector3 pos, Quaternion rot) SetForPanelPreview()
+    {
+        var res = SetForPanelPreview(Type);
+        UpdateObjects();
+        return res;
+    }
 
     // こちらは直接呼ばない
-    private void GenerationIncremented(StructureType type)
+    private (Vector3 pos, Quaternion rot) SetForPanelPreview(StructureType type)
     {
+        Vector3 camPos; Quaternion camRot;
         switch (type)
+        {
+            case StructureType.Floor:
+                PositionInt = PREVIEW_POSINT;
+                LocalScaleInt = new Vector3Int(4, 1, 4);
+                camPos = PREVIEW_POS + new Vector3(0, 2, -3);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Start:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Goal:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Board:
+                PositionInt = PREVIEW_POSINT;
+                LocalScaleInt = new Vector3Int(4, 4, 4);
+                RotationInt = RotationEnum.Y270;
+                UpdateObjects();
+                camPos = PREVIEW_POS + new Vector3(-3.66f, 1.99f, -3.41f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Plate:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Slope:
+                (camPos, camRot) = SetForPreview(StructureType.Board);
+                break;
+            case StructureType.Arc:
+                (camPos, camRot) = SetForPreview(StructureType.Board);
+                break;
+            case StructureType.Angle:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Lift:
+                PositionInt = PREVIEW_POSINT;
+                LocalScaleInt = new Vector3Int(4, 1, 4);
+                MoveDirInt = new Vector3Int(0, 5, 0);
+                camPos = (Position + Position2) / 2 + new Vector3(0, 2, -4);
+                camRot = Quaternion.LookRotation((Position + Position2) / 2 - camPos);
+                break;
+            case StructureType.Ball:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Chopsticks:
+                (camPos, camRot) = SetForPreview(StructureType.Board);
+                break;
+            case StructureType.Jump:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            case StructureType.Box:
+                (camPos, camRot) = SetForPreview(StructureType.Floor);
+                break;
+            default:
+                throw GameException.Unreachable;
+        }
+
+        UpdateObjects();
+        return (camPos, camRot);
+    }
+
+    // Generationに合わせてオブジェクトを更新
+    public void GenerationIncremented(int generation = -1)
+    {
+        if (generation == -1) generation = Parent.Generation;
+
+        switch (Type)
         {
             case StructureType.Lift:
                 {
-                    if (Scenes.GetActiveScene() == SceneType.Play)
+                    if (Scenes.GetActiveScene() != SceneType.Create)
                     {
                         objs[0].Position = Position + ToPositionF(MoveDirInt)
-                            * (1 + Mathf.Sin(2 * Mathf.PI * Parent.Generation / LIFT_PERIOD)) / 2;
+                            * (1 + Mathf.Sin(2 * Mathf.PI * generation / LIFT_PERIOD)) / 2;
                     }
                 }
                 break;
@@ -702,13 +765,16 @@ public class Structure
         else range = objs.FindAll(i => !i.CreateOnly);
 
         range.ForEach(i => i.Create());
-        if (DetectsCollision) range.ForEach(i => i.SetCollisionEvent());
+        if (Type.DetectsCollision()) range.ForEach(i => i.SetCollisionEvent());
     }
 
     public void CreateForPreview()
     {
         Collided = false;
-        objs.ForEach(i => i.Create());
+        if (Type == StructureType.Ball) // BallはCreateOnlyだが要撮影
+            objs.ForEach(i => i.Create());
+        else
+            objs.FindAll(i => !i.CreateOnly).ForEach(i => i.Create());
     }
 
     // ワールドから削除
@@ -727,7 +793,15 @@ public class Structure
         };
     }
     // 補助面を表示する面
-    public static CubeFace GetArrowFace(int index) => (CubeFace)index;
+    public static CubeFace GetArrowFace(int index)
+    {
+        switch (index % 3)
+        {
+            case 0: return CubeFace.X;
+            case 1: return CubeFace.Y;
+            default: return CubeFace.Z;
+        }
+    }
 
     // オブジェクト選択時、XZ平面上でのサイズ変更を表す辺上の印を表示する点((X+,Z+,X-,Z-)*(Y+,Y-))
     public void GetXZResizeEdges(out List<Vector3> points)
@@ -789,42 +863,49 @@ public class Structure
     public Vector3 GetZInverseArrowPos()
         => Position + new Vector3(0, -LocalScale.y / 2 - 0.8f, 0);
 
-    // いずれかの方向にサイズ変更が可能か
-    public bool IsResizable => !NonresizableList.Contains(Type);
-
-    // Y方向のサイズ変更が可能か
-    public bool IsYResizable => !YNonresizableList.Contains(Type);
-
-    // 回転可能か
-    public bool IsRotatable => RotatableList.Contains(Type);
-
-    // 各軸方向に反転可能か
-    public bool IsXInversable => XInversableList.Contains(Type);
-    public bool IsYInversable => YInversableList.Contains(Type);
-    public bool IsZInversable => ZInversableList.Contains(Type);
-
-    // 衝突判定を行うか
-    public bool DetectsCollision => DetectCollisionList.Contains(Type);
-
-    // Position2を使うか
-    public bool HasPosition2 => HasPosition2List.Contains(Type);
-
-    // ステージに一つしか存在できないか
-    public bool IsOnlyOne => OnlyOneList.Contains(Type);
-
-    // ステージの情報に保存するか
-    public bool IsSaved => !UnsavedList.Contains(Type);
-
-    // 他のStructureの上に置くのが推奨されるか
-    public bool ShouldBeOnStructure => ShouldBeOnStructureList.Contains(Type);
-
-    // ステージから削除できるか
-    public bool IsDeletable => !(Type == StructureType.Start || Type == StructureType.Goal);
-
     // Primitiveがクリックされた時にtrueになる
     public bool Clicked { get; set; }
 
     // ボールと衝突した時にtrueになる
     public bool Collided { get; set; }
+
+}
+
+public static partial class AddMethod
+{
+    // いずれかの方向にサイズ変更が可能か
+    public static bool IsResizable(this StructureType type) => !Structure.NonresizableList.Contains(type);
+
+    // Y方向のサイズ変更が可能か
+    public static bool IsYResizable(this StructureType type) => !Structure.YNonresizableList.Contains(type);
+
+    // 回転可能か
+    public static bool IsRotatable(this StructureType type) => Structure.RotatableList.Contains(type);
+
+    // 各軸方向に反転可能か
+    public static bool IsXInversable(this StructureType type) => Structure.XInversableList.Contains(type);
+    public static bool IsYInversable(this StructureType type) => Structure.YInversableList.Contains(type);
+    public static bool IsZInversable(this StructureType type) => Structure.ZInversableList.Contains(type);
+
+    // 衝突判定を行うか
+    public static bool DetectsCollision(this StructureType type) => Structure.DetectCollisionList.Contains(type);
+
+    // Position2を使うか
+    public static bool HasPosition2(this StructureType type) => Structure.HasPosition2List.Contains(type);
+
+    // ステージに一つしか存在できないか
+    public static bool IsOnlyOne(this StructureType type) => Structure.OnlyOneList.Contains(type);
+
+    // ステージの情報に保存するか
+    public static bool IsSaved(this StructureType type) => !Structure.UnsavedList.Contains(type);
+
+    // Create画面の下に表示するか
+    public static bool ShowInItemView(this StructureType type) => !Structure.HideInItemView.Contains(type);
+
+    // 他のStructureの上に置くのが推奨されるか
+    public static bool ShouldBeOnStructure(this StructureType type) => Structure.ShouldBeOnStructureList.Contains(type);
+
+    // ステージから削除できるか
+    public static bool IsDeletable(this StructureType type) => !Structure.UndeletableList.Contains(type);
 
 }

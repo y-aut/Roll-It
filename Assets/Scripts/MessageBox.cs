@@ -20,7 +20,6 @@ public class MessageBox : MonoBehaviour
     public static void ShowDialog(Transform parent, string desc, MessageBoxType type, Action OKClicked, Action CancelClicked = null)
     {
         var msgbox = Instantiate(Prefabs.MessageBoxPrefab, parent, false);
-        msgbox.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
         var script = msgbox.GetComponent<MessageBox>();
         script.AnswerType = type;
         script.description = desc;

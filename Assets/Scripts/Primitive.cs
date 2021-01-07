@@ -12,9 +12,9 @@ public class Primitive
     public GameObject Prefab { get; set; } = null;
 
     // Create Sceneでのみ表示
-    public bool CreateOnly { get; private set; } = false;
+    public bool CreateOnly { get; set; } = false;
     // PlayモードではKinematicをfalseに
-    public bool NonKinematic { get; private set; } = false;
+    public bool NonKinematic { get; set; } = false;
 
     public Structure Parent { get; set; }
 
@@ -52,19 +52,15 @@ public class Primitive
         }
     }
 
-    public Primitive(GameObject prefab, bool createOnly = false, bool nonKinematic = false)
+    public Primitive(GameObject prefab)
     {
         Prefab = prefab;
-        CreateOnly = createOnly;
-        NonKinematic = nonKinematic;
     }
 
-    public Primitive(GameObject prefab, Structure parent, bool createOnly = false, bool nonKinematic = false)
+    public Primitive(GameObject prefab, Structure parent)
     {
         Prefab = prefab;
         Parent = parent;
-        CreateOnly = createOnly;
-        NonKinematic = nonKinematic;
     }
 
     // ワールドに生成

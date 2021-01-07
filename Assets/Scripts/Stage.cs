@@ -65,10 +65,10 @@ public class Stage
     public Stage()
     {
         LocalData = new StageLocal();
-        Structs = new SerializableList<Structure>()
+        Structs = new List<Structure>()
         {
-            new Structure(StructureType.Start, new Vector3Int(0,0,0), new Vector3Int(4,1,4), this),
-            new Structure(StructureType.Goal, new Vector3Int(0,0,20), new Vector3Int(4,1,4), this),
+            new Structure(StructureType.Start.GetStructureNos()[0], new Vector3Int(0, 0, 0), new Vector3Int(4, 1, 4), this),
+            new Structure(StructureType.Goal.GetStructureNos()[0], new Vector3Int(0, 0, 20), new Vector3Int(4, 1, 4), this),
         };
         AuthorID = GameData.User.ID;
     }
@@ -115,7 +115,7 @@ public class Stage
 
     public void Add(Structure item)
     {
-        if (item.IsOnlyOne)
+        if (item.Type.IsOnlyOne())
         {
             var rest = Structs.Find(i => i.Type == item.Type);
             if (rest != null)

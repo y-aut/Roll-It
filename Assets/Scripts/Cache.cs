@@ -6,11 +6,9 @@ using UnityEngine;
 public static class Cache
 {
     // 取得したユーザー情報
-    private static List<User> Users = new List<User>();
+    private static readonly List<User> Users = new List<User>();
     // 取得したステージ情報
-    private static List<Stage> Stages = new List<Stage>();
-    // StructureのPreview画像
-    public static EnumCollection<StructureType, List<RenderTexture>> StructPreviews = new EnumCollection<StructureType, List<RenderTexture>>(_ => new List<RenderTexture>());
+    private static readonly List<Stage> Stages = new List<Stage>();
 
     // キャッシュがあればキャッシュから取得
     public static async Task<User> GetUser(IDType userID)

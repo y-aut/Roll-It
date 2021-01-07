@@ -57,7 +57,6 @@ public class StagePanelOperator : MonoBehaviour
     public static void ShowDialog(Transform parent, StageItemOperator stageItem, MenuOperator menuOp, bool authorAccessible)
     {
         var panel = Instantiate(Prefabs.StagePanelPrefab, parent, false);
-        panel.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
         var script = panel.GetComponent<StagePanelOperator>();
 
         script.Stage = stageItem.Stage;

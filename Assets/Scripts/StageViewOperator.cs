@@ -113,15 +113,3 @@ public static partial class AddMethod
         }
     }
 }
-
-// 各タブに関する情報
-public class StageViewTabCollection<T>
-{
-    private T[] vals = new T[(int)StageViewTabs.NB];
-
-    public T this[StageViewTabs tab]
-    {
-        get => vals[(int)tab];
-        set => vals[(int)tab] = value;
-    }
-}

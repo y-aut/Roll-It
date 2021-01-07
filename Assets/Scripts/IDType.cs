@@ -8,8 +8,8 @@ using UnityEngine;
 [Serializable]
 public struct IDType
 {
-    public static IDType Empty => new IDType();
-    public static IDType NotFound => new IDType("ZZZZZZ");
+    public static readonly IDType Empty = new IDType();
+    public static readonly IDType NotFound = new IDType("ZZZZZZ");
 
     [SerializeField]
     uint p;      // 31bit にすると 36^6 でおさえられる

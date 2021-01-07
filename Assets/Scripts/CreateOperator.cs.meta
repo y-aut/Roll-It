@@ -10,7 +10,7 @@ MonoImporter:
   - XZResizeCubePrefab: {instanceID: 0}
   - YResizeCubePrefab: {instanceID: 0}
   - FrameCubePrefab: {instanceID: 0}
-  executionOrder: 0
+  executionOrder: -20
   icon: {instanceID: 0}
   userData: 
   assetBundleName: 

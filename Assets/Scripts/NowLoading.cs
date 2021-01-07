@@ -37,7 +37,6 @@ public class NowLoading : MonoBehaviour
         if (++PiledCount > 1) return;
         Visible = true;
         instance = Instantiate(Prefabs.NowLoadingPrefab, parent, false);
-        instance.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
         var script = instance.GetComponent<NowLoading>();
         script.message = msg;
         script.popup.Open();

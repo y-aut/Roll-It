@@ -48,7 +48,7 @@ public class StructureIndexerOperator : MonoBehaviour
         var cate = BtnSelected.GetComponent<StructureIndexerButtonOperator>().Category;
         foreach (var item in StructurePanel.GetComponentsInChildren<StructureItemOperator>(true))
         {
-            item.gameObject.SetActive(item.Type.GetCategory() == cate);
+            item.gameObject.SetActive(item.StructureItem.Type.GetCategory() == cate);
         }
     }
 

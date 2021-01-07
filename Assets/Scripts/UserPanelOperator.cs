@@ -3,11 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UserPanelOperator : MonoBehaviour
 {
     // 各種コントロール
     public TextMeshProUGUI TxtName;
+    public RawImage ImgBallIcon;
     public TextMeshProUGUI TxtPosEvaCount;
     public TextMeshProUGUI TxtChallengedCount;
     public TextMeshProUGUI TxtFavoredCount;
@@ -30,7 +32,6 @@ public class UserPanelOperator : MonoBehaviour
     public static void ShowDialog(Transform parent, User user, MenuOperator menuOp)
     {
         var panel = Instantiate(Prefabs.UserPanelPrefab, parent, false);
-        panel.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
         var script = panel.GetComponent<UserPanelOperator>();
 
         script.User = user;
@@ -54,6 +55,7 @@ public class UserPanelOperator : MonoBehaviour
     private void UpdateControls()
     {
         TxtName.text = User.Name;
+        ImgBallIcon.texture = Prefabs.StructureItemList[User.ActiveBallNo].Preview;
         TxtPosEvaCount.text = string.Format("{0:#,0}", User.PosEvaCount);
         TxtChallengedCount.text = string.Format("{0:#,0}", User.ChallengedCount);
         TxtFavoredCount.text = string.Format("{0:#,0}", User.FavoredCount);

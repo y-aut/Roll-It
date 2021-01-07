@@ -42,6 +42,7 @@ public class ResultPanelOperator : MonoBehaviour
         }
         catch (System.Exception e)
         {
+            // TODO: ステージが削除されている場合
             e.Show(parent);
         }
         // ClearCountをインクリメントしたあとでコントロールを更新

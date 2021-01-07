@@ -23,7 +23,6 @@ public class InputBox : MonoBehaviour
     public static void ShowDialog(Transform parent, string desc, Action<string> OKClicked, Action CancelClicked = null, bool allowEmpty = false, bool allowCancel = true, string defaultString = "")
     {
         var input = Instantiate(Prefabs.InputBoxPrefab, parent, false);
-        input.transform.localScale = Prefabs.OpenCurve.Evaluate(0f) * Vector3.one;  // 初めに見えてしまうのを防ぐ
         var script = input.GetComponent<InputBox>();
         script.AllowEmpty = allowEmpty;
         script.AllowCancel = allowCancel;

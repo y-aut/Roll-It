@@ -5,17 +5,20 @@ using UnityEngine.SceneManagement;
 using Firebase;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
 
 public class MenuOperator : MonoBehaviour
 {
     public Canvas canvas;
     public Camera PrevCam;
     public Camera StructCam;
+    public Camera StrPanelCam;
     public RenderTexture StructPrevRT;
 
     public HeaderPanelOperator header;
     public StageViewOperator stageView;
     public ResultPanelOperator resultPanel;
+    public ShopPanelOperator shopPanel;
     private static bool firstTime = true;   // 起動時に一度だけ処理するため
 
     private static bool openResult;     // 次回はhistoryではなくResultを開く
@@ -25,8 +28,8 @@ public class MenuOperator : MonoBehaviour
     private Structure PrevStruct;   // StructCamで表示しているStructure
 
     // 読み込んだステージを一時保存しておく
-    private static StageViewTabCollection<List<Stage>[]> StageCache;
-    private static StageViewTabCollection<IDType> LastStageCacheID;
+    private static EnumCollection<StageViewTabs, List<Stage>[]> StageCache;
+    private static EnumCollection<StageViewTabs, IDType> LastStageCacheID;
 
     private MenuPage _page = MenuPage.Unset;
     private MenuPage Page
@@ -44,6 +47,9 @@ public class MenuOperator : MonoBehaviour
                     break;
                 case MenuPage.Result:
                     resultPanel.SetActive(false);
+                    break;
+                case MenuPage.Shop:
+                    shopPanel.SetActive(false);
                     break;
                 default:
                     stageView.SetActive(false);
@@ -119,6 +125,11 @@ public class MenuOperator : MonoBehaviour
                     resultPanel.SetActive(true);
                 }
                 break;
+            case MenuPage.Shop:
+                {
+                    shopPanel.SetActive(true);
+                }
+                break;
             default:
                 throw GameException.Unreachable;
         }
@@ -149,7 +160,7 @@ public class MenuOperator : MonoBehaviour
     }
 
     // 最後にユーザー情報を更新した時間
-    private static DateTime LastUserInfoUpdatedTime = DateTime.MinValue;
+    public static DateTime LastUserInfoUpdatedTime = DateTime.MinValue;
 
     // ユーザー情報を更新する必要があれば更新
     private async Task UpdateUserInfo()
@@ -208,7 +219,7 @@ public class MenuOperator : MonoBehaviour
         if (!flgLoadData)
         {
             flgLoadData = true;
-            if (!GameData.Load(canvas.transform))
+            if (!GameData.Load())
             {
                 MessageBox.ShowDialog(canvas.transform, "Failed to load the data.", MessageBoxType.OKOnly,
                     () => _ = FirstAwake());
@@ -253,10 +264,10 @@ public class MenuOperator : MonoBehaviour
         }
 
         // StageCacheを初期化
-        StageCache = new StageViewTabCollection<List<Stage>[]>();
-        for (int i = 0; i < (int)StageViewTabs.NB; ++i)
-            StageCache[(StageViewTabs)i] = new List<Stage>[StageViewContentOperator.PAGE_LIMIT];
-        LastStageCacheID = new StageViewTabCollection<IDType>();
+        StageCache = new EnumCollection<StageViewTabs, List<Stage>[]>(_ => null);
+        for (StageViewTabs i = 0; i < StageViewTabs.NB; ++i)
+            StageCache[i] = new List<Stage>[StageViewContentOperator.PAGE_LIMIT];
+        LastStageCacheID = new EnumCollection<StageViewTabs, IDType>(_ => IDType.Empty);
 
         // StructurePreviewを取得
         StartCoroutine(GetStructPreviews());
@@ -270,6 +281,16 @@ public class MenuOperator : MonoBehaviour
     public void BtnCreateClicked()
     {
         Page = MenuPage.Create;
+    }
+
+    public void BtnShopClicked()
+    {
+        Page = MenuPage.Shop;
+    }
+
+    public void BtnGalleryClicked()
+    {
+        Page = MenuPage.Gallery;
     }
 
     // StageViewOperatorを更新
@@ -373,24 +394,25 @@ public class MenuOperator : MonoBehaviour
     {
         NowLoading.Show(canvas.transform, "Loading assets...");
 
-        for (StructureType type = StructureType.Zero; type < StructureType.NB; ++type)
-            for (int texture = 0, cnt = Prefabs.GetTextureCount(type); texture < cnt; ++texture)
-            {
-                CreateStructPreview(new Structure(type, texture));
-                yield return new WaitForEndOfFrame();
+        for (int i = 0; i < Prefabs.StructureItemList.Count; ++i)
+        {
+            CreateStructPreview(new Structure(i));
+            yield return new WaitForEndOfFrame();
 
-                var copy = new RenderTexture(StructPrevRT);
-                Graphics.CopyTexture(StructPrevRT, copy);
-                Cache.StructPreviews[type].Add(copy);
-            }
+            var copy = new RenderTexture(StructPrevRT);
+            Graphics.CopyTexture(StructPrevRT, copy);
+            Prefabs.StructureItemList[i].Preview = copy;
+        }
 
         //CreateStructPreview(new Structure(StructureType.Chopsticks, 0));
 
         NowLoading.Close();
+
+        header.UpdateIcon();
     }
 
     // オブジェクトを配置してStructCamで表示する
-    public void CreateStructPreview(Structure str)
+    private void CreateStructPreview(Structure str)
     {
         if (PrevStruct != null) PrevStruct.Destroy();
         PrevStruct = str;
@@ -398,6 +420,17 @@ public class MenuOperator : MonoBehaviour
         str.CreateForPreview();
         StructCam.transform.position = pos;
         StructCam.transform.rotation = rot;
+    }
+
+    // StructureItemPanel用にオブジェクトを配置する
+    public void SetForStructPanelPreview(Structure str)
+    {
+        if (PrevStruct != null) PrevStruct.Destroy();
+        PrevStruct = str;
+        var (pos, rot) = str.SetForPanelPreview();
+        str.CreateForPreview();
+        StrPanelCam.transform.position = pos;
+        StrPanelCam.transform.rotation = rot;
     }
 
 }
@@ -408,4 +441,6 @@ public enum MenuPage
     Find,
     Create,
     Result,
+    Shop,
+    Gallery,
 }
