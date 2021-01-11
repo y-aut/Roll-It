@@ -87,8 +87,8 @@ public class User
     public static void Sync(User local, User server)
     {
         // ID, StartDateはIDの作成時に同期している
-        // Nameは同期されていない可能性あり？-- オフラインでの名前変更を許す？
         server.Name = local.Name;
+        server.ActiveBallNo = local.ActiveBallNo;
         // PublishedStagesは変更時に同期している
         server.Money = local.Money;
         server.PurchasedMoney = local.PurchasedMoney;

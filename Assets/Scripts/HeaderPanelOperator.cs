@@ -11,7 +11,7 @@ public class HeaderPanelOperator : MonoBehaviour
     public TextMeshProUGUI TxtJewelCount;
     public TextMeshProUGUI TxtPosEvaCount;
     public TextMeshProUGUI TxtChallengeCount;
-    public TextMeshProUGUI TxtFavoredCount;
+    public TextMeshProUGUI TxtCoinCount;
 
     private void SetValue(User user)
     {
@@ -19,7 +19,7 @@ public class HeaderPanelOperator : MonoBehaviour
         TxtJewelCount.text = string.Format("{0:#,0}", user.Money.Jewel);
         TxtPosEvaCount.text = string.Format("{0:#,0}", user.PosEvaCount);
         TxtChallengeCount.text = string.Format("{0:#,0}", user.ChallengedCount);
-        TxtFavoredCount.text = string.Format("{0:#,0}", user.FavoredCount);
+        TxtCoinCount.text = string.Format("{0:#,0}", user.Money.Coin);
 
         if (Prefabs.StructureItemList[GameData.User.ActiveBallNo].Preview != null)
             ImgIcon.texture = Prefabs.StructureItemList[GameData.User.ActiveBallNo].Preview;

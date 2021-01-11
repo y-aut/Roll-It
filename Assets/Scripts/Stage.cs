@@ -158,17 +158,18 @@ public class Stage
     public List<Structure> CollidedStructures() => Structs.FindAll(i => i.Collided);
 
     // posにscaleのオブジェクトを設置可能かどうか
-    public bool CheckSpace(Vector3Int posInt, Vector3Int scaleInt)
+    public bool CheckSpaceFor(Structure str)
     {
         // 各頂点の座標を取得
-        var nega = posInt - scaleInt;
-        var posi = posInt + scaleInt;
+        var nega = str.PositionInt - str.LocalScaleInt;
+        var posi = str.PositionInt + str.LocalScaleInt;
 
         // Stageの範囲内か
         if (!(nega.IsAllMoreThanOrEqual(-GameConst.STAGE_LIMIT) && posi.IsAllLessThan(GameConst.STAGE_LIMIT)))
             return false;
 
         // Startの真上にないか
+        if (str.Type == StructureType.Ball) return true;
         Vector3Int nlim = Start.PositionInt - new Vector3Int(1, -Start.LocalScaleInt.y, 1);
         Vector3Int plim = Start.PositionInt + new Vector3Int(1, 8, 1);
         // xyz各方向からみて全てで重なりがあれば、直方体同士が重なっている

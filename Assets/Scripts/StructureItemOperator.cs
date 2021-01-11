@@ -1,54 +1,61 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class StructureItemOperator : MonoBehaviour
 {
     public RawImage ImgPreview;
-    public GameObject ImgTriangle;
     public RawImage ImgAdditional;
+    public GameObject ImgInUse;
+    public CanvasGroup canvasGroup;
+    private MenuOperator menuOp;
+    public StructureGroupViewOperator parent;
+    public ChildScrollRect ScrollRect;
     public int StructureNo { get; private set; }
-    private bool IsClickable;
-    private CreateOperator CreateOp;
 
     public StructureItem StructureItem => Prefabs.StructureItemList[StructureNo];
 
-    public void Initialize(CreateOperator createOp, int structureNo, bool isClickable)
-    {
-        CreateOp = createOp;
-        StructureNo = structureNo;
-        IsClickable = isClickable;
-        ImgTriangle.SetActive(IsClickable);
-        ImgPreview.texture = StructureItem.Preview;
+    private Vector3 pointer;
 
-        var adt = Prefabs.AdditionalSprites[Prefabs.StructureItemList[StructureNo].Type];
+    private bool _inUse = false;
+    public bool InUse
+    {
+        get => _inUse;
+        set
+        {
+            _inUse = value;
+            ImgInUse.SetActive(value);
+        }
+    }
+
+    public void Initialize(int structureNo, MenuOperator _menuOp, StructureGroupViewOperator _parent)
+    {
+        StructureNo = structureNo;
+        menuOp = _menuOp;
+        parent = _parent;
+        ScrollRect.parentScrollRect = _parent.ScrollRect;
+        ImgPreview.texture = Prefabs.StructureItemList[StructureNo].Preview;
+
+        var adt = Prefabs.AdditionalSprites[StructureItem.Type];
         ImgAdditional.gameObject.SetActive(adt != null);
         if (adt) ImgAdditional.texture = adt.texture;
+
+        // 未所持の場合は透過
+        if (!GameData.MyStructure[StructureNo])
+            canvasGroup.alpha = 0.5f;
     }
 
-    public void InitializeForBall(CreateOperator createOp, int structureNo)
+    public void OnPointerDown()
     {
-        CreateOp = createOp;
-        StructureNo = structureNo;
-        IsClickable = false;
-        ImgPreview.texture = StructureItem.Preview;
+        pointer = Input.mousePosition;
     }
 
-    public void Clicked()
+    public void OnPointerUp()
     {
-        if (!IsClickable) return;
-        CreateOp.TextureList.Show(this);
-    }
-
-    public void Dragged()
-    {
-        CreateOp.ItemDragged(this);
-    }
-
-    public void Released()
-    {
-        CreateOp.ItemReleased();
+        if (pointer == Input.mousePosition) // スクロール中はスルー
+            StructurePanelOperator.ShowDialog(menuOp.canvas.transform, this, menuOp);
     }
 
 }

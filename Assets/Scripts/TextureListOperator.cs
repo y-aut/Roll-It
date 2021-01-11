@@ -18,7 +18,7 @@ public class TextureListOperator : MonoBehaviour
     // Show()時のアニメーション
     public AnimationCurve ScaleCurve;
 
-    public void Show(StructureItemOperator itemOp)
+    public void Show(CreateStructureItemOperator itemOp)
     {
         Type = itemOp.StructureItem.Type;
 
@@ -26,8 +26,8 @@ public class TextureListOperator : MonoBehaviour
         {
             if (GameData.MyStructure[i])
             {
-                var item = Instantiate(Prefabs.StructureItemPrefab, gameObject.transform, false);
-                var script = item.GetComponent<StructureItemOperator>();
+                var item = Instantiate(Prefabs.CreateStructureItemPrefab, gameObject.transform, false);
+                var script = item.GetComponent<CreateStructureItemOperator>();
                 script.Initialize(createOp, i, false);
             }
         }
@@ -51,7 +51,7 @@ public class TextureListOperator : MonoBehaviour
         State = StateEnum.Closing;
         gameObject.SetActive(false);
         PnlTrans.SetActive(false);
-        foreach (var item in GetComponentsInChildren<StructureItemOperator>())
+        foreach (var item in GetComponentsInChildren<CreateStructureItemOperator>())
             Destroy(item.gameObject);
     }
 

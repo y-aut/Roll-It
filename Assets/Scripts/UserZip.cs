@@ -112,12 +112,12 @@ public class UserZip
 
     // 使用中のボール
     [SerializeField]
-    public int activeBallTexture = 0;
+    public int activeBallNo;
     [FirestoreProperty("b")]
-    private int ActiveBallTexture
+    private int ActiveBallNo
     {
-        get => activeBallTexture;
-        set => activeBallTexture = value;
+        get => activeBallNo;
+        set => activeBallNo = value;
     }
 
     public UserZip() { }
@@ -134,13 +134,14 @@ public class UserZip
         clear_challenged = AddMethod.Pack(src.ClearCount, src.ChallengedCount);
         poseva_favored = AddMethod.Pack(src.PosEvaCount, src.FavoredCount);
         published = new IDTypeCollection(src.PublishedStages);
+        activeBallNo = src.ActiveBallNo;
     }
 
     public User ToUser()
     {
         return new User(id, name, money, purchased, userType, startDate, lastDate,
             clear_challenged.GetUpper(), clear_challenged.GetLower(), poseva_favored.GetUpper(), poseva_favored.GetLower(),
-            published, activeBallTexture);
+            published, activeBallNo);
     }
 
     // 指定したパラメータをvだけ増やすのに足すべき値

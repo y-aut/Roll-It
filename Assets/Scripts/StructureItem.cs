@@ -15,9 +15,9 @@ public class StructureItem
     private List<GameObject> _prefabs;
     public List<GameObject> Prefabs { get => _prefabs; private set => _prefabs = value; }
 
-    [SerializeField, Price]
-    private Money _price;
-    public Money Price { get => _price; private set => _price = value; }
+    [SerializeField]
+    private bool _isDefault;
+    public bool IsDefault { get => _isDefault; private set => _isDefault = value; }
 
     // Preview画像
     public RenderTexture Preview { get; set; }
@@ -26,8 +26,4 @@ public class StructureItem
     [SerializeField]
     private bool _isUnfolded = false;
 #endif
-}
-
-public class PriceAttribute : PropertyAttribute
-{
 }

@@ -135,6 +135,7 @@ public static class FirebaseIO
         if (!Available) throw GameException.FirebaseUnavailable;
         GameException.CheckNetwork();
 
+        // TODO: LastSnapShotが存在しない場合
         var stages = new List<StageZip>();
         var values = await Stages.OrderByDescending(key).StartAfter(LastSnapShot)
             .Limit(StageViewContentOperator.STAGE_LIMIT).GetSnapshotAsync();

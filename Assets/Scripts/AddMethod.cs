@@ -38,10 +38,14 @@ public static partial class AddMethod
     public static Vector3 ZMinus(this Vector3 vec) => new Vector3(vec.x, vec.y, -vec.z);
     public static Vector3 XYMinus(this Vector3 vec) => new Vector3(-vec.x, -vec.y, vec.z);
     public static Vector3 XCast(this Vector3 vec) => new Vector3(vec.x, 0, 0);
+    public static Vector3Int XCast(this Vector3Int vec) => new Vector3Int(vec.x, 0, 0);
     public static Vector3 YCast(this Vector3 vec) => new Vector3(0, vec.y, 0);
+    public static Vector3Int YCast(this Vector3Int vec) => new Vector3Int(0, vec.y, 0);
     public static Vector3 ZCast(this Vector3 vec) => new Vector3(0, 0, vec.z);
+    public static Vector3Int ZCast(this Vector3Int vec) => new Vector3Int(0, 0, vec.z);
     public static Vector3 XYZCast(this Vector3 vec, XYZEnum xyz) => XYZCustom(xyz, XCast, YCast, ZCast, vec);
     public static Vector3 XZCast(this Vector3 vec) => new Vector3(vec.x, 0, vec.z);
+    public static Vector3Int XZCast(this Vector3Int vec) => new Vector3Int(vec.x, 0, vec.z);
     public static Vector3 Abs(this Vector3 vec) => vec.Select(i => Mathf.Abs(i));
     public static Vector3Int Abs(this Vector3Int vec) => vec.Select(i => Math.Abs(i));
 
@@ -71,9 +75,14 @@ public static partial class AddMethod
     public static bool NegativeExists(this Vector3 vec) => vec.Exist(i => i < 0);
     public static bool NegativeExists(this Vector3Int vec) => vec.Exist(i => i < 0);
     public static bool IsAllMoreThan(this Vector3Int vec, int min) => vec.All(i => i > min);
+    public static bool IsAllMoreThan(this Vector3Int vec, Vector3Int min) => vec.All(min, (i, j) => i > j);
     public static bool IsAllMoreThanOrEqual(this Vector3Int vec, int min) => vec.All(i => i >= min);
+    public static bool IsAllMoreThanOrEqual(this Vector3Int vec, Vector3Int min) => vec.All(min, (i, j) => i >= j);
     public static bool IsAllLessThan(this Vector3Int vec, int max) => vec.All(i => i < max);
+    public static bool IsAllLessThan(this Vector3Int vec, Vector3Int max) => vec.All(max, (i, j) => i < j);
     public static bool IsAllBetween(this Vector3Int vec, int min, int max)
+        => IsAllMoreThanOrEqual(vec, min) && IsAllLessThan(vec, max);
+    public static bool IsAllBetween(this Vector3Int vec, Vector3Int min, Vector3Int max)
         => IsAllMoreThanOrEqual(vec, min) && IsAllLessThan(vec, max);
 
     public static float CosWith(this Vector2 vec, Vector2 tar) => Vector2.Dot(vec, tar) / (vec.magnitude * tar.magnitude);
@@ -95,6 +104,8 @@ public static partial class AddMethod
     public static Vector3Int Select(this Vector3Int v1, Vector3Int v2, Vector3Int v3, Func<int, int, int, int> func)
         => new Vector3Int(func(v1.x, v2.x, v3.x), func(v1.y, v2.y, v3.y), func(v1.z, v2.z, v3.z));
 
+    public static Vector3Int Scaled(this Vector3Int vec, Vector3Int scale) => vec.Select(scale, (i, j) => i * j);
+    public static Vector3Int Scaled(this Vector3Int vec, int x, int y, int z) => vec.Scaled(new Vector3Int(x, y, z));
 
     public static Quaternion ToQuaternion(this RotationEnum rotation)
     {

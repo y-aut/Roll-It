@@ -105,7 +105,9 @@ public class PlayOperator : MonoBehaviour
             }
             catch (System.Exception e)
             {
-                e.Show(canvas.transform);
+                // Stageが削除された場合は、キャッシュデータを使って続行する
+                if (!e.IsNotFoundException())
+                    e.Show(canvas.transform);
             }
         }
 

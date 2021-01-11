@@ -14,8 +14,10 @@ public class StructureItemDrawer : PropertyDrawer
         var prefabsProp = property.FindPropertyRelative("_prefabs");
         var obj = prefabsProp.arraySize == 0 ? null : prefabsProp.GetArrayElementAtIndex(0).objectReferenceValue;
 
+        var defProp = property.FindPropertyRelative("_isDefault");
+
         // label.text ... "Element ##"
-        label.text = $"{label.text.Substring("Element ".Length)}: {type}, {(obj != null ? obj.name : "None")}";
+        label.text = $"{label.text.Substring("Element ".Length)}: {type}, {(obj != null ? obj.name : "None")}{(defProp.boolValue ? ", [Default]" : "")}";
         label = EditorGUI.BeginProperty(position, label, property);
         EditorGUI.PrefixLabel(position, label);
 
@@ -46,10 +48,9 @@ public class StructureItemDrawer : PropertyDrawer
                 prefabsProp.GetArrayElementAtIndex(i).objectReferenceValue, typeof(GameObject), false);
         }
 
-        // Price
-        var priceProp = property.FindPropertyRelative("_price");
+        // IsDefault
         rect.y += EditorGUIUtility.singleLineHeight + EditorConst.Y_MARGIN;
-        EditorGUI.PropertyField(rect, priceProp);
+        EditorGUI.PropertyField(rect, defProp);
 
         EditorGUI.EndProperty();
     }
@@ -61,9 +62,7 @@ public class StructureItemDrawer : PropertyDrawer
 
         var typeProp = property.FindPropertyRelative("_type");
         var type = (StructureType)typeProp.enumValueIndex;
-        var priceProp = property.FindPropertyRelative("_price");
-        return (EditorGUIUtility.singleLineHeight + EditorConst.Y_MARGIN) * (2 + type.GetPrimitivesCount())
-            + EditorGUI.GetPropertyHeight(priceProp);
+        return (EditorGUIUtility.singleLineHeight + EditorConst.Y_MARGIN) * (3 + type.GetPrimitivesCount()) - EditorConst.Y_MARGIN;
     }
 }
 
@@ -74,9 +73,15 @@ public static partial class AddMethod
     {
         { StructureType.Goal, new List<string>() { "Goal", "Flag" } },
         { StructureType.Lift, new List<string>() { "Lift", "Goal" } },
+        { StructureType.Gate, new List<string>() { "Pillar", "Beam", "Door" } },
     };
 
     public static bool HasMultiPrimitives(this StructureType type) => PrimitiveNames.ContainsKey(type);
     public static int GetPrimitivesCount(this StructureType type) => type.HasMultiPrimitives() ? type.GetPrimitiveNames().Count : 1;
     public static List<string> GetPrimitiveNames(this StructureType type) => PrimitiveNames[type];
+}
+
+public static class EditorConst
+{
+    public const float Y_MARGIN = 2f;
 }

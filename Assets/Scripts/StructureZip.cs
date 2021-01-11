@@ -43,9 +43,9 @@ public class StructureZip
         p |= (uint)src.LocalScaleInt.x;
         q = src.LocalScaleInt.y; q <<= 10;
         q |= (uint)src.LocalScaleInt.z; q <<= 7;
-        q |= PackSignedInt(src.MoveDirInt.x, 10); q <<= 7;
-        q |= PackSignedInt(src.MoveDirInt.y, 10); q <<= 7;
-        q |= PackSignedInt(src.MoveDirInt.z, 10); q <<= 8;
+        q |= PackSignedInt(src.MoveDirInt.x, 7); q <<= 7;
+        q |= PackSignedInt(src.MoveDirInt.y, 7); q <<= 7;
+        q |= PackSignedInt(src.MoveDirInt.z, 7); q <<= 8;
         q |= (long)src.RotationInt; q <<= 1;
         q |= Convert.ToUInt32(src.XInversed); q <<= 1;
         q |= Convert.ToUInt32(src.YInversed); q <<= 1;
@@ -58,16 +58,16 @@ public class StructureZip
     {
         long cp = p; long cq = q;
 
-        var Tag = (int)(cq & LowerMask(13)); cq >>= 12;
+        var Tag = (int)(cq & LowerMask(12)); cq >>= 12;
         var ZInversed = Convert.ToBoolean(cq & LowerMask(1)); cq >>= 1;
         var YInversed = Convert.ToBoolean(cq & LowerMask(1)); cq >>= 1;
         var XInversed = Convert.ToBoolean(cq & LowerMask(1)); cq >>= 1;
         var RotationInt = (RotationEnum)(cq & LowerMask(8)); cq >>= 8;
             
         var MoveDirInt = new Vector3Int();
-        MoveDirInt.z = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 7;
-        MoveDirInt.y = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 7;
-        MoveDirInt.x = UnpackSignedInt(cq & LowerMask(10), 10); cq >>= 7;
+        MoveDirInt.z = UnpackSignedInt(cq & LowerMask(7), 7); cq >>= 7;
+        MoveDirInt.y = UnpackSignedInt(cq & LowerMask(7), 7); cq >>= 7;
+        MoveDirInt.x = UnpackSignedInt(cq & LowerMask(7), 7); cq >>= 7;
 
         var LocalScaleInt = new Vector3Int();
         LocalScaleInt.z = (int)(cq & LowerMask(10)); cq >>= 10;
@@ -79,7 +79,7 @@ public class StructureZip
         PositionInt.y = UnpackSignedInt(cp & LowerMask(11), 11); cp >>= 11;
         PositionInt.x = UnpackSignedInt(cp & LowerMask(11), 11); cp >>= 11;
 
-        var No = (int)(cp & LowerMask(4)); cp >>= 14;
+        var No = (int)(cp & LowerMask(14));
 
         return new Structure(No, PositionInt, LocalScaleInt, MoveDirInt, RotationInt, XInversed, YInversed, ZInversed, Tag, parent);
     }

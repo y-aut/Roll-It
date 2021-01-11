@@ -13,7 +13,7 @@ public class CreateOperator : MonoBehaviour
 
     public static Stage Stage { get; set; }
     public GameObject StructurePanel;
-    public StructureItemOperator ItmBall;
+    public CreateStructureItemOperator ItmBall;
     public Canvas canvas;
     public Button BtnDelete;
     public TextureListOperator TextureList;
@@ -55,14 +55,14 @@ public class CreateOperator : MonoBehaviour
         Stage.Create();
 
         // StructureIndexerOperator.Start()よりも先に実行
-        for (StructureType i = 0; i < StructureType.NB; ++i)
+        foreach (var i in Structure.StructureOrder)
         {
             // 所持しているなら表示
             var bb = GameData.MyStructure & Prefabs.TypeBoolList[i];
             if (i.ShowInItemView() && !bb.IsAllFalse)
             {
-                var item = Instantiate(Prefabs.StructureItemPrefab, StructurePanel.transform, false);
-                var script = item.GetComponent<StructureItemOperator>();
+                var item = Instantiate(Prefabs.CreateStructureItemPrefab, StructurePanel.transform, false);
+                var script = item.GetComponent<CreateStructureItemOperator>();
                 script.Initialize(this, bb.GetFirstTrue(), bb.TrueCount() != 1);
             }
         }
@@ -116,7 +116,8 @@ public class CreateOperator : MonoBehaviour
             {
                 tools.Drag(cam.ScreenPointToRay(Input.mousePosition), out var deltaPos, out var deltaPos2, out var deltaScale);
                 // 0 < Scale < GameConst.LOCALSCALE_LIMIT
-                if ((focused.LocalScaleInt + deltaScale).IsAllBetween(1, Structure.LOCALSCALE_LIMIT))
+                if ((focused.LocalScaleInt + deltaScale).IsAllBetween(focused.Type.MinSize(),
+                    Vector3Int.one * Structure.LOCALSCALE_LIMIT))
                 {
                     focused.PositionInt += deltaPos;
                     if (focused.Type.HasPosition2()) focused.PositionInt2 += deltaPos2;
@@ -126,13 +127,13 @@ public class CreateOperator : MonoBehaviour
                     tools.UpdateObjects();
                 }
 
-                tools.IsLegal = Stage.CheckSpace(focused.PositionInt, focused.LocalScaleInt);
+                tools.IsLegal = Stage.CheckSpaceFor(focused);
             }
         }
         // ドラッグが終了した直後
         else if (tools != null && tools.FinishDragged)
         {
-            if (!Stage.CheckSpace(focused.PositionInt, focused.LocalScaleInt))
+            if (!Stage.CheckSpaceFor(focused))
                 tools.ReturnToFormer();
         }
         else
@@ -233,7 +234,7 @@ public class CreateOperator : MonoBehaviour
     }
 
     // アイテムをドラッグ
-    public void ItemDragged(StructureItemOperator item)
+    public void ItemDragged(CreateStructureItemOperator item)
     {
         // 二本指ならピンチイン時なのでスルー
         if (Input.touchCount >= 2) return;
@@ -288,6 +289,9 @@ public class CreateOperator : MonoBehaviour
                 case StructureType.Box:
                     dragged = new Structure(item.StructureNo, pos, new Vector3Int(1, 1, 1), Stage);
                     break;
+                case StructureType.Gate:
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 4, 1), Stage);
+                    break;
                 default:
                     return;
             }
@@ -332,8 +336,7 @@ public class CreateOperator : MonoBehaviour
             }
             auxiFaces.Destroy();
             auxiFaces = null;
-            if (dragged.Type == StructureType.Ball
-                || Stage.CheckSpace(dragged.PositionInt, dragged.LocalScaleInt))
+            if (Stage.CheckSpaceFor(dragged))
             {
                 // 置ける場所なら置く
                 dragged = null;

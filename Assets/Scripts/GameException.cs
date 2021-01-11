@@ -73,8 +73,23 @@ public static partial class AddMethod
 
     public static void Show(this Exception e, Transform parent, Action action = null)
     {
-        if (e.InnerException != null) e.InnerException.Show(parent, action);
-        else MessageBox.ShowDialog(parent, e.Message, MessageBoxType.OKOnly, action);
+        if (e.IsNotFoundException())
+        {
+            MessageBox.ShowDialog(parent, "The stage is not found.", MessageBoxType.OKOnly, action);
+        }
+        else
+        {
+            if (e.InnerException != null) e.InnerException.Show(parent, action);
+            else MessageBox.ShowDialog(parent, e.Message, MessageBoxType.OKOnly, action);
+        }
+    }
+
+    // Documentが見つからない例外
+    public static bool IsNotFoundException(this Exception e)
+    {
+        const string MSG_BEG = "No document";
+        if (e == null || e.Message.Length < MSG_BEG.Length) return false;
+        else return e.Message.Substring(0, MSG_BEG.Length) == MSG_BEG;
     }
 
 }

@@ -9,15 +9,16 @@ public class TransformTools
 {
     public const float ARROW_LOCALSCALE = 0.3f;
     const int ARROW_COUNT = 6;
-    const int XZCUBE_COUNT = 8;
+    const int XCUBE_COUNT = 4;
+    const int ZCUBE_COUNT = 4;
     const int YCUBE_COUNT = 8;
 
     private CreateOperator createOp;
     public Structure Focused { get; private set; }
-    private List<Vector3> arrowRoots, XZpos, Ypos;
+    private List<Vector3> arrowRoots, Xpos, Zpos, Ypos;
 
     private GameObject frameCube, frameCubeIllegal;
-    private List<GameObject> Arrows, Arrows2, XZCubes, YCubes;
+    private List<GameObject> Arrows, Arrows2, XCubes, ZCubes, YCubes;
     private GameObject RotateArrow, XInverseArrow, YInverseArrow, ZInverseArrow;
 
     // Arrowの向いている方向
@@ -26,8 +27,8 @@ public class TransformTools
     public Ray Arrow2Ray(int index)
         => new Ray(arrowRoots[index] + Focused.MoveDir, Arrows2[index].transform.rotation * new Vector3(0, 0, 1));
     // Cubeを引っ張る方向
-    public Ray XZCubeRay(int index)
-        => new Ray(XZpos[index], index % 2 == 0 ? new Vector3(1, 0, 0) : new Vector3(0, 0, 1));
+    public Ray XCubeRay(int index) => new Ray(Xpos[index], new Vector3(1, 0, 0));
+    public Ray ZCubeRay(int index) => new Ray(Zpos[index], new Vector3(0, 0, 1));
     public Ray YCubeRay(int index) => new Ray(Ypos[index], new Vector3(0, 1, 0));
 
     public TransformToolType DraggedType { get; private set; }
@@ -83,25 +84,38 @@ public class TransformTools
     // ドラッグ開始時のポインタのRayと移動対象のオブジェクトの座標、サイズを設定
     public void SetPointerRay(Ray ray)
     {
-        if (DraggedType == TransformToolType.Arrow)
+        switch (DraggedType)
         {
-            var i = Arrows.IndexOf(Dragged);
-            dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, ArrowRay(i), ray);
-        }
-        else if (DraggedType == TransformToolType.Arrow2)
-        {
-            var i = Arrows2.IndexOf(Dragged);
-            dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, Arrow2Ray(i), ray);
-        }
-        else if (DraggedType == TransformToolType.XZCube)
-        {
-            var i = XZCubes.IndexOf(Dragged);
-            dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, XZCubeRay(i), ray);
-        }
-        else
-        {
-            var i = YCubes.IndexOf(Dragged);
-            dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, YCubeRay(i), ray);
+            case TransformToolType.Arrow:
+                {
+                    var i = Arrows.IndexOf(Dragged);
+                    dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, ArrowRay(i), ray);
+                }
+                break;
+            case TransformToolType.Arrow2:
+                {
+                    var i = Arrows2.IndexOf(Dragged);
+                    dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, Arrow2Ray(i), ray);
+                }
+                break;
+            case TransformToolType.XCube:
+                {
+                    var i = XCubes.IndexOf(Dragged);
+                    dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, XCubeRay(i), ray);
+                }
+                break;
+            case TransformToolType.ZCube:
+                {
+                    var i = ZCubes.IndexOf(Dragged);
+                    dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, ZCubeRay(i), ray);
+                }
+                break;
+            default:
+                {
+                    var i = YCubes.IndexOf(Dragged);
+                    dragStartPointer = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, YCubeRay(i), ray);
+                }
+                break;
         }
         dragStartObjPos = Focused.PositionInt;
         dragStartObjPos2 = Focused.PositionInt2;
@@ -139,10 +153,28 @@ public class TransformTools
             deltaPos2 = dragStartObjPos2 + Structure.ToPositionInt(dragDelta) - Focused.PositionInt2;
             deltaScale = Vector3Int.zero;
         }
-        else if (DraggedType == TransformToolType.XZCube)
+        else if (DraggedType == TransformToolType.XCube)
         {
-            var index = XZCubes.IndexOf(Dragged);
-            var dragDelta = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, XZCubeRay(index), ray) - dragStartPointer;
+            var index = XCubes.IndexOf(Dragged);
+            var dragDelta = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, XCubeRay(index), ray) - dragStartPointer;
+            switch (index % 2)
+            {
+                case 0: dragDelta = new Vector3(dragDelta.x, 0, 0); break;
+                default: dragDelta = new Vector3(0, 0, dragDelta.z); break;
+            }
+            // サイズがdragDeltaだけ変わるので、Posはその1/2だけ変わる
+            // POSITION_SCALE = LOCALSCALE_SCALE * 2 より、deltaScaleをPositionIntとして扱えば1/2になる
+            deltaScale = Structure.ToLocalScaleInt(dragDelta);
+            deltaPos = dragStartObjPos + deltaScale - Focused.PositionInt;
+            deltaPos2 = Vector3Int.zero;
+            // 負の方向へ伸ばす場合は-1倍
+            if (index % 4 >= 2) deltaScale *= -1;
+            deltaScale = dragStartObjScale + deltaScale - Focused.LocalScaleInt;
+        }
+        else if (DraggedType == TransformToolType.ZCube)
+        {
+            var index = ZCubes.IndexOf(Dragged);
+            var dragDelta = AddMethod.GetIntersectionOfRayAndFathestPlane(ray.origin, ZCubeRay(index), ray) - dragStartPointer;
             switch (index % 2)
             {
                 case 0: dragDelta = new Vector3(dragDelta.x, 0, 0); break;
@@ -199,9 +231,18 @@ public class TransformTools
         }
         if (Focused.Type.IsResizable())
         {
-            XZCubes = new List<GameObject>();
-            for (int i = 0; i < XZCUBE_COUNT; ++i)
-                XZCubes.Add(UnityEngine.Object.Instantiate(Prefabs.XZCubePrefab));
+            if (Focused.Type.IsXResizable(Focused.RotationInt))
+            {
+                XCubes = new List<GameObject>();
+                for (int i = 0; i < XCUBE_COUNT; ++i)
+                    XCubes.Add(UnityEngine.Object.Instantiate(Prefabs.XZCubePrefab));
+            }
+            if (Focused.Type.IsZResizable(Focused.RotationInt))
+            {
+                ZCubes = new List<GameObject>();
+                for (int i = 0; i < ZCUBE_COUNT; ++i)
+                    ZCubes.Add(UnityEngine.Object.Instantiate(Prefabs.XZCubePrefab));
+            }
             if (Focused.Type.IsYResizable())
             {
                 YCubes = new List<GameObject>();
@@ -234,8 +275,16 @@ public class TransformTools
         arrowRoots = roots;
         if (Focused.Type.IsResizable())
         {
-            Focused.GetXZResizeEdges(out var xzpos);
-            XZpos = xzpos;
+            if (Focused.Type.IsXResizable(Focused.RotationInt))
+            {
+                Focused.GetXResizeEdges(out var xpos);
+                Xpos = xpos;
+            }
+            if (Focused.Type.IsZResizable(Focused.RotationInt))
+            {
+                Focused.GetZResizeEdges(out var zpos);
+                Zpos = zpos;
+            }
             if (Focused.Type.IsYResizable())
             {
                 Focused.GetYResizeVertexes(out var ypos);
@@ -270,10 +319,19 @@ public class TransformTools
 
         if (Focused.Type.IsResizable())
         {
-            for (int i = 0; i < XZCUBE_COUNT; ++i)
-                XZCubes[i].transform.position = XZpos[i];
-            for (int i = 0; i < XZCUBE_COUNT; i += 2)
-                XZCubes[i].transform.rotation = Quaternion.Euler(0, 90, 0);
+            if (Focused.Type.IsXResizable(Focused.RotationInt))
+            {
+                for (int i = 0; i < XCUBE_COUNT; ++i)
+                    XCubes[i].transform.position = Xpos[i];
+            }
+            if (Focused.Type.IsZResizable(Focused.RotationInt))
+            {
+                for (int i = 0; i < ZCUBE_COUNT; ++i)
+                {
+                    ZCubes[i].transform.position = Zpos[i];
+                    ZCubes[i].transform.rotation = Quaternion.Euler(0, 90, 0);
+                }
+            }
 
             if (Focused.Type.IsYResizable())
             {
@@ -312,7 +370,8 @@ public class TransformTools
         if (Focused.Type.HasPosition2()) Arrows2.ForEach(i => UnityEngine.Object.Destroy(i));
         if (Focused.Type.IsResizable())
         {
-            XZCubes.ForEach(i => UnityEngine.Object.Destroy(i));
+            if (Focused.Type.IsXResizable(Focused.RotationInt)) XCubes.ForEach(i => UnityEngine.Object.Destroy(i));
+            if (Focused.Type.IsZResizable(Focused.RotationInt)) ZCubes.ForEach(i => UnityEngine.Object.Destroy(i));
             if (Focused.Type.IsYResizable()) YCubes.ForEach(i => UnityEngine.Object.Destroy(i));
         }
         if (Focused.Type.IsRotatable()) UnityEngine.Object.Destroy(RotateArrow);
@@ -324,7 +383,7 @@ public class TransformTools
     // Down/Upイベントを追加
     private void SetDownUpEvent()
     {
-        for (int i = 0; i < Arrows.Count; ++i)
+        for (int i = 0; i < ARROW_COUNT; ++i)
         {
             var arrow = Arrows[i];
             var trigger = arrow.AddComponent<EventTrigger>();
@@ -346,7 +405,7 @@ public class TransformTools
 
         if (Focused.Type.HasPosition2())
         {
-            for (int i = 0; i < Arrows2.Count; ++i)
+            for (int i = 0; i < ARROW_COUNT; ++i)
             {
                 var arrow = Arrows2[i];
                 var trigger = arrow.AddComponent<EventTrigger>();
@@ -369,17 +428,37 @@ public class TransformTools
 
         if (Focused.Type.IsResizable())
         {
-            for (int i = 0; i < XZCubes.Count; ++i)
+            for (int i = 0; i < XCUBE_COUNT; ++i)
             {
-                var cube = XZCubes[i];
+                var cube = XCubes[i];
                 var trigger = cube.AddComponent<EventTrigger>();
                 trigger.triggers = new List<EventTrigger.Entry>();
                 var entry = new EventTrigger.Entry
                 {
                     eventID = EventTriggerType.PointerDown,
                 };
-                var face = Structure.GetXZResizeFace(i);
-                entry.callback.AddListener(x => PointerDown(cube, TransformToolType.XZCube, face));
+                var face = Structure.GetXResizeFace(i);
+                entry.callback.AddListener(x => PointerDown(cube, TransformToolType.XCube, face));
+                trigger.triggers.Add(entry);
+                entry = new EventTrigger.Entry
+                {
+                    eventID = EventTriggerType.PointerUp,
+                };
+                entry.callback.AddListener(x => PointerUp());
+                trigger.triggers.Add(entry);
+            }
+
+            for (int i = 0; i < ZCUBE_COUNT; ++i)
+            {
+                var cube = ZCubes[i];
+                var trigger = cube.AddComponent<EventTrigger>();
+                trigger.triggers = new List<EventTrigger.Entry>();
+                var entry = new EventTrigger.Entry
+                {
+                    eventID = EventTriggerType.PointerDown,
+                };
+                var face = Structure.GetZResizeFace(i);
+                entry.callback.AddListener(x => PointerDown(cube, TransformToolType.ZCube, face));
                 trigger.triggers.Add(entry);
                 entry = new EventTrigger.Entry
                 {
@@ -391,7 +470,7 @@ public class TransformTools
 
             if (Focused.Type.IsYResizable())
             {
-                for (int i = 0; i < YCubes.Count; ++i)
+                for (int i = 0; i < YCUBE_COUNT; ++i)
                 {
                     var cube = YCubes[i];
                     var trigger = cube.AddComponent<EventTrigger>();
@@ -501,7 +580,7 @@ public class TransformTools
 
 public enum TransformToolType
 {
-    Arrow, Arrow2, XZCube, YCube,
+    Arrow, Arrow2, XCube, ZCube, YCube,
 }
 
 [Flags]

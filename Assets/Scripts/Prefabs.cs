@@ -31,9 +31,11 @@ public class Prefabs : MonoBehaviour
     public static GameObject NowLoadingPrefab;
     public static GameObject PausePanelPrefab;
     public static GameObject UserPanelPrefab;
+    public static GameObject CreateStructureItemPrefab;
+    public static GameObject StructurePanelPrefab;
     public static GameObject StructureItemPrefab;
-    public static GameObject ShopStructureItemPrefab;
-    public static GameObject StructureItemPanelPrefab;
+    public static GameObject StructureGroupViewPrefab;
+    public static GameObject MachineConfirmPanelPrefab;
 
     public GameObject ArrowPrefabObj;
     public GameObject XZCubePrefabObj;
@@ -56,9 +58,11 @@ public class Prefabs : MonoBehaviour
     public GameObject NowLoadingPrefabObj;
     public GameObject PausePanelPrefabObj;
     public GameObject UserPanelPrefabObj;
+    public GameObject CreateStructureItemPrefabObj;
+    public GameObject StructurePanelPrefabObj;
     public GameObject StructureItemPrefabObj;
-    public GameObject ShopStructureItemPrefabObj;
-    public GameObject StructureItemPanelPrefabObj;
+    public GameObject StructureGroupViewPrefabObj;
+    public GameObject MachineConfirmPanelPrefabObj;
 
     // ポップアップウィンドウ表示時のLocalScaleの曲線
     public static AnimationCurve OpenCurve;
@@ -104,9 +108,11 @@ public class Prefabs : MonoBehaviour
         NowLoadingPrefab = NowLoadingPrefabObj;
         PausePanelPrefab = PausePanelPrefabObj;
         UserPanelPrefab = UserPanelPrefabObj;
+        CreateStructureItemPrefab = CreateStructureItemPrefabObj;
+        StructurePanelPrefab = StructurePanelPrefabObj;
         StructureItemPrefab = StructureItemPrefabObj;
-        ShopStructureItemPrefab = ShopStructureItemPrefabObj;
-        StructureItemPanelPrefab = StructureItemPanelPrefabObj;
+        StructureGroupViewPrefab = StructureGroupViewPrefabObj;
+        MachineConfirmPanelPrefab = MachineConfirmPanelPrefabObj;
 
         OpenCurve = OpenCurveObj;
         CloseCurve = CloseCurveObj;

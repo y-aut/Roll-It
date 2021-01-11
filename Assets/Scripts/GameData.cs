@@ -96,6 +96,9 @@ public static class GameData
                 MyStructure = JsonUtility.FromJson<BoolList>(PlayerPrefs.GetString(MYSTRUCTURE_STRING));
                 // アイテムの数の変化を調整
                 MyStructure.Count = Prefabs.StructureItemList.Count;
+                // DefaultのItemはtrueに
+                for (int i = 0; i < MyStructure.Count; ++i)
+                    if (Prefabs.StructureItemList[i].IsDefault) MyStructure[i] = true;
             }
             catch (System.Exception)
             {
@@ -118,7 +121,7 @@ public static class GameData
 
     private static void InitializeMyStructure()
     {
-        MyStructure = new BoolList(Prefabs.StructureItemList.Count, i => Prefabs.StructureItemList[i].Price == Money.Default);
+        MyStructure = new BoolList(Prefabs.StructureItemList.Count, i => Prefabs.StructureItemList[i].IsDefault);
     }
 
 }

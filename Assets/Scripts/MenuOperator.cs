@@ -18,7 +18,9 @@ public class MenuOperator : MonoBehaviour
     public HeaderPanelOperator header;
     public StageViewOperator stageView;
     public ResultPanelOperator resultPanel;
+    public GalleryPanelOperator galleryPanel;
     public ShopPanelOperator shopPanel;
+    public MachinePanelOperator machinePanel;
     private static bool firstTime = true;   // 起動時に一度だけ処理するため
 
     private static bool openResult;     // 次回はhistoryではなくResultを開く
@@ -48,8 +50,14 @@ public class MenuOperator : MonoBehaviour
                 case MenuPage.Result:
                     resultPanel.SetActive(false);
                     break;
+                case MenuPage.Gallery:
+                    galleryPanel.SetActive(false);
+                    break;
                 case MenuPage.Shop:
                     shopPanel.SetActive(false);
+                    break;
+                case MenuPage.Machine:
+                    machinePanel.SetActive(false);
                     break;
                 default:
                     stageView.SetActive(false);
@@ -125,9 +133,19 @@ public class MenuOperator : MonoBehaviour
                     resultPanel.SetActive(true);
                 }
                 break;
+            case MenuPage.Gallery:
+                {
+                    galleryPanel.SetActive(true);
+                }
+                break;
             case MenuPage.Shop:
                 {
                     shopPanel.SetActive(true);
+                }
+                break;
+            case MenuPage.Machine:
+                {
+                    machinePanel.SetActive(true);
                 }
                 break;
             default:
@@ -293,6 +311,11 @@ public class MenuOperator : MonoBehaviour
         Page = MenuPage.Gallery;
     }
 
+    public void BtnMachineClicked()
+    {
+        Page = MenuPage.Machine;
+    }
+
     // StageViewOperatorを更新
     public async Task RefreshStages()
     {
@@ -441,6 +464,7 @@ public enum MenuPage
     Find,
     Create,
     Result,
-    Shop,
     Gallery,
+    Shop,
+    Machine,
 }
