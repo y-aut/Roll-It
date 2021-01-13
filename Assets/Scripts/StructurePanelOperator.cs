@@ -64,21 +64,11 @@ public class StructurePanelOperator : MonoBehaviour
         popup.CloseAndDestroy();
     }
 
-    public async void BtnUseClicked()
+    public void BtnUseClicked()
     {
         // Active Ballを変更
         GameData.User.ActiveBallNo = StructureNo;
         BtnUse.interactable = false;
-        try
-        {
-            NowLoading.Show(menuOp.canvas.transform, "Connecting...");
-            await FirebaseIO.SyncUser();
-            NowLoading.Close();
-        }
-        catch (Exception e)
-        {
-            e.Show(menuOp.canvas.transform);
-        }
         itemOp.parent.UpdateActiveBall();   // StructureGroupViewに反映
         menuOp.header.UpdateIcon();
         GameData.Save();

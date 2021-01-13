@@ -108,7 +108,7 @@ public class IDTypeCollection
             list.Add(new IDType((uint)i.GetUpper()));
             list.Add(new IDType((uint)i.GetLower()));
         }
-        if (list.Count != 0 && list.Last() == IDType.Empty) list.RemoveAt(list.Count - 1);
+        if (list.Count != 0 && list.Last() == IDType.Empty) list.RemoveLast();
         return list;
     }
 

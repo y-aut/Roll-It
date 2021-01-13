@@ -148,15 +148,20 @@ public class PlayOperator : MonoBehaviour
         foreach (var str in Stage.CollidedStructures())
         {
             str.Collided = false;
-            if (str.Type == StructureType.Angle)
+            switch (str.Type)
             {
-                // 視点回転
-                SetCamAngle(str.Rotation);
-            }
-            else if (str.Type == StructureType.Jump)
-            {
-                // ジャンプ
-                Ball.GetComponent<Rigidbody>().AddForce(Vector3.up * 7, ForceMode.Impulse);
+                case StructureType.Angle:
+                    SetCamAngle(str.Rotation);
+                    break;
+                case StructureType.Jump:
+                    Ball.GetComponent<Rigidbody>().AddForce(Vector3.up * 7, ForceMode.Impulse);
+                    break;
+                case StructureType.Gate:
+                    if (str.ButtonGeneration != -1) break;
+                    str.PressButton();
+                    break;
+                default:
+                    throw GameException.Unreachable;
             }
         }
     }

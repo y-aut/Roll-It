@@ -10,7 +10,8 @@
         _BumpScale("Bump Scale", Float) = 1.0
         [Normal][NoScaleOffset] _BumpMap("Normal", 2D) = "bump" { }
         [NoScaleOffset] _OcclusionMap("Occlusion", 2D) = "white" { }
-
+        // 透過時の背景色
+        _BGColor("Background Color", Color) = (1, 1, 1, 1)
         // 発光
         _EmissionColor("Emission Color", Color) = (1.0, 1.0, 1.0, 1.0)
         _EmissionValue("Emission Value", float) = 1.0
@@ -23,7 +24,7 @@
 
         // OpenGL ESには非対応...OpenGL ES対応にしたい場合、非正方行列を使用している箇所を書き換える必要がある
         #pragma exclude_renderers gles
-        #pragma surface surf Standard vertex:vert fullforwardshadows addshadow
+        #pragma surface surf Standard vertex:vert fullforwardshadows addshadow 
         #pragma target 3.5
 
         float _PixelsPerUnit;
@@ -36,6 +37,8 @@
         half _BumpScale;
         sampler2D _BumpMap;
         sampler2D _OcclusionMap;
+
+        fixed4 _BGColor;
         // 発光
         half4 _EmissionColor;
         float _EmissionValue;
@@ -222,9 +225,19 @@
                 o.Smoothness = _Glossiness;
             #endif
 
+            // 透過
+            float3 albedoAlphas = float3(
+                tex2D(_MainTex, objectUVX).a,
+                tex2D(_MainTex, objectUVY).a,
+                tex2D(_MainTex, objectUVZ).a);
+
+            float alpha = mul(albedoAlphas, factor);
+            o.Albedo = lerp(_BGColor, o.Albedo, alpha);
+
             // 発光
             o.Emission = _EmissionColor * _EmissionValue;
         }
+
         ENDCG
     }
     FallBack Off

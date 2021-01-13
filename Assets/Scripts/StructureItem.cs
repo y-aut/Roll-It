@@ -15,6 +15,11 @@ public class StructureItem
     private List<GameObject> _prefabs;
     public List<GameObject> Prefabs { get => _prefabs; private set => _prefabs = value; }
 
+    // 特定のタイミングで差し替えるマテリアル
+    [SerializeField]
+    private List<Material> _materials;
+    public List<Material> Materials { get => _materials; private set => _materials = value; }
+
     [SerializeField]
     private bool _isDefault;
     public bool IsDefault { get => _isDefault; private set => _isDefault = value; }

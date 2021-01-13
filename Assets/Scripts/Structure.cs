@@ -77,11 +77,14 @@ public class Structure
 {
     public const float Z_FIGHTING_GAP = 0.001f;    // Z-fightingを防ぐためにズラす
 
+    const float BUTTON_OFF_HEIGHT = 0.1f;   // Buttonが押された前のYスケール
+    const float BUTTON_ON_HEIGHT = 0.01f;   // Buttonが押された後のYスケール
     const float BOARD_THICKNESS = 0.2f;     // Boardの厚み
     const int LIFT_PERIOD = 300;            // Liftの周期(f)
     const float CHOPSTICKS_SPACE = 0.5f;      // Chopsticksの間隔
     const float CHOPSTICKS_DIAMETER = 0.2f;   // Chopsticksの直径
-    const float GATE_TOP_HEIGHT = 0.3f;     // Gateの上に突き出た部分の長さ
+    const float GATE_TOP_HEIGHT = 0.2f;     // Gateの上に突き出た部分の長さ
+    const int GATE_DURATION = 300;          // Gateの開閉にかける時間(f)
 
     public const string BALL_NAME = "ball";        // Ballの名前（衝突判定で用いる）
 
@@ -95,23 +98,29 @@ public class Structure
     static readonly Vector3Int PREVIEW_POSINT = Structure.ToPositionInt(PREVIEW_POS);
 
     // StructureTypeの表示順（ゲーム内での順序）
-    public static readonly List<StructureType> StructureOrder = new List<StructureType>()
-    {
-        StructureType.Ball,
-        StructureType.Floor,
-        StructureType.Start,
-        StructureType.Goal,
-        StructureType.Board,
-        StructureType.Plate,
-        StructureType.Slope,
-        StructureType.Arc,
-        StructureType.Angle,
-        StructureType.Lift,
-        StructureType.Chopsticks,
-        StructureType.Jump,
-        StructureType.Box,
-        StructureType.Gate,
-    };
+    public static readonly List<StructureType> StructureOrder
+        = new List<StructureType>() {
+            StructureType.Ball,
+            StructureType.Floor,
+            StructureType.Start,
+            StructureType.Goal,
+            StructureType.Board,
+            StructureType.Plate,
+            StructureType.Slope,
+            StructureType.Arc,
+            StructureType.Angle,
+            StructureType.Lift,
+            StructureType.Chopsticks,
+            StructureType.Jump,
+            StructureType.Box,
+            StructureType.Gate,
+        };
+
+    // LocalScale2 != LocalScaleであるStructureType
+    private static readonly Dictionary<StructureType, Vector3Int> LocalScaleInt2List
+        = new Dictionary<StructureType, Vector3Int>() {
+            { StructureType.Gate, new Vector3Int(1, 1, 1) },
+        };
 
     public int No { get; private set; }
     public StructureItem Item => Prefabs.StructureItemList[No];
@@ -165,6 +174,17 @@ public class Structure
         }
     }
 
+    public Vector3Int LocalScaleInt2
+    {
+        get
+        {
+            if (LocalScaleInt2List.ContainsKey(Type))
+                return LocalScaleInt2List[Type];
+            else
+                return LocalScaleInt;
+        }
+    }
+
     private RotationEnum _rotationInt = RotationEnum.IDENTITY;
     public RotationEnum RotationInt
     {
@@ -179,27 +199,29 @@ public class Structure
     // float型で取得/設定
     public Vector3 Position
     {
-        get => (Vector3)PositionInt / GameConst.POSITION_SCALE;
+        get => ToPositionF(PositionInt);
         set => PositionInt = ToPositionInt(value);
     }
 
     public Vector3 MoveDir
     {
-        get => (Vector3)MoveDirInt / GameConst.POSITION_SCALE;
+        get => ToPositionF(MoveDirInt);
         set => MoveDirInt = ToPositionInt(value);
     }
 
     public Vector3 Position2
     {
-        get => (Vector3)PositionInt2 / GameConst.POSITION_SCALE;
+        get => ToPositionF(PositionInt2);
         set => PositionInt2 = ToPositionInt(value);
     }
 
     public Vector3 LocalScale
     {
-        get => (Vector3)LocalScaleInt / GameConst.LOCALSCALE_SCALE;
+        get => ToLocalScaleF(LocalScaleInt);
         set => LocalScaleInt = ToLocalScaleInt(value);
     }
+
+    public Vector3 LocalScale2 => ToLocalScaleF(LocalScaleInt2);
 
     // X軸方向の反転
     private bool _xInversed = false;
@@ -237,7 +259,29 @@ public class Structure
         }
     }
 
+    public Vector3Int PositionIntOr2(bool IsPos2) => IsPos2 ? PositionInt2 : PositionInt;
+    public Vector3 PositionOr2(bool IsPos2) => IsPos2 ? Position2 : Position;
+    public Vector3Int LocalScaleIntOr2(bool IsPos2) => IsPos2 ? LocalScaleInt2 : LocalScaleInt;
+    public Vector3 LocalScaleOr2(bool IsPos2) => IsPos2 ? LocalScale2 : LocalScale;
+
     public int Tag { get; private set; } = 0;
+
+    // ボタン
+    private int ButtonIndex { get; set; }
+    private Primitive Button => objs[ButtonIndex];
+
+    // ボタンが押されてから経過したgeneration数
+    public int ButtonGeneration { get; private set; }
+
+    // ボタンを押す
+    public void PressButton()
+    {
+        ButtonGeneration = 0;
+        // ボタンのランプを点灯させる
+        Button.Obj.GetComponent<LampObject>().Lamp = true;
+        // ボタンを凹ませる
+        Button.LocalScale = Button.LocalScale.NewY(BUTTON_ON_HEIGHT);
+    }
 
     public Quaternion Rotation => RotationInt.ToQuaternion();
 
@@ -325,6 +369,15 @@ public class Structure
 
         switch (Type)
         {
+            case StructureType.Goal:
+                objs[0].DetectsCollision = true;
+                break;
+            case StructureType.Angle:
+                objs[0].DetectsCollision = true;
+                break;
+            case StructureType.Jump:
+                objs[0].DetectsCollision = true;
+                break;
             case StructureType.Lift:
                 objs[1].CreateOnly = true;  // Lift Goal
                 break;
@@ -338,9 +391,10 @@ public class Structure
                 objs[0].NonKinematic = true;
                 break;
             case StructureType.Gate:
-                objs.InsertRange(0, new List<Primitive>() {
-                    new Primitive(Item.Prefabs[0]), new Primitive(Item.Prefabs[0]), new Primitive(Item.Prefabs[0])
-                });
+                objs.Insert(0, new Primitive(Item.Prefabs[0]));
+                ButtonIndex = 4;
+                Button.LocalScale = Button.LocalScale.NewY(BUTTON_OFF_HEIGHT);
+                Button.DetectsCollision = true;
                 break;
         }
 
@@ -503,21 +557,27 @@ public class Structure
                 break;
             case StructureType.Gate:
                 {
+                    objs.ForEach(i => i.Rotation = Quaternion.identity);
                     // Xが横幅
                     // 柱
                     // Rotationが0のときは、X+Z-とX-Z-の隅に置く
-                    objs[0].Position = ToPositionF(PositionInt + LocalScaleInt.Scaled(1, 0, -1));
+                    objs[0].Position = ToPositionF(PositionInt + LocalScaleInt.Scaled(new Vector3Int(1, 0, -1).Rotate(RotationInt)));
                     objs[0].Rotation = Quaternion.Euler(0, 0, 180);
-                    objs[1].Position = ToPositionF(PositionInt + LocalScaleInt.Scaled(-1, 0, -1));
+                    objs[1].Position = ToPositionF(PositionInt + LocalScaleInt.Scaled(new Vector3Int(-1, 0, -1).Rotate(RotationInt)));
                     objs[0].LocalScale = objs[1].LocalScale = new Vector3(1, LocalScale.y, 1);
-                    objs[2].Position = objs[0].Position + new Vector3(0, (LocalScale.y + GATE_TOP_HEIGHT) / 2, 0);
-                    objs[3].Position = objs[1].Position + new Vector3(0, (LocalScale.y + GATE_TOP_HEIGHT) / 2, 0);
                     // 梁
-                    objs[4].Position = ToPositionF(PositionInt + LocalScaleInt.Scaled(0, 1, -1));
-                    objs[4].LocalScale = new Vector3(LocalScale.x - 1, 1, 1);
+                    objs[2].Position = ToPositionF(PositionInt + LocalScaleInt.Scaled(new Vector3Int(0, 1, -1).Rotate(RotationInt))) - new Vector3(0, GATE_TOP_HEIGHT, 0);
+                    objs[2].LocalScale = new Vector3(Mathf.Abs((Rotation * LocalScale).x) - 1, 1, 1);
                     // 扉
-                    objs[5].Position = ToPositionF(PositionInt - LocalScaleInt.ZCast());
-                    objs[5].LocalScale = new Vector3(LocalScale.x - 0.75f, LocalScale.y, 0.25f);
+                    objs[3].Position = ToPositionF(PositionInt - LocalScaleInt.Scaled(new Vector3Int(0, 0, 1).Rotate(RotationInt))) + (Rotation * new Vector3(0, -GATE_TOP_HEIGHT / 2, 0.25f));
+                    objs[3].LocalScale = new Vector3(Mathf.Abs((Rotation * LocalScale).x) - 0.75f, LocalScale.y - GATE_TOP_HEIGHT, 0.25f);
+                    // ボタン
+                    objs[4].Position = Position2Shifted - LocalScale2.YCast() / 2;
+                    objs[4].LocalScale = LocalScale2;
+
+                    ButtonGeneration = -1;
+
+                    objs.ForEach(i => i.Rotation = Rotation * i.Rotation);
                 }
                 break;
         }
@@ -553,6 +613,8 @@ public class Structure
                 (camPos, camRot) = SetForPreview(StructureType.Floor);
                 break;
             case StructureType.Board:
+                if (Item.Materials.Count != 0)
+                    objs[0].Material = Item.Materials[0];
                 Position = PREVIEW_POS;
                 LocalScale = new Vector3(2, 2, 2);
                 RotationInt = RotationEnum.Y270;
@@ -589,7 +651,7 @@ public class Structure
                 camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
                 break;
             case StructureType.Lift:
-                objs.RemoveAt(objs.Count - 1);
+                objs.RemoveLast();
                 objs[0].Position = PREVIEW_POS;
                 objs[0].LocalScale = new Vector3(2, 0.5f, 2);
                 camPos = PREVIEW_POS + new Vector3(-3.69f, 1.45f, -2.51f);
@@ -622,7 +684,11 @@ public class Structure
                 camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
                 break;
             case StructureType.Gate:
-                camPos = PREVIEW_POS + new Vector3(-1.45f, 1.53f, -1.77f);
+                PositionInt = PREVIEW_POSINT;
+                LocalScaleInt = new Vector3Int(4, 4, 4);
+                UpdateObjects();
+                objs.RemoveAt(ButtonIndex);
+                camPos = PREVIEW_POS + new Vector3(0, 0, -5);
                 camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
                 break;
             default:
@@ -662,9 +728,9 @@ public class Structure
             case StructureType.Board:
                 PositionInt = PREVIEW_POSINT;
                 LocalScaleInt = new Vector3Int(4, 4, 4);
-                RotationInt = RotationEnum.Y270;
+                RotationInt = RotationEnum.Y90;
                 UpdateObjects();
-                camPos = PREVIEW_POS + new Vector3(-3.66f, 1.99f, -3.41f);
+                camPos = PREVIEW_POS + new Vector3(3.66f, 1.99f, 3.41f);
                 camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
                 break;
             case StructureType.Plate:
@@ -710,8 +776,10 @@ public class Structure
                 break;
             case StructureType.Gate:
                 PositionInt = PREVIEW_POSINT;
-                LocalScaleInt = new Vector3Int(1, 1, 1);
-                camPos = PREVIEW_POS + new Vector3(0, 2, -3) * 0.4f;
+                LocalScaleInt = new Vector3Int(4, 4, 1);
+                UpdateObjects();
+                Button.Active = false;  // GenerationIncrementedが呼ばれるのでobjsから削除してはいけない
+                camPos = PREVIEW_POS + new Vector3(0, 2, -3.5f);
                 camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
                 break;
             default:
@@ -738,6 +806,16 @@ public class Structure
                     }
                 }
                 break;
+            case StructureType.Gate:
+                {
+                    if (0 <= ButtonGeneration && ButtonGeneration < GATE_DURATION)
+                    {
+                        float min = Position.y - GATE_TOP_HEIGHT / 2;
+                        float dy = LocalScale.y - GATE_TOP_HEIGHT - 0.25f;
+                        objs[3].Position = objs[3].Position.NewY(min + dy * ++ButtonGeneration / GATE_DURATION);
+                    }
+                }
+                break;
         }
     }
 
@@ -752,7 +830,7 @@ public class Structure
         else range = objs.FindAll(i => !i.CreateOnly);
 
         range.ForEach(i => i.Create());
-        if (Type.DetectsCollision()) range.ForEach(i => i.SetCollisionEvent());
+        range.ForEach(i => i.SetCollisionEvent());
     }
 
     public void CreateForPreview()
@@ -776,6 +854,19 @@ public class Structure
             Position - new Vector3(0, 0, LocalScale.z / 2),
         };
     }
+
+    public void GetArrow2Roots(out List<Vector3> roots)
+    {
+        roots = new List<Vector3>() {
+            Position2 + new Vector3(LocalScale2.x / 2, 0, 0),
+            Position2 + new Vector3(0, LocalScale2.y / 2, 0),
+            Position2 + new Vector3(0, 0, LocalScale2.z / 2),
+            Position2 - new Vector3(LocalScale2.x / 2, 0, 0),
+            Position2 - new Vector3(0, LocalScale2.y / 2, 0),
+            Position2 - new Vector3(0, 0, LocalScale2.z / 2),
+        };
+    }
+
     // 補助面を表示する面
     public static CubeFace GetArrowFace(int index)
     {
@@ -787,31 +878,31 @@ public class Structure
         }
     }
 
-    // オブジェクト選択時、X軸上でのサイズ変更を表す辺上の印を表示する点((X+,X-)*(Y+,Y-))
-    public void GetXResizeEdges(out List<Vector3> points)
+    // オブジェクト選択時、XZ平面上でのサイズ変更を表す辺上の印を表示する点((X+,Z+,X-,Z-)*(Y+,Y-))
+    public void GetXZResizeEdges(out List<Vector3> points)
     {
         points = new List<Vector3>() {
             Position + new Vector3(LocalScale.x / 2, LocalScale.y / 2, 0),
-            Position + new Vector3(-LocalScale.x / 2, LocalScale.y / 2, 0),
-            Position + new Vector3(LocalScale.x / 2, -LocalScale.y / 2, 0),
-            Position + new Vector3(-LocalScale.x / 2, -LocalScale.y / 2, 0),
-        };
-    }
-
-    // オブジェクト選択時、Z軸上でのサイズ変更を表す辺上の印を表示する点((Z+,Z-)*(Y+,Y-))
-    public void GetZResizeEdges(out List<Vector3> points)
-    {
-        points = new List<Vector3>() {
             Position + new Vector3(0, LocalScale.y / 2, LocalScale.z / 2),
+            Position + new Vector3(-LocalScale.x / 2, LocalScale.y / 2, 0),
             Position + new Vector3(0, LocalScale.y / 2, -LocalScale.z / 2),
+            Position + new Vector3(LocalScale.x / 2, -LocalScale.y / 2, 0),
             Position + new Vector3(0, -LocalScale.y / 2, LocalScale.z / 2),
+            Position + new Vector3(-LocalScale.x / 2, -LocalScale.y / 2, 0),
             Position + new Vector3(0, -LocalScale.y / 2, -LocalScale.z / 2),
         };
     }
-
     // 補助面を表示する面
-    public static CubeFace GetXResizeFace(int index) => index % 2 == 0 ? CubeFace.XP : CubeFace.XN;
-    public static CubeFace GetZResizeFace(int index) => index % 2 == 0 ? CubeFace.ZP : CubeFace.ZN;
+    public static CubeFace GetXZResizeFace(int index)
+    {
+        switch (index % 4)
+        {
+            case 0: return CubeFace.XP;
+            case 1: return CubeFace.ZP;
+            case 2: return CubeFace.XN;
+            default: return CubeFace.ZN;
+        }
+    }
 
     // オブジェクト選択時、Y方向のサイズ変更を表す辺上の印を表示する点((X+Z+,X-Z+,X-Z-,X+Z-)*(Y+,Y-))
     public void GetYResizeVertexes(out List<Vector3> points)
@@ -860,7 +951,7 @@ public static partial class AddMethod
     // 最小サイズが(1,1,1)以外のもの
     private static readonly Dictionary<StructureType, Vector3Int> MinSizeDict
         = new Dictionary<StructureType, Vector3Int>() {
-            { StructureType.Gate, new Vector3Int(2, 1, 1) },
+            { StructureType.Gate, new Vector3Int(3, 2, 3) },
         };
     public static Vector3Int MinSize(this StructureType type)
         => MinSizeDict.ContainsKey(type) ? MinSizeDict[type] : Vector3Int.one;
@@ -888,12 +979,6 @@ public static partial class AddMethod
             StructureType.Angle,
         };
 
-    // XZ軸の一方向にのみリサイズ可能なStructureType（Rotationが0のときはX軸のみにResizable）
-    private static readonly List<StructureType> XZEitherNonresizableList
-        = new List<StructureType>() {
-            StructureType.Gate,
-        };
-
     // X軸方向に反転可能なStructureType
     private static readonly List<StructureType> XInversableList
         = new List<StructureType>() {
@@ -912,18 +997,11 @@ public static partial class AddMethod
             StructureType.Chopsticks,
         };
 
-    // 衝突判定をするか
-    private static readonly List<StructureType> DetectCollisionList
-        = new List<StructureType>() {
-            StructureType.Goal,
-            StructureType.Angle,
-            StructureType.Jump,
-        };
-
     // Position2を使うか
     private static readonly List<StructureType> HasPosition2List
         = new List<StructureType>() {
             StructureType.Lift,
+            StructureType.Gate,
         };
 
     // ステージに一つしか存在できないか
@@ -974,16 +1052,6 @@ public static partial class AddMethod
     // Y方向のサイズ変更が可能か
     public static bool IsYResizable(this StructureType type) => !YNonresizableList.Contains(type);
 
-    // X方向のサイズ変更が可能か
-    public static bool IsXResizable(this StructureType type, RotationEnum rot) =>
-        !XZEitherNonresizableList.Contains(type) ||
-        (rot == RotationEnum.IDENTITY || rot == RotationEnum.Y180);
-
-    // Z方向のサイズ変更が可能か
-    public static bool IsZResizable(this StructureType type, RotationEnum rot) =>
-        !XZEitherNonresizableList.Contains(type) ||
-        (rot == RotationEnum.Y90 || rot == RotationEnum.Y270);
-
     // 回転可能か
     public static bool IsRotatable(this StructureType type) => RotatableList.Contains(type);
 
@@ -991,9 +1059,6 @@ public static partial class AddMethod
     public static bool IsXInversable(this StructureType type) => XInversableList.Contains(type);
     public static bool IsYInversable(this StructureType type) => YInversableList.Contains(type);
     public static bool IsZInversable(this StructureType type) => ZInversableList.Contains(type);
-
-    // 衝突判定を行うか
-    public static bool DetectsCollision(this StructureType type) => DetectCollisionList.Contains(type);
 
     // Position2を使うか
     public static bool HasPosition2(this StructureType type) => HasPosition2List.Contains(type);

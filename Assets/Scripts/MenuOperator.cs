@@ -427,7 +427,7 @@ public class MenuOperator : MonoBehaviour
             Prefabs.StructureItemList[i].Preview = copy;
         }
 
-        //CreateStructPreview(new Structure(StructureType.Chopsticks, 0));
+        //CreateStructPreview(new Structure(Prefabs.StructureItemList.FindIndex(i => i.Type == StructureType.Gate)));
 
         NowLoading.Close();
 

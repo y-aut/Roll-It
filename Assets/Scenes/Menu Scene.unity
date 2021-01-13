@@ -767,7 +767,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.33641863, g: 0.41900977, b: 0.764151, a: 0}
+  m_BackGroundColor: {r: 1, g: 1, b: 0.7607843, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1411,7 +1411,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -0.0000076293945, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 20}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &435513358
@@ -3304,90 +3304,134 @@ MonoBehaviour:
   - _type: 0
     _prefabs:
     - {fileID: 2255632354428109499, guid: b2431fa6803640a41968c0ab6df1ee0e, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 1
     _prefabs:
     - {fileID: 1664170307347302039, guid: 2923c5301d46fc8469c9d29741f09779, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 2
     _prefabs:
     - {fileID: 9039419686012537759, guid: 3bed2b9fbfde68f4d85f58206100eb49, type: 3}
     - {fileID: 301880721134377274, guid: d64bdf2cd7487d04e9ed90e8183fc453, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 3
     _prefabs:
     - {fileID: 5986451130454932828, guid: 45ec2e556e842b44eb7e4896bd3c8875, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 4
     _prefabs:
     - {fileID: 1328486439140754755, guid: 6dab14ce8f8233441bad1083c643d72a, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 5
     _prefabs:
     - {fileID: 7072857930752478111, guid: f3cad630cca42554281d60736dbc0a94, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 6
     _prefabs:
     - {fileID: 7460715442248354182, guid: 0130f3f659c11e340b704be467933cc2, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 7
     _prefabs:
     - {fileID: 6393451307173250525, guid: 9f4a157a0edf2cb408ec5dfbb914355a, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 8
     _prefabs:
     - {fileID: 4318931375622053694, guid: c694f7b5f4363f54c999e51274f34547, type: 3}
     - {fileID: 7500296333541903919, guid: ec699c7833be43c4cbe9dfebf0687787, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 9
     _prefabs:
     - {fileID: 4268612413603920118, guid: c6f200ec55b6935429f92233ea18a674, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 10
     _prefabs:
     - {fileID: 5352079436958817036, guid: c6d2fdcf133a834408dcb3c15931bd8d, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 11
     _prefabs:
     - {fileID: 9039419686012537759, guid: 51ba11d56a0561d4792d2b21ab40cada, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 12
     _prefabs:
     - {fileID: 2255632354428109499, guid: 66bc40ce05e3b2041855f6cc9cdd4069, type: 3}
+    _materials: []
     _isDefault: 1
     _isUnfolded: 0
   - _type: 0
     _prefabs:
     - {fileID: 2255632354428109499, guid: 4abd425ac04b8f14294f0e01ed436b70, type: 3}
+    _materials: []
     _isDefault: 0
     _isUnfolded: 0
   - _type: 9
     _prefabs:
     - {fileID: 4268612413603920118, guid: 578febc678d6fe1498839a68e6e2eb9a, type: 3}
+    _materials: []
     _isDefault: 0
     _isUnfolded: 0
   - _type: 9
     _prefabs:
     - {fileID: 4268612413603920118, guid: 02a5c2cc285d9e9478b3da1dcd7c3870, type: 3}
+    _materials: []
     _isDefault: 0
     _isUnfolded: 0
   - _type: 13
     _prefabs:
-    - {fileID: 919132149155446097, guid: fb7b9d6a2dd83484696c6d834accbaf2, type: 3}
-    - {fileID: 919132149155446097, guid: 55284668d9a399d4fbdf3090c25683b7, type: 3}
+    - {fileID: 2181949971201242328, guid: bd8644d14b7e585489449c66000ea986, type: 3}
+    - {fileID: 1929890764378897443, guid: 6a060b8b40d008b43ab77a1782cfdaf2, type: 3}
     - {fileID: 5636437599686557691, guid: 46d77ae392bf5c841a98fb8e34b86b24, type: 3}
+    - {fileID: 5261532514094853681, guid: 96351131a53f1474697df4dcede9e857, type: 3}
+    _materials: []
+    _isDefault: 0
+    _isUnfolded: 0
+  - _type: 3
+    _prefabs:
+    - {fileID: 5986451130454932828, guid: 76c2fc32a72f696419fc52ea54b7fd7a, type: 3}
+    _materials:
+    - {fileID: 2100000, guid: 009526c2869dbfb4780125672cb1db5f, type: 2}
+    _isDefault: 0
+    _isUnfolded: 0
+  - _type: 3
+    _prefabs:
+    - {fileID: 2255632354428109499, guid: 4bad6555a3ed7214eaae6850d7f2eef3, type: 3}
+    _materials: []
+    _isDefault: 0
+    _isUnfolded: 0
+  - _type: 5
+    _prefabs:
+    - {fileID: 7072857930752478111, guid: efc58a61f21c50b4782a7f266f7ecf2c, type: 3}
+    _materials: []
+    _isDefault: 0
+    _isUnfolded: 0
+  - _type: 8
+    _prefabs:
+    - {fileID: 4318931375622053694, guid: fc7995480754fa449996f636fb9a943d, type: 3}
+    - {fileID: 4318931375622053694, guid: 21176257a73de804aa4ec3ccfe4004da, type: 3}
+    _materials: []
     _isDefault: 0
     _isUnfolded: 1
   LiftAdditionalSpriteObj: {fileID: 21300000, guid: 0b71c30b2c5cd594bb998eb30f7b569f, type: 3}
@@ -3969,7 +4013,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.33641863, g: 0.41900977, b: 0.764151, a: 0}
+  m_BackGroundColor: {r: 1, g: 1, b: 0.7607843, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0

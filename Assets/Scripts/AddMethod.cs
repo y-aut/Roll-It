@@ -131,6 +131,9 @@ public static partial class AddMethod
         }
     }
 
+    public static Vector3Int Rotate(this Vector3Int vec, RotationEnum rot)
+        => Structure.ToPositionInt(rot.ToQuaternion() * Structure.ToPositionF(vec));
+
     // ray1を通る平面で、posからの距離が最大となるものとray2との交点を返す
     public static Vector3 GetIntersectionOfRayAndFathestPlane(Vector3 pos, Ray ray1, Ray ray2)
     {
@@ -185,6 +188,8 @@ public static partial class AddMethod
             if (match(list.ElementAt(i))) ans.Add(i);
         return ans;
     }
+
+    public static void RemoveLast<T>(this List<T> list) => list.RemoveAt(list.Count - 1);
 }
 
 public enum XYZEnum

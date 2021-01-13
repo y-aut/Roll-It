@@ -8,9 +8,14 @@ using UnityEngine.EventSystems;
 // Stuructureの構成要素; 初期化時に生成されないようにする
 public class Primitive
 {
-    private GameObject obj;
+    public GameObject Obj { get; private set; }
     public GameObject Prefab { get; set; } = null;
 
+    // 以下のプロパティはCreate前に設定する
+    public Material Material { get; set; } = null;
+    public bool Active { get; set; } = true;
+    // 衝突を検出
+    public bool DetectsCollision { get; set; } = false;
     // Create Sceneでのみ表示
     public bool CreateOnly { get; set; } = false;
     // PlayモードではKinematicをfalseに
@@ -19,36 +24,36 @@ public class Primitive
     public Structure Parent { get; set; }
 
     // Transform
-    private Vector3 _position;
+    private Vector3 _position = Vector3.zero;
     public Vector3 Position
     {
         get => _position;
         set
         {
             _position = value;
-            if (obj != null) UpdateObject();
+            if (Obj != null) UpdateObject();
         }
     }
 
-    private Vector3 _localScale;
+    private Vector3 _localScale = Vector3.one;
     public Vector3 LocalScale
     {
         get => _localScale;
         set
         {
             _localScale = value;
-            if (obj != null) UpdateObject();
+            if (Obj != null) UpdateObject();
         }
     }
 
-    private Quaternion _rotation;
+    private Quaternion _rotation = Quaternion.identity;
     public Quaternion Rotation
     {
         get => _rotation;
         set
         {
             _rotation = value;
-            if (obj != null) UpdateObject();
+            if (Obj != null) UpdateObject();
         }
     }
 
@@ -66,48 +71,37 @@ public class Primitive
     // ワールドに生成
     public void Create()
     {
-        obj = UnityEngine.Object.Instantiate(Prefab);
+        Obj = UnityEngine.Object.Instantiate(Prefab);
+        if (Material != null)
+            Obj.GetComponent<Renderer>().material = Material;
 
         UpdateObject();
         SetKinematic();
         SetClickEvent();
+        Obj.SetActive(Active);
     }
 
     // ワールドから削除
-    public void Destroy() => UnityEngine.Object.Destroy(obj);
+    public void Destroy() => UnityEngine.Object.Destroy(Obj);
 
     private void UpdateObject()
     {
-        obj.transform.position = Position;
-        obj.transform.localScale = LocalScale;
-        obj.transform.rotation = Rotation;
+        Obj.transform.position = Position;
+        Obj.transform.localScale = LocalScale;
+        Obj.transform.rotation = Rotation;
     }
 
     private void SetKinematic()
     {
         if (NonKinematic)
-            obj.GetComponent<Rigidbody>().isKinematic = Scenes.GetActiveScene() != SceneType.Play;
+            Obj.GetComponent<Rigidbody>().isKinematic = Scenes.GetActiveScene() != SceneType.Play;
     }
-
-    // objのアルファ値を変更
-    private void SetAlpha(float a)
-    {
-        var color = obj.GetComponent<Renderer>().material.color;
-        color.a = a;
-        obj.GetComponent<Renderer>().material.color = color;
-    }
-
-    // objを半透明に
-    public void Fade() => SetAlpha(GameConst.FADE_ALPHA);
-
-    // objを不透明に
-    public void Opaque() => SetAlpha(1f);
 
     // Clickイベントを追加
     private void SetClickEvent()
     {
-        if (!obj.TryGetComponent(out EventTrigger trigger))
-            trigger = obj.AddComponent<EventTrigger>();
+        if (!Obj.TryGetComponent(out EventTrigger trigger))
+            trigger = Obj.AddComponent<EventTrigger>();
         trigger.triggers = new List<EventTrigger.Entry>();
         var entry = new EventTrigger.Entry
         {
@@ -120,11 +114,12 @@ public class Primitive
     // Collisionイベントを追加
     public void SetCollisionEvent()
     {
+        if (!DetectsCollision) return;
         CollisionEvent script;
         // "Collider"という名前の子オブジェクトをもつ場合はそちらにつける
-        var child = obj.transform.Find("Collider");
+        var child = Obj.transform.Find("Collider");
         if (child != null) script = child.gameObject.AddComponent<CollisionEvent>();
-        else script = obj.AddComponent<CollisionEvent>();
+        else script = Obj.AddComponent<CollisionEvent>();
         script.Primitive = this;
     }
 
@@ -132,14 +127,14 @@ public class Primitive
     public void MovePosition(Vector3 position)
     {
         _position = position;
-        var rb = obj.GetComponent<Rigidbody>();
+        var rb = Obj.GetComponent<Rigidbody>();
         rb.MovePosition(position);
     }
 
     // Kinematicでない物体に力を加える
     public void AddForce(Vector3 force)
     {
-        var rb = obj.GetComponent<Rigidbody>();
+        var rb = Obj.GetComponent<Rigidbody>();
         rb.AddForce(force);
     }
 }
