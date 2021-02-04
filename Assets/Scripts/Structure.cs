@@ -27,7 +27,7 @@ public enum StructureType
     Jump,       // ジャンプ台
     Box,        // 軽い箱
     Gate,       // ゲート
-
+    Funnel,     // ろうと
 
     NB,
 }
@@ -60,6 +60,7 @@ public static partial class AddMethod
         Category.Other,     // Jump
         Category.Movable,   // Box
         Category.Moving,    // Gate
+        Category.Basic,     // Funnel
     };
 
     public static Category GetCategory(this StructureType type) => StructureTypeToCategory[(int)type];
@@ -108,6 +109,7 @@ public class Structure
             StructureType.Plate,
             StructureType.Slope,
             StructureType.Arc,
+            StructureType.Funnel,
             StructureType.Angle,
             StructureType.Lift,
             StructureType.Chopsticks,
@@ -580,6 +582,40 @@ public class Structure
                     objs.ForEach(i => i.Rotation = Rotation * i.Rotation);
                 }
                 break;
+            case StructureType.Funnel:
+                {
+                    objs[0].Position = PositionShifted;
+                    objs[0].LocalScale = new Vector3(1, LocalScale.y, 1);
+                    // Meshの頂点位置を変更
+                    void Remesh()
+                    {
+                        // 側面数(n)
+                        const int SIDE_COUNT = 64;
+                        // 厚み
+                        const float THICKNESS = 0.1f;
+
+                        var mesh = objs[0].Obj.GetComponent<MeshFilter>().mesh;
+                        var vertices = mesh.vertices;
+
+                        // 上面内側,下面内側,上面外側,下面外側
+                        for (int i = 0; i < SIDE_COUNT; ++i)
+                        {
+                            var theta = 2 * Mathf.PI * i / SIDE_COUNT;
+                            var e = new Vector3(Mathf.Cos(theta), 0, Mathf.Sin(theta));
+                            vertices[i] = e.Scaled(LocalScale.x / 2, 0, LocalScale.z / 2).NewY(0.5f);
+                            vertices[SIDE_COUNT * 2 + i] = e.Scaled(LocalScale.x / 2 + THICKNESS, 0, LocalScale.z / 2 + THICKNESS).NewY(0.5f);
+                        }
+                        mesh.vertices = vertices;
+
+                        mesh.RecalculateBounds();
+                        mesh.RecalculateNormals();
+
+                        objs[0].Obj.GetComponent<MeshCollider>().sharedMesh = mesh;
+                    }
+                    if (objs[0].Obj != null) Remesh();
+                    else objs[0].CreateAction = Remesh;
+                }
+                break;
         }
     }
 
@@ -614,7 +650,7 @@ public class Structure
                 break;
             case StructureType.Board:
                 if (Item.Materials.Count != 0)
-                    objs[0].Material = Item.Materials[0];
+                    objs[0].CreateAction = () => objs[0].Obj.GetComponent<Renderer>().material = Item.Materials[0];
                 Position = PREVIEW_POS;
                 LocalScale = new Vector3(2, 2, 2);
                 RotationInt = RotationEnum.Y270;
@@ -690,6 +726,13 @@ public class Structure
                 objs.RemoveAt(ButtonIndex);
                 camPos = PREVIEW_POS + new Vector3(0, 0, -5);
                 camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Funnel:
+                PositionInt = PREVIEW_POSINT;
+                LocalScaleInt = new Vector3Int(4, 2, 4);
+                UpdateObjects();
+                camPos = PREVIEW_POS + new Vector3(0, 2.7f, -2.7f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos) * Quaternion.Euler(-5, 0, 0);
                 break;
             default:
                 throw GameException.Unreachable;
@@ -778,9 +821,16 @@ public class Structure
                 PositionInt = PREVIEW_POSINT;
                 LocalScaleInt = new Vector3Int(4, 4, 1);
                 UpdateObjects();
-                Button.Active = false;  // GenerationIncrementedが呼ばれるのでobjsから削除してはいけない
+                Button.CreateAction = () => Button.Obj.SetActive(false);  // GenerationIncrementedが呼ばれるのでobjsから削除してはいけない
                 camPos = PREVIEW_POS + new Vector3(0, 2, -3.5f);
                 camRot = Quaternion.LookRotation(PREVIEW_POS - camPos);
+                break;
+            case StructureType.Funnel:
+                PositionInt = PREVIEW_POSINT;
+                LocalScaleInt = new Vector3Int(4, 2, 4);
+                UpdateObjects();
+                camPos = PREVIEW_POS + new Vector3(0, 2.5f, -2.5f);
+                camRot = Quaternion.LookRotation(PREVIEW_POS - camPos) * Quaternion.Euler(-5, 0, 0); ;
                 break;
             default:
                 throw GameException.Unreachable;

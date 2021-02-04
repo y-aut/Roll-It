@@ -292,6 +292,9 @@ public class CreateOperator : MonoBehaviour
                 case StructureType.Gate:
                     dragged = new Structure(item.StructureNo, pos, new Vector3Int(0, -3, -6), new Vector3Int(4, 4, 4), Stage);
                     break;
+                case StructureType.Funnel:
+                    dragged = new Structure(item.StructureNo, pos, new Vector3Int(4, 4, 4), Stage);
+                    break;
                 default:
                     return;
             }

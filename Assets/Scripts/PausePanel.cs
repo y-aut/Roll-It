@@ -53,7 +53,7 @@ public class PausePanel : MonoBehaviour
 
     private IEnumerator WaitClose(Action after)
     {
-        while (popup.IsClosing) yield return new WaitForEndOfFrame();
+        while (popup.IsClosing) yield return null;
         after();
         Destroy(popup.gameObject);
     }

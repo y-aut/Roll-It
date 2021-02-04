@@ -6,6 +6,8 @@ using UnityEngine;
 
 public static partial class AddMethod
 {
+    public static bool Approx(this float v1, float v2, float dif = 1E-3f) => Mathf.Abs(v1 - v2) < dif;
+
     public static T Last<T>(this List<T> list) => list[list.Count - 1];
     public static T LastOrDefault<T>(this List<T> list, T def) => list.Count == 0 ? def : list.Last();
 
@@ -104,6 +106,8 @@ public static partial class AddMethod
     public static Vector3Int Select(this Vector3Int v1, Vector3Int v2, Vector3Int v3, Func<int, int, int, int> func)
         => new Vector3Int(func(v1.x, v2.x, v3.x), func(v1.y, v2.y, v3.y), func(v1.z, v2.z, v3.z));
 
+    public static Vector3 Scaled(this Vector3 vec, Vector3 scale) => vec.Select(scale, (i, j) => i * j);
+    public static Vector3 Scaled(this Vector3 vec, float x, float y, float z) => vec.Scaled(new Vector3(x, y, z));
     public static Vector3Int Scaled(this Vector3Int vec, Vector3Int scale) => vec.Select(scale, (i, j) => i * j);
     public static Vector3Int Scaled(this Vector3Int vec, int x, int y, int z) => vec.Scaled(new Vector3Int(x, y, z));
 

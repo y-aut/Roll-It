@@ -807,8 +807,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 275453221}
-  m_LocalRotation: {x: 0.13598645, y: 0.4821241, z: -0.076046266, w: 0.86213756}
-  m_LocalPosition: {x: -3.45, y: 1.31, z: -2.12}
+  m_LocalRotation: {x: 0.27779222, y: 0.40954718, z: -0.13247296, w: 0.8588094}
+  m_LocalPosition: {x: -2.625, y: 6.297, z: -1.452}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -3433,6 +3433,12 @@ MonoBehaviour:
     - {fileID: 4318931375622053694, guid: 21176257a73de804aa4ec3ccfe4004da, type: 3}
     _materials: []
     _isDefault: 0
+    _isUnfolded: 0
+  - _type: 14
+    _prefabs:
+    - {fileID: 5747148767345885445, guid: 4bd8eda7a738d57479d559f4925485b2, type: 3}
+    _materials: []
+    _isDefault: 1
     _isUnfolded: 1
   LiftAdditionalSpriteObj: {fileID: 21300000, guid: 0b71c30b2c5cd594bb998eb30f7b569f, type: 3}
   InputBoxPrefabObj: {fileID: 6269427580765542264, guid: d29d5c23d1b78154cab0288e69275212, type: 3}

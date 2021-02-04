@@ -11,9 +11,10 @@ public class Primitive
     public GameObject Obj { get; private set; }
     public GameObject Prefab { get; set; } = null;
 
+    // Create後に行うアクション
+    public Action CreateAction { get; set; } = null;
+
     // 以下のプロパティはCreate前に設定する
-    public Material Material { get; set; } = null;
-    public bool Active { get; set; } = true;
     // 衝突を検出
     public bool DetectsCollision { get; set; } = false;
     // Create Sceneでのみ表示
@@ -72,13 +73,11 @@ public class Primitive
     public void Create()
     {
         Obj = UnityEngine.Object.Instantiate(Prefab);
-        if (Material != null)
-            Obj.GetComponent<Renderer>().material = Material;
 
+        CreateAction?.Invoke();
         UpdateObject();
         SetKinematic();
         SetClickEvent();
-        Obj.SetActive(Active);
     }
 
     // ワールドから削除
